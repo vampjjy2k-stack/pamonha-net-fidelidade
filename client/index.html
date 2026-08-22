@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pamonha Net Fiel — Cartão Fidelidade Digital</title>
+  <meta name="description" content="Cartão fidelidade digital da Pamonha Net: compre 10, ganhe 1 pamonha grátis!" />
+  <link rel="icon" type="image/png" href="assets/logo-pamonha-net.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="toast-container" aria-live="polite"></div>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="index.html" class="brand">
+        <img src="assets/logo-pamonha-net.png" alt="Logotipo Pamonha Net" width="42" height="42" />
+        <span class="brand-name">Pamonha Net<small>Cartão Fiel</small></span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero">
+    <div class="container">
+      <span class="hero-mascote" aria-hidden="true">🌽</span>
+      <h1>Compre 10 pamonhas,<br /><span>ganhe 1 de presente</span></h1>
+      <p class="lead">O cartão fidelidade da Pamonha Net agora é digital. Sem plastiquinho para perder — seu progresso fica guardado no seu celular.</p>
+      <div class="hero-cta">
+        <a href="#auth" class="btn btn-primary">Quero meu cartão</a>
+        <a href="#como-funciona" class="btn btn-ghost">Como funciona</a>
+      </div>
+    </div>
+    <svg class="divisor-folha" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,32 C240,70 480,0 720,24 C960,48 1200,10 1440,32 L1440,60 L0,60 Z" fill="#FFF8E1" />
+    </svg>
+  </section>
+
+  <!-- ===== COMO FUNCIONA ===== -->
+  <section class="como-funciona" id="como-funciona">
+    <div class="container">
+      <span class="section-eyebrow">Simples assim</span>
+      <h2 class="section-title">Como funciona</h2>
+      <div class="passos">
+        <div class="passo">
+          <span class="emoji" aria-hidden="true">📱</span>
+          <h3>Crie seu cartão</h3>
+          <p>Cadastre-se com nome e telefone. Leva menos de 1 minuto.</p>
+        </div>
+        <div class="passo">
+          <span class="emoji" aria-hidden="true">🌽</span>
+          <h3>Ganhe carimbos</h3>
+          <p>A cada pamonha comprada, mostre seu QR Code e ganhe um carimbo.</p>
+        </div>
+        <div class="passo">
+          <span class="emoji" aria-hidden="true">🎁</span>
+          <h3>Resgate seu prêmio</h3>
+          <p>Ao completar 10 carimbos, escolha seu produto grátis.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ONDE ENCONTRAR ===== -->
+  <section class="onde-encontrar">
+    <div class="container">
+      <span class="section-eyebrow">Venha nos visitar</span>
+      <h2 class="section-title">Onde encontrar</h2>
+      <div class="locais">
+        <div class="local-card">
+          <span class="emoji" aria-hidden="true">📍</span>
+          <div>
+            <h4>Endereço fixo</h4>
+            <p>R. Dr. Osmundo Bezerra Duarte, s/n<br />Duque de Caxias/RJ</p>
+          </div>
+        </div>
+        <div class="local-card">
+          <span class="emoji" aria-hidden="true">🗓️</span>
+          <div>
+            <h4>Feiras</h4>
+            <p><strong>Sábados:</strong> Figueira e Xerém<br /><strong>Domingos:</strong> Santa Cruz da Serra</p>
+          </div>
+        </div>
+      </div>
+      <div class="mapa-wrap">
+        <iframe
+          title="Mapa até a Pamonha Net"
+          src="https://www.google.com/maps?q=R.+Dr.+Osmundo+Bezerra+Duarte,+Duque+de+Caxias+-+RJ&output=embed"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+        ></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LOGIN / CADASTRO ===== -->
+  <section class="auth-section" id="auth">
+    <div class="container">
+      <span class="section-eyebrow">Acesse sua conta</span>
+      <h2 class="section-title">Entrar no Cartão Fiel</h2>
+
+      <div class="auth-card">
+        <div class="auth-toggle" role="tablist" aria-label="Tipo de acesso">
+          <button type="button" class="active" data-perfil="cliente" role="tab" aria-selected="true">🌽 Sou Cliente</button>
+          <button type="button" data-perfil="admin" role="tab" aria-selected="false">🔑 Sou Admin</button>
+        </div>
+
+        <!-- Painel do cliente: alterna entre login e cadastro -->
+        <div id="painel-cliente" class="tab-panel active">
+          <form id="form-login" class="tab-panel active" data-form="login" data-perfil="cliente" novalidate>
+            <div class="campo">
+              <label for="login-telefone">Telefone</label>
+              <input id="login-telefone" type="tel" inputmode="numeric" placeholder="(21) 91234-5678" data-mascara="telefone" required />
+            </div>
+            <div class="campo">
+              <label for="login-senha">Senha</label>
+              <input id="login-senha" type="password" placeholder="Sua senha" required />
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-label">Entrar</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+            <p class="forms-switch">Ainda não tem cartão? <button type="button" data-mostrar-form="cadastro">Cadastre-se</button></p>
+          </form>
+
+          <form id="form-cadastro" class="tab-panel" novalidate>
+            <div class="campo">
+              <label for="cadastro-nome">Nome completo</label>
+              <input id="cadastro-nome" type="text" placeholder="Seu nome completo" required />
+              <span class="erro-campo"></span>
+            </div>
+            <div class="campo">
+              <label for="cadastro-telefone">Telefone</label>
+              <input id="cadastro-telefone" type="tel" inputmode="numeric" placeholder="(21) 91234-5678" data-mascara="telefone" required />
+              <span class="erro-campo"></span>
+            </div>
+            <div class="campo">
+              <label for="cadastro-senha">Senha</label>
+              <input id="cadastro-senha" type="password" placeholder="Mínimo 6 caracteres" required />
+              <span class="erro-campo"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <span class="btn-label">Criar meu cartão</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+            <p class="forms-switch">Já tem cartão? <button type="button" data-mostrar-form="login">Fazer login</button></p>
+          </form>
+        </div>
+
+        <!-- Painel do admin: apenas login -->
+        <div id="painel-admin" class="tab-panel">
+          <form data-form="login" data-perfil="admin" novalidate>
+            <div class="campo">
+              <label for="admin-telefone">Telefone</label>
+              <input id="admin-telefone" type="tel" inputmode="numeric" placeholder="(21) 91234-5678" data-mascara="telefone" required />
+            </div>
+            <div class="campo">
+              <label for="admin-senha">Senha</label>
+              <input id="admin-senha" type="password" placeholder="Sua senha" required />
+            </div>
+            <button type="submit" class="btn btn-secondary">
+              <span class="btn-label">Entrar como Admin</span>
+              <span class="spinner" aria-hidden="true"></span>
+            </button>
+            <p class="form-hint" style="text-align:center;">Contas admin são criadas diretamente no banco de dados (veja o README).</p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="rodape">
+    <div class="container">🌽 Pamonha Net — feito com carinho em Duque de Caxias/RJ</div>
+  </footer>
+
+  <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

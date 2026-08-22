@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Admin — Pamonha Net Fiel</title>
+  <link rel="icon" type="image/png" href="assets/logo-pamonha-net.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="pagina-admin">
+  <div id="toast-container" aria-live="polite"></div>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="admin.html" class="brand">
+        <img src="assets/logo-pamonha-net.png" alt="Logotipo Pamonha Net" width="42" height="42" />
+        <span class="brand-name">Pamonha Net<small>Painel Admin</small></span>
+      </a>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-logout" title="Sair" aria-label="Sair da conta">↩︎</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="admin-topo">
+      <h1>Painel administrativo</h1>
+      <p>Gerencie os cartões fidelidade dos clientes.</p>
+    </div>
+
+    <div class="admin-cards">
+      <div class="admin-card" id="card-total-clientes">
+        <div class="valor">—</div>
+        <div class="rotulo">Clientes</div>
+      </div>
+      <div class="admin-card" id="card-perto-premio">
+        <div class="valor">—</div>
+        <div class="rotulo">Perto do prêmio</div>
+      </div>
+      <div class="admin-card" id="card-resgates-mes">
+        <div class="valor">—</div>
+        <div class="rotulo">Ver histórico no cliente</div>
+      </div>
+    </div>
+
+    <!-- ===== Escanear QR Code ===== -->
+    <h2 class="section-title" style="text-align:left; font-size:1.15rem;">Escanear QR Code</h2>
+    <div class="scan-box">
+      <div id="leitor-camera" class="hidden"></div>
+      <button type="button" class="btn btn-primary" id="btn-alternar-camera" style="margin-bottom:10px;">
+        Escanear com a câmera
+      </button>
+      <label for="scan-textarea" style="font-size:.8rem; font-weight:700; display:block; margin-bottom:6px;">
+        Ou cole o conteúdo do QR Code:
+      </label>
+      <textarea id="scan-textarea" placeholder="Cole aqui o token lido do QR Code..."></textarea>
+      <button type="button" class="btn btn-secondary" id="btn-scan-texto">Confirmar carimbo</button>
+      <p class="scan-resultado" id="scan-resultado"></p>
+    </div>
+
+    <!-- ===== Lista de clientes ===== -->
+    <h2 class="section-title" style="text-align:left; font-size:1.15rem; margin-top:26px;">Clientes</h2>
+    <div class="admin-busca">
+      <input type="search" id="busca-input" placeholder="Buscar por nome ou telefone..." aria-label="Buscar cliente" />
+      <select id="busca-ordenar" aria-label="Ordenar clientes">
+        <option value="name">Ordenar por nome</option>
+        <option value="stamps">Ordenar por carimbos</option>
+      </select>
+    </div>
+
+    <div class="lista-clientes" id="lista-clientes"></div>
+
+    <div class="paginacao">
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-pagina-anterior">← Anterior</button>
+      <span id="paginacao-info">Página 1 de 1</span>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-pagina-proxima">Próxima →</button>
+    </div>
+  </div>
+
+  <footer class="rodape">🌽 Pamonha Net — feito com carinho em Duque de Caxias/RJ</footer>
+
+  <!-- Modal de detalhe do cliente -->
+  <div class="modal-overlay" id="modal-cliente">
+    <div class="modal-box">
+      <button class="modal-fechar" id="btn-fechar-modal-cliente" aria-label="Fechar">×</button>
+      <h3 id="modal-cliente-nome">Nome do cliente</h3>
+      <p style="margin:0 0 4px; color:var(--marrom-terra-claro); font-size:.9rem;" id="modal-cliente-telefone"></p>
+      <p style="margin:0 0 16px; color:var(--marrom-terra-claro); font-size:.8rem;" id="modal-cliente-cadastro"></p>
+
+      <p class="form-hint" style="margin-top:0;">Toque em um espaço vazio para carimbar, ou em um carimbo para removê-lo.</p>
+      <div class="grade-carimbos editavel" id="grade-carimbos-admin"></div>
+
+      <div id="premio-admin-secao" class="hidden" style="margin-top:18px;">
+        <h4 style="text-align:center; color:var(--verde-folha-escuro);">Cartão completo — confirmar resgate:</h4>
+        <div class="premio-opcoes" id="premio-admin-opcoes">
+          <button type="button" class="btn btn-secondary" data-produto="Pamonha Doce">Pamonha Doce</button>
+          <button type="button" class="btn btn-secondary" data-produto="Pamonha Salgada">Pamonha Salgada</button>
+          <button type="button" class="btn btn-secondary" data-produto="Pamonha Recheada">Pamonha Recheada</button>
+          <button type="button" class="btn btn-secondary" data-produto="Curau">Curau</button>
+        </div>
+      </div>
+
+      <div class="linha-acoes">
+        <button type="button" class="btn btn-danger btn-sm" id="btn-resetar-cartao">Resetar cartão</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/admin-dashboard.js"></script>
+  <script src="js/qr-scanner.js"></script>
+</body>
+</html>
