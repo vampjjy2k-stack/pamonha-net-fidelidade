@@ -1,5 +1,5 @@
 // js/client-dashboard.js
-// Lógica da página cliente.html: cartão de carimbos, QR Code, resgate de prêmio e histórico.
+// Lógica da página cliente.html: cartão, QR Code, resgate, reservas, pesquisa.
 
 let usuarioAtual = null;
 let estadoAtual = { stamps: 0, history: [] };
@@ -26,10 +26,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('saudacao-nome').textContent = usuarioAtual.fullName.split(' ')[0];
 
   await carregarDashboard();
+  await carregarProdutosReserva();
+  await carregarMinhasReservas();
+  await carregarPesquisa();
 
   document.getElementById('btn-gerar-qr').addEventListener('click', gerarQrCode);
   document.getElementById('btn-fechar-qr').addEventListener('click', fecharModalQr);
   document.getElementById('btn-compartilhar-whatsapp').addEventListener('click', compartilharWhatsapp);
+  document.getElementById('btn-enviar-pesquisa').addEventListener('click', enviarPesquisa);
 
   document.querySelectorAll('.premio-opcoes button').forEach((btn) => {
     btn.addEventListener('click', () => resgatarPremio(btn.dataset.produto, btn));
@@ -142,7 +146,6 @@ function iniciarCronometroQr(segundosIniciais) {
     if (restante <= 0) {
       clearInterval(cronometroQr);
       label.textContent = 'Expirado — gere um novo QR Code';
-      // Ao expirar, recarrega os carimbos automaticamente (caso já tenha sido escaneado antes de expirar)
       carregarDashboard();
     }
     restante -= 1;
@@ -159,9 +162,6 @@ async function resgatarPremio(produto, botaoClicado) {
   setBotaoCarregando(botaoClicado, true);
 
   try {
-    // O resgate final é confirmado pelo admin no balcão; aqui registramos o pedido do cliente.
-    // Como o admin também pode confirmar diretamente pelo painel dele, mostramos a mensagem
-    // de forma que fique claro que é preciso validar com a equipe no momento da retirada.
     mostrarToast(`Show! Mostre esta tela no balcão para retirar sua ${produto}. 🎁`);
   } finally {
     setBotaoCarregando(botaoClicado, false);
@@ -180,7 +180,139 @@ function compartilharWhatsapp() {
   window.open(url, '_blank', 'noopener');
 }
 
-/* ---------- Confete (canvas leve, sem dependências) ---------- */
+/* ---------- Reservas ---------- */
+async function carregarProdutosReserva() {
+  const lista = document.getElementById('lista-produtos-reserva');
+  try {
+    const data = await api('/client/products');
+    lista.innerHTML = '';
+    const produtos = data.products?.filter((p) => p.inStock) || [];
+    if (produtos.length === 0) {
+      lista.innerHTML = '<p class="form-hint" style="text-align:center;">Nenhum produto disponível para reserva no momento.</p>';
+      return;
+    }
+    produtos.forEach((p) => {
+      const card = document.createElement('div');
+      card.className = 'produto-reserva-card';
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img src="${escaparHtml(p.imageUrl || 'assets/logo-pamonha-net.png')}" width="50" height="50" style="border-radius:8px;object-fit:cover;" />
+          <div>
+            <strong>${escaparHtml(p.name)}</strong>
+            <div style="font-size:.85rem;">R$ ${(p.priceCents / 100).toFixed(2)}</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="reservarProduto('${p._id}')">Reservar</button>
+      `;
+      lista.appendChild(card);
+    });
+  } catch (err) {
+    lista.innerHTML = '<p class="form-hint" style="text-align:center;">Erro ao carregar produtos.</p>';
+  }
+}
+
+async function reservarProduto(productId) {
+  try {
+    await api('/client/reservations', { method: 'POST', body: { productId, quantity: 1 } });
+    mostrarToast('Reserva feita com sucesso! 🛒');
+    carregarMinhasReservas();
+  } catch (err) {
+    mostrarToast(err.message, 'erro');
+  }
+}
+
+async function carregarMinhasReservas() {
+  const lista = document.getElementById('lista-minhas-reservas');
+  try {
+    const data = await api('/client/reservations');
+    lista.innerHTML = '';
+    if (!data.reservations || data.reservations.length === 0) {
+      lista.innerHTML = '<p class="form-hint" style="text-align:center;">Você ainda não tem reservas.</p>';
+      return;
+    }
+    data.reservations.forEach((r) => {
+      const statusLabel = { pending: '⏳ Pendente', picked_up: '✅ Retirada', cancelled: '❌ Cancelada' }[r.status];
+      const div = document.createElement('div');
+      div.className = 'reserva-cliente-item';
+      div.innerHTML = `
+        <span><strong>${escaparHtml(r.productId?.name || 'Produto')}</strong> — ${statusLabel}</span>
+        <span style="font-size:.75rem;color:var(--marrom-terra-claro);">${new Date(r.createdAt).toLocaleDateString('pt-BR')}</span>
+      `;
+      lista.appendChild(div);
+    });
+  } catch (err) {
+    lista.innerHTML = '<p class="form-hint" style="text-align:center;">Erro ao carregar reservas.</p>';
+  }
+}
+
+/* ---------- Pesquisa ---------- */
+async function carregarPesquisa() {
+  const container = document.getElementById('pesquisa-perguntas');
+  try {
+    const data = await api('/client/survey/questions');
+    container.innerHTML = '';
+    data.questions.forEach((q) => {
+      const div = document.createElement('div');
+      div.className = 'pesquisa-pergunta';
+      div.innerHTML = `
+        <label>${escaparHtml(q.label)}</label>
+        <div class="estrelas" data-pergunta="${q.id}">
+          ${[1,2,3,4,5].map(n => `<button type="button" data-nota="${n}">⭐</button>`).join('')}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+
+    container.querySelectorAll('.estrelas button').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const pergunta = e.target.closest('.estrelas').dataset.pergunta;
+        const nota = Number(e.target.dataset.nota);
+        const botoes = e.target.closest('.estrelas').querySelectorAll('button');
+        botoes.forEach((b, i) => {
+          b.style.opacity = i < nota ? '1' : '0.3';
+        });
+        e.target.closest('.estrelas').dataset.valor = nota;
+      });
+    });
+  } catch (err) {
+    container.innerHTML = '<p class="form-hint">Não foi possível carregar a pesquisa.</p>';
+  }
+}
+
+async function enviarPesquisa() {
+  const perguntas = document.querySelectorAll('.estrelas');
+  const respostas = {};
+  for (const p of perguntas) {
+    const id = p.dataset.pergunta;
+    const valor = p.dataset.valor;
+    if (!valor) {
+      mostrarToast('Responda todas as perguntas.', 'aviso');
+      return;
+    }
+    respostas[id] = Number(valor);
+  }
+
+  const btn = document.getElementById('btn-enviar-pesquisa');
+  setBotaoCarregando(btn, true);
+  try {
+    await api('/client/survey', {
+      method: 'POST',
+      body: {
+        experience: respostas.experience,
+        service: respostas.service,
+        recommend: respostas.recommend,
+      },
+    });
+    mostrarToast('Obrigado pela avaliação! 🌟');
+    document.getElementById('pesquisa-container').innerHTML = '<p class="form-hint" style="text-align:center;">Você já avaliou. Muito obrigado! 🌽</p>';
+  } catch (err) {
+    mostrarToast(err.message, 'erro');
+  } finally {
+    setBotaoCarregando(btn, false);
+  }
+}
+
+/* ---------- Confete ---------- */
 function dispararConfete() {
   const canvas = document.getElementById('confete-canvas');
   if (!canvas) return;
