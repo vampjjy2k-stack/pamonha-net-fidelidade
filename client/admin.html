@@ -25,76 +25,104 @@
     </div>
   </header>
 
-  <div class="container">
+  <main class="container">
     <div class="admin-topo">
       <h1>Painel administrativo</h1>
-      <p>Gerencie os cartões fidelidade dos clientes.</p>
+      <p>Gerencie clientes, produtos, reservas, notificações e pesquisas.</p>
     </div>
 
     <div class="admin-cards">
-      <div class="admin-card" id="card-total-clientes">
-        <div class="valor">—</div>
-        <div class="rotulo">Clientes</div>
+      <div class="admin-card" id="card-total-clientes"><div class="valor">—</div><div class="rotulo">Clientes</div></div>
+      <div class="admin-card" id="card-perto-premio"><div class="valor">—</div><div class="rotulo">Perto do prêmio</div></div>
+      <div class="admin-card" id="card-premium"><div class="valor">—</div><div class="rotulo">Clientes VIP</div></div>
+    </div>
+
+    <nav class="admin-tabs" aria-label="Seções do painel">
+      <button type="button" class="tab-btn active" data-tab="clientes">Clientes</button>
+      <button type="button" class="tab-btn" data-tab="produtos">Produtos</button>
+      <button type="button" class="tab-btn" data-tab="reservas">Reservas <span class="badge hidden" id="badge-reservas-tab">0</span></button>
+      <button type="button" class="tab-btn" data-tab="notificacoes">Notificações</button>
+      <button type="button" class="tab-btn" data-tab="pesquisas">Pesquisas</button>
+    </nav>
+
+    <section class="tab-content active" id="tab-clientes">
+      <h2 class="section-title" style="text-align:left;font-size:1.15rem;">Escanear QR Code</h2>
+      <div class="scan-box">
+        <div id="leitor-camera" class="hidden"></div>
+        <button type="button" class="btn btn-primary" id="btn-alternar-camera" style="margin-bottom:10px;">Escanear com a câmera</button>
+        <label for="scan-textarea" style="font-size:.8rem;font-weight:700;display:block;margin-bottom:6px;">Ou cole o conteúdo do QR Code:</label>
+        <textarea id="scan-textarea" placeholder="Cole aqui o token lido do QR Code..."></textarea>
+        <button type="button" class="btn btn-secondary" id="btn-scan-texto">Confirmar carimbo</button>
+        <p class="scan-resultado" id="scan-resultado"></p>
       </div>
-      <div class="admin-card" id="card-perto-premio">
-        <div class="valor">—</div>
-        <div class="rotulo">Perto do prêmio</div>
+
+      <h2 class="section-title" style="text-align:left;font-size:1.15rem;margin-top:26px;">Clientes</h2>
+      <div class="admin-busca">
+        <input type="search" id="busca-input" placeholder="Buscar por nome ou telefone..." aria-label="Buscar cliente" />
+        <select id="busca-ordenar" aria-label="Ordenar clientes">
+          <option value="name">Ordenar por nome</option>
+          <option value="stamps">Ordenar por carimbos</option>
+        </select>
       </div>
-      <div class="admin-card" id="card-resgates-mes">
-        <div class="valor">—</div>
-        <div class="rotulo">Ver histórico no cliente</div>
+      <div class="lista-clientes" id="lista-clientes"></div>
+      <div class="paginacao">
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-pagina-anterior">← Anterior</button>
+        <span id="paginacao-info">Página 1 de 1</span>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-pagina-proxima">Próxima →</button>
       </div>
-    </div>
+    </section>
 
-    <!-- ===== Escanear QR Code ===== -->
-    <h2 class="section-title" style="text-align:left; font-size:1.15rem;">Escanear QR Code</h2>
-    <div class="scan-box">
-      <div id="leitor-camera" class="hidden"></div>
-      <button type="button" class="btn btn-primary" id="btn-alternar-camera" style="margin-bottom:10px;">
-        Escanear com a câmera
-      </button>
-      <label for="scan-textarea" style="font-size:.8rem; font-weight:700; display:block; margin-bottom:6px;">
-        Ou cole o conteúdo do QR Code:
-      </label>
-      <textarea id="scan-textarea" placeholder="Cole aqui o token lido do QR Code..."></textarea>
-      <button type="button" class="btn btn-secondary" id="btn-scan-texto">Confirmar carimbo</button>
-      <p class="scan-resultado" id="scan-resultado"></p>
-    </div>
+    <section class="tab-content" id="tab-produtos">
+      <div class="section-head-inline"><h2 class="section-title" style="text-align:left;font-size:1.15rem;">Catálogo de produtos</h2><button class="btn btn-primary btn-sm" id="btn-novo-produto">+ Produto</button></div>
+      <div class="lista-produtos" id="lista-produtos"></div>
+    </section>
 
-    <!-- ===== Lista de clientes ===== -->
-    <h2 class="section-title" style="text-align:left; font-size:1.15rem; margin-top:26px;">Clientes</h2>
-    <div class="admin-busca">
-      <input type="search" id="busca-input" placeholder="Buscar por nome ou telefone..." aria-label="Buscar cliente" />
-      <select id="busca-ordenar" aria-label="Ordenar clientes">
-        <option value="name">Ordenar por nome</option>
-        <option value="stamps">Ordenar por carimbos</option>
-      </select>
-    </div>
+    <section class="tab-content" id="tab-reservas">
+      <div class="section-head-inline"><h2 class="section-title" style="text-align:left;font-size:1.15rem;">Reservas</h2><span class="badge badge-static hidden" id="badge-reservas">0</span></div>
+      <div class="admin-busca"><select id="filtro-reserva-status" aria-label="Filtrar reservas por status"><option value="">Todas</option><option value="pending">Pendentes</option><option value="picked_up">Retiradas</option><option value="cancelled">Canceladas</option></select></div>
+      <div class="lista-reservas" id="lista-reservas"></div>
+    </section>
 
-    <div class="lista-clientes" id="lista-clientes"></div>
+    <section class="tab-content" id="tab-notificacoes">
+      <h2 class="section-title" style="text-align:left;font-size:1.15rem;">Enviar notificação</h2>
+      <div class="notif-composer">
+        <div class="campo"><label for="notif-mensagem">Mensagem</label><textarea id="notif-mensagem" rows="4" placeholder="Escreva a mensagem..."></textarea></div>
+        <div class="campo"><label for="notif-imagem">Imagem (URL opcional)</label><input id="notif-imagem" type="url" placeholder="https://..." /></div>
+        <div class="campo"><label for="notif-audience">Público</label><select id="notif-audience"><option value="all">Todos os clientes</option><option value="single">Um cliente</option></select></div>
+        <div class="campo hidden" id="campo-target-user"><label for="notif-target-user">ID do cliente</label><input id="notif-target-user" type="text" placeholder="Cole o ID do cliente" /></div>
+        <button class="btn btn-primary" id="btn-enviar-notif"><span class="btn-label">Enviar notificação</span><span class="spinner" aria-hidden="true"></span></button>
+      </div>
+      <h2 class="section-title" style="text-align:left;font-size:1.15rem;margin-top:22px;">Histórico de envios</h2>
+      <div id="lista-notificacoes"></div>
+    </section>
 
-    <div class="paginacao">
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-pagina-anterior">← Anterior</button>
-      <span id="paginacao-info">Página 1 de 1</span>
-      <button type="button" class="btn btn-ghost btn-sm" id="btn-pagina-proxima">Próxima →</button>
-    </div>
-  </div>
+    <section class="tab-content" id="tab-pesquisas">
+      <h2 class="section-title" style="text-align:left;font-size:1.15rem;">Pesquisa de satisfação</h2>
+      <div class="admin-cards">
+        <div class="admin-card"><div class="valor" id="pesq-media-exp">0.0</div><div class="rotulo">Experiência</div></div>
+        <div class="admin-card"><div class="valor" id="pesq-media-serv">0.0</div><div class="rotulo">Atendimento</div></div>
+        <div class="admin-card"><div class="valor" id="pesq-media-rec">0.0</div><div class="rotulo">Recomendação</div></div>
+      </div>
+      <div id="lista-pesquisas"></div>
+    </section>
+  </main>
 
   <footer class="rodape">🌽 Pamonha Net — feito com carinho em Duque de Caxias/RJ</footer>
 
-  <!-- Modal de detalhe do cliente -->
   <div class="modal-overlay" id="modal-cliente">
-    <div class="modal-box">
+    <div class="modal-box modal-grande">
       <button class="modal-fechar" id="btn-fechar-modal-cliente" aria-label="Fechar">×</button>
       <h3 id="modal-cliente-nome">Nome do cliente</h3>
-      <p style="margin:0 0 4px; color:var(--marrom-terra-claro); font-size:.9rem;" id="modal-cliente-telefone"></p>
-      <p style="margin:0 0 16px; color:var(--marrom-terra-claro); font-size:.8rem;" id="modal-cliente-cadastro"></p>
+      <p style="margin:0 0 4px;color:var(--marrom-terra-claro);font-size:.9rem;" id="modal-cliente-telefone"></p>
+      <p style="margin:0 0 4px;color:var(--marrom-terra-claro);font-size:.8rem;" id="modal-cliente-segmento"></p>
+      <p style="margin:0 0 16px;color:var(--marrom-terra-claro);font-size:.8rem;" id="modal-cliente-cadastro"></p>
 
+      <div class="cliente-metricas" id="cliente-metricas"></div>
       <p class="form-hint" style="margin-top:0;">Toque em um espaço vazio para carimbar, ou em um carimbo para removê-lo.</p>
       <div class="grade-carimbos editavel" id="grade-carimbos-admin"></div>
 
       <div id="premio-admin-secao" class="hidden" style="margin-top:18px;">
-        <h4 style="text-align:center; color:var(--verde-folha-escuro);">Cartão completo — confirmar resgate:</h4>
+        <h4 style="text-align:center;color:var(--verde-folha-escuro);">Cartão completo — confirmar resgate:</h4>
         <div class="premio-opcoes" id="premio-admin-opcoes">
           <button type="button" class="btn btn-secondary" data-produto="Pamonha Doce">Pamonha Doce</button>
           <button type="button" class="btn btn-secondary" data-produto="Pamonha Salgada">Pamonha Salgada</button>
@@ -104,8 +132,34 @@
       </div>
 
       <div class="linha-acoes">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-editar-perfil">Editar perfil</button>
+        <button type="button" class="btn btn-danger btn-sm" id="btn-apagar-historico">Apagar histórico</button>
         <button type="button" class="btn btn-danger btn-sm" id="btn-resetar-cartao">Resetar cartão</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-editar-perfil">
+    <div class="modal-box">
+      <button class="modal-fechar" id="btn-fechar-modal-editar" aria-label="Fechar">×</button>
+      <h3>Editar perfil</h3>
+      <div class="campo"><label for="editar-nome">Nome</label><input id="editar-nome" type="text" autocomplete="name" /></div>
+      <div class="campo"><label for="editar-telefone">Telefone</label><input id="editar-telefone" type="tel" inputmode="numeric" autocomplete="tel" /></div>
+      <button class="btn btn-primary" id="btn-salvar-perfil">Salvar</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-produto">
+    <div class="modal-box">
+      <button class="modal-fechar" id="btn-fechar-modal-produto" aria-label="Fechar">×</button>
+      <h3 id="modal-produto-titulo">Novo Produto</h3>
+      <input type="hidden" id="produto-id" />
+      <div class="campo"><label for="produto-nome">Nome</label><input id="produto-nome" type="text" /></div>
+      <div class="campo"><label for="produto-preco">Preço (centavos)</label><input id="produto-preco" type="number" min="0" step="1" /></div>
+      <div class="campo"><label for="produto-imagem">Imagem (URL opcional)</label><input id="produto-imagem" type="url" /></div>
+      <div class="campo"><label for="produto-categoria">Categoria</label><input id="produto-categoria" type="text" /></div>
+      <label style="display:flex;align-items:center;gap:8px;margin:8px 0 18px;"><input id="produto-estoque" type="checkbox" /> Disponível para reserva</label>
+      <button class="btn btn-primary" id="btn-salvar-produto">Salvar produto</button>
     </div>
   </div>
 
