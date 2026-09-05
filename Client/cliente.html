@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meu Cartão — Pamonha Net Fiel</title>
+  <link rel="icon" type="image/png" href="assets/logo-pamonha-net.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Manrope:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="pagina-cliente">
+  <div id="toast-container" aria-live="polite"></div>
+  <canvas id="confete-canvas" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <div class="container">
+      <a href="cliente.html" class="brand">
+        <img src="assets/logo-pamonha-net.png" alt="Logotipo Pamonha Net" width="36" height="36" />
+        <span class="brand-name">Pamonha Net<small>Cartão Fiel</small></span>
+      </a>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-logout" title="Sair" aria-label="Sair da conta">↩︎</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="saudacao-wrap">
+      <h1>Olá, <span id="saudacao-nome">cliente</span></h1>
+      <p>Confira seus carimbos, notificações e reservas.</p>
+    </div>
+  </div>
+
+  <nav class="cliente-tabs">
+    <button class="cliente-tab-btn ativo" data-cliente-tab="cartao">Cartão</button>
+    <button class="cliente-tab-btn" data-cliente-tab="notificacoes">Novidades <span class="contagem hidden" id="badge-notificacoes">0</span></button>
+    <button class="cliente-tab-btn" data-cliente-tab="reservas">Reservar</button>
+    <button class="cliente-tab-btn" data-cliente-tab="pesquisa">Pesquisa</button>
+  </nav>
+
+  <div class="container">
+
+    <!-- ===== CARTÃO ===== -->
+    <section class="cliente-painel ativo" id="painel-cartao">
+      <div id="conteudo-cartao">
+        <div class="cartao-fidelidade" id="cartao-fidelidade" role="region" aria-label="Seu cartão fidelidade">
+          <div class="cartao-cabecalho">
+            <span class="cartao-selo" aria-hidden="true">🌽</span>
+            <div class="cartao-meta">
+              <p class="cartao-contador"><span id="cartao-contador-valor">0</span><span class="cartao-contador-total">/ 10</span></p>
+              <p class="cartao-frase" id="cartao-frase">Vamos começar sua coleção de carimbos.</p>
+            </div>
+          </div>
+          <div class="barra-progresso-wrap" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0" aria-label="Progresso do cartão fidelidade" id="barra-progresso-wrap">
+            <div class="barra-progresso-track"><div class="barra-progresso-fill" id="barra-progresso-fill"></div><div class="barra-progresso-ponto" id="barra-progresso-ponto" aria-hidden="true"></div></div>
+            <div class="barra-progresso-marcadores" aria-hidden="true"><span>0</span><span>5</span><span>10</span></div>
+          </div>
+          <div class="grade-carimbos" id="grade-carimbos" role="list" aria-label="Carimbos do cartão"></div>
+          <div class="premio-banner" id="premio-banner">
+            <div class="premio-banner-icone" aria-hidden="true">🎁</div><h3>Cartão completo!</h3><p>Escolha sua pamonha grátis no balcão:</p>
+            <div class="premio-opcoes">
+              <button type="button" class="btn btn-premio" data-produto="Pamonha Doce"><span class="premio-icone" aria-hidden="true">🍯</span><span>Pamonha Doce</span></button>
+              <button type="button" class="btn btn-premio" data-produto="Pamonha Salgada"><span class="premio-icone" aria-hidden="true">🧀</span><span>Pamonha Salgada</span></button>
+              <button type="button" class="btn btn-premio" data-produto="Pamonha Recheada"><span class="premio-icone" aria-hidden="true">🌭</span><span>Pamonha Recheada</span></button>
+              <button type="button" class="btn btn-premio" data-produto="Curau"><span class="premio-icone" aria-hidden="true">🥣</span><span>Curau</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="acoes-cliente">
+        <button type="button" class="btn btn-primary btn-grande" id="btn-gerar-qr"><span class="btn-icone" aria-hidden="true">📷</span><span class="btn-label">Gerar QR Code</span><span class="spinner" aria-hidden="true"></span></button>
+        <button type="button" class="btn btn-whatsapp" id="btn-compartilhar-whatsapp"><span class="btn-icone" aria-hidden="true">💬</span><span>Compartilhar no WhatsApp</span></button>
+      </div>
+      <div class="historico">
+        <div class="historico-cabecalho"><h2>Histórico de resgates</h2><span class="historico-contagem" id="historico-contagem"></span></div>
+        <div id="lista-historico"></div>
+      </div>
+    </section>
+
+    <!-- ===== NOTIFICAÇÕES ===== -->
+    <section class="cliente-painel" id="painel-notificacoes">
+      <div class="lista-secao">
+        <h2>Novidades da Pamonha Net</h2>
+        <div id="lista-notificacoes"></div>
+      </div>
+    </section>
+
+    <!-- ===== RESERVAS ===== -->
+    <section class="cliente-painel" id="painel-reservas">
+      <div class="lista-secao">
+        <h2>Produtos disponíveis</h2>
+        <div id="lista-produtos-reserva"></div>
+      </div>
+      <div class="lista-secao" style="margin-top:26px;">
+        <h2>Minhas reservas</h2>
+        <div id="lista-minhas-reservas"></div>
+      </div>
+    </section>
+
+    <!-- ===== PESQUISA ===== -->
+    <section class="cliente-painel" id="painel-pesquisa">
+      <div class="lista-secao">
+        <h2>Como está sendo sua experiência?</h2>
+        <p class="form-hint" style="margin-bottom:20px;">Leva 10 segundos e nos ajuda muito.</p>
+
+        <div class="pesquisa-pergunta">
+          <p>Como foi sua experiência geral?</p>
+          <div class="estrelas" data-pergunta="experience">
+            <button class="estrela" data-valor="1">★</button><button class="estrela" data-valor="2">★</button><button class="estrela" data-valor="3">★</button><button class="estrela" data-valor="4">★</button><button class="estrela" data-valor="5">★</button>
+          </div>
+        </div>
+        <div class="pesquisa-pergunta">
+          <p>O que achou do atendimento?</p>
+          <div class="estrelas" data-pergunta="service">
+            <button class="estrela" data-valor="1">★</button><button class="estrela" data-valor="2">★</button><button class="estrela" data-valor="3">★</button><button class="estrela" data-valor="4">★</button><button class="estrela" data-valor="5">★</button>
+          </div>
+        </div>
+        <div class="pesquisa-pergunta">
+          <p>Recomendaria a um amigo?</p>
+          <div class="estrelas" data-pergunta="recommend">
+            <button class="estrela" data-valor="1">★</button><button class="estrela" data-valor="2">★</button><button class="estrela" data-valor="3">★</button><button class="estrela" data-valor="4">★</button><button class="estrela" data-valor="5">★</button>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="btn-enviar-pesquisa">
+          <span class="btn-label">Enviar respostas</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="rodape">Pamonha Net — feito em Duque de Caxias/RJ</footer>
+
+  <!-- Modal do QR Code -->
+  <div class="modal-overlay" id="modal-qr">
+    <div class="modal-box">
+      <button class="modal-fechar" id="btn-fechar-qr" aria-label="Fechar">×</button>
+      <div class="qr-caixa">
+        <h3>Mostre este QR no balcão</h3>
+        <img id="qr-imagem" src="" alt="QR Code do seu cartão fidelidade" />
+        <p>Válido por: <span class="qr-timer" id="qr-timer-texto">05:00</span></p>
+        <p class="form-hint">Depois de escaneado pela nossa equipe, seu carimbo aparece automaticamente aqui.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/client-dashboard.js"></script>
+</body>
+</html>
