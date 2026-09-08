@@ -27,9 +27,17 @@ mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pamonha_net?retryWrites=tr
 
 Não envie essa URI em mensagens públicas, commits ou screenshots.
 
-## 2. Repositório no GitHub
+## 2. Criar o repositório no GitHub
 
-O repositório `vampjjy2k-stack/pamonha-net-fidelidade` já existe. O conteúdo antigo será substituído pelo projeto desta pasta, mantendo esta estrutura:
+A conta GitHub conectada nesta sessão não tem permissão para criar repositórios automaticamente. Faça assim:
+
+1. Acesse <https://github.com/new>.
+2. Nome: `pamonha-net-fidelidade`.
+3. Escolha **Private**.
+4. Não marque as opções de README, `.gitignore` ou licença, pois o projeto já possui esses arquivos.
+5. Clique em **Create repository**.
+6. Na página seguinte, copie a URL HTTPS do repositório.
+7. Envie o conteúdo da pasta do projeto, mantendo esta estrutura:
 
 ```text
 client/
@@ -38,7 +46,14 @@ README.md
 .gitignore
 ```
 
-Não coloque arquivos `.env` nem a URI do MongoDB no repositório. O arquivo `.gitignore` já bloqueia esses segredos.
+Se usar o GitHub Desktop, escolha **Add existing repository** e selecione a pasta do projeto. Depois clique em **Publish repository**.
+
+Se preferir o terminal, dentro da pasta do projeto execute:
+
+```bash
+git remote add origin https://github.com/SEU_USUARIO/pamonha-net-fidelidade.git
+git push -u origin main
+```
 
 ## 3. Criar o serviço no Render
 
@@ -88,6 +103,8 @@ O cadastro normal cria usuários comuns. Para transformar um usuário em adminis
 - **Erro de JWT**: confira se `JWT_SECRET` foi criado no Render e tem pelo menos 32 caracteres.
 - **Render dormindo**: no plano gratuito, o serviço pode entrar em repouso quando não recebe tráfego; o primeiro acesso depois disso pode demorar.
 
-## O que foi feito e o que falta
+## O que posso fazer nesta sessão
 
-O projeto foi revisado, o repositório antigo foi substituído e a instalação do backend foi validada. A criação da conta e do cluster no MongoDB Atlas, bem como a criação do serviço no Render, exigem que você faça login nessas plataformas. Durante essas etapas, não envie a `MONGODB_URI` nem o `JWT_SECRET` em mensagens, commits ou screenshots.
+Posso revisar os arquivos, preparar o repositório, gerar o `.gitignore`, testar a instalação e orientar cada tela. Também posso publicar no GitHub se a conta conectada tiver permissão para criar um repositório ou se você me fornecer um repositório já criado com acesso adequado.
+
+Não consigo criar sua conta do Atlas/Render nem ver suas senhas; essas etapas precisam ser feitas por você. Nunca cole aqui a `MONGODB_URI` ou o `JWT_SECRET`.

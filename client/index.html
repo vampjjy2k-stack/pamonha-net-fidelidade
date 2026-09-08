@@ -3,40 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#FFD700" />
-  <meta name="description" content="Cartão Fidelidade Digital da Pamonha Net — Ganhe selos e resgate prêmios!" />
-  <title>Pamonha Net Fidelidade</title>
+  <meta name="theme-color" content="#2E3A22" />
+  <meta name="description" content="Cartão fidelidade digital da Pamonha Net. Junte selos a cada compra e troque por prêmios." />
+  <title>Pamonha Net · Fidelidade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --amarelo-vivo: #FFD700;
-      --amarelo-escuro: #F9A825;
-      --amarelo-claro: #FFF9C4;
-      --amarelo-suave: #FFF59D;
-      --marrom-rustico: #5D4037;
-      --marrom-amadeirado: #8D6E63;
-      --marrom-escuro: #3E2723;
-      --marrom-claro: #A1887F;
-      --verde-palha: #7CB342;
-      --verde-rural: #558B2F;
-      --verde-escuro: #33691E;
-      --creme: #FFFDE7;
-      --creme-escuro: #F5F5DC;
-      --linho: #FAF3E0;
-      --texto-principal: #3E2723;
-      --texto-secundario: #6D4C41;
-      --sucesso: #43A047;
-      --erro: #D32F2F;
-      --aviso: #F57C00;
-      --sombra-card: 0 4px 16px rgba(94, 64, 55, 0.12);
-      --sombra-botao: 0 4px 12px rgba(249, 168, 37, 0.35);
-      --borda-arredondada: 18px;
-      --borda-botao: 14px;
-      --transicao: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      /* -- Paleta: milho, palha e terra -- */
+      --paper: #F7F1E1;
+      --paper-deep: #F0E7D0;
+      --cream-card: #FFFCF4;
+      --husk-900: #29331F;
+      --husk-700: #40502C;
+      --husk-500: #5F7440;
+      --husk-300: #A9B98A;
+      --gold-700: #A97A1E;
+      --gold-600: #C99A2E;
+      --gold-300: #F0D889;
+      --gold-100: #FBEFC9;
+      --clay-600: #A2653A;
+      --clay-100: #F1E0CE;
+      --ink: #2A2118;
+      --ink-soft: #6D6151;
+      --ink-faint: #9C8F7C;
+      --line: rgba(41, 51, 31, 0.14);
+      --line-soft: rgba(41, 51, 31, 0.08);
+      --success: #4C7A34;
+      --error: #A8432B;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --ease: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-body: 'Work Sans', system-ui, -apple-system, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--linho); color: var(--texto-principal); overflow-x: hidden; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font-body);
+      background: var(--paper);
+      color: var(--ink);
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
     #app { min-height: 100vh; display: flex; flex-direction: column; }
+    button, input, textarea { font-family: inherit; }
+    a { color: inherit; }
 
     .hidden { display: none !important; }
     .flex { display: flex; }
@@ -47,199 +62,348 @@
     .gap-2 { gap: 1rem; }
     .w-full { width: 100%; }
     .mt-1 { margin-top: 0.5rem; }
-    .mt-2 { margin-top: 1rem; }
+    .mt-2 { margin-top: 1.5rem; }
     .mb-1 { margin-bottom: 0.5rem; }
-    .mb-2 { margin-bottom: 1rem; }
+    .mb-2 { margin-bottom: 1.25rem; }
     .p-1 { padding: 0.75rem; }
     .p-2 { padding: 1.25rem; }
     .text-center { text-align: center; }
     .text-sm { font-size: 0.875rem; }
-    .text-xs { font-size: 0.75rem; }
-    .font-bold { font-weight: 700; }
+    .text-xs { font-size: 0.78rem; }
+    .font-bold { font-weight: 600; }
     .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .muted { color: var(--ink-soft); }
 
-    @keyframes stampPop {
-      0% { transform: scale(0) rotate(-45deg); opacity: 0; }
-      60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
-      50% { box-shadow: 0 0 0 12px rgba(255, 215, 0, 0); }
-    }
-    .animate-fade-in { animation: fadeIn 0.4s ease both; }
-    .animate-stamp { animation: stampPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-    .animate-pulse-glow { animation: pulseGlow 2s infinite; }
+    /* -- Icon system -- */
+    .icon, .logo-seal, .auth-seal { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; display: block; flex-shrink: 0; }
+    .icon-sm { width: 16px; height: 16px; }
+    .icon-lg { width: 28px; height: 28px; }
 
-    .container { max-width: 480px; margin: 0 auto; width: 100%; padding: 1rem; flex: 1; }
-    .page { display: none; animation: fadeIn 0.35s ease; }
-    .page.active { display: block; }
-
-    .card {
-      background: #fff;
-      border-radius: var(--borda-arredondada);
-      box-shadow: var(--sombra-card);
-      padding: 1.25rem;
-      border: 1px solid rgba(141, 110, 99, 0.12);
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes stampIn {
+      0% { transform: scale(0.4) rotate(-14deg); opacity: 0; }
+      55% { transform: scale(1.08) rotate(4deg); opacity: 1; }
+      100% { transform: scale(1) rotate(var(--jit, 0deg)); opacity: 1; }
     }
-    .card-creme {
-      background: var(--creme);
-      border: 2px dashed var(--amarelo-escuro);
-    }
-
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-      width: 100%; padding: 1rem; border: none; border-radius: var(--borda-botao);
-      font-size: 1rem; font-weight: 700; cursor: pointer; transition: var(--transicao);
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--amarelo-vivo), var(--amarelo-escuro));
-      color: var(--marrom-escuro);
-      box-shadow: var(--sombra-botao);
-    }
-    .btn-primary:active { transform: scale(0.98); }
-    .btn-secondary {
-      background: var(--marrom-rustico); color: #fff;
-    }
-    .btn-danger { background: var(--erro); color: #fff; }
-    .btn-success { background: var(--sucesso); color: #fff; }
-    .btn-outline {
-      background: transparent; border: 2px solid var(--marrom-amadeirado); color: var(--marrom-rustico);
-    }
-    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
-
-    .input {
-      width: 100%; padding: 0.9rem 1rem; border: 2px solid #E0E0E0;
-      border-radius: 12px; font-size: 1rem; background: #fff; color: var(--texto-principal);
-      transition: var(--transicao); outline: none;
-    }
-    .input:focus { border-color: var(--amarelo-escuro); box-shadow: 0 0 0 3px rgba(249, 168, 37, 0.2); }
-    .label { display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.875rem; color: var(--texto-secundario); }
-
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: #fff; border-top: 1px solid rgba(141,110,99,0.15);
-      display: flex; justify-around: space-around; padding: 0.5rem 0; z-index: 50;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-    }
-    .nav-item {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-      font-size: 0.65rem; color: var(--marrom-claro); text-decoration: none; font-weight: 600;
-      transition: var(--transicao); border: none; background: none; cursor: pointer;
-    }
-    .nav-item.active { color: var(--amarelo-escuro); }
-    .nav-item .icon { font-size: 1.35rem; line-height: 1; }
-
-    .fidelity-grid {
-      display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin: 1.25rem 0;
-    }
-    .stamp-slot {
-      aspect-ratio: 1; border-radius: 50%;
-      background: var(--creme-escuro); border: 2px dashed var(--marrom-claro);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem; transition: var(--transicao);
-    }
-    .stamp-slot.filled {
-      background: linear-gradient(135deg, var(--amarelo-vivo), var(--amarelo-escuro));
-      border: 2px solid var(--amarelo-escuro); color: var(--marrom-escuro);
-      box-shadow: 0 2px 8px rgba(249,168,37,0.35);
-    }
-    .stamp-slot.winner {
-      background: linear-gradient(135deg, var(--verde-palha), var(--verde-rural));
-      border-color: var(--verde-escuro); color: #fff;
-      animation: stampPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
-
-    .qr-wrap {
-      background: #fff; padding: 1rem; border-radius: var(--borda-arredondada);
-      display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
-      box-shadow: var(--sombra-card);
-    }
-    .qr-wrap img { max-width: 260px; width: 100%; border-radius: 12px; }
-
-    .toast {
-      position: fixed; top: 12px; left: 50%; transform: translateX(-50%) translateY(-120%);
-      background: var(--marrom-escuro); color: #fff; padding: 0.9rem 1.4rem;
-      border-radius: 12px; font-weight: 600; font-size: 0.95rem; z-index: 100;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
-      max-width: 90vw; text-align: center; pointer-events: none;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.success { background: var(--sucesso); }
-    .toast.error { background: var(--erro); }
-
-    .app-header {
-      background: linear-gradient(135deg, var(--amarelo-vivo), var(--amarelo-escuro));
-      color: var(--marrom-escuro); padding: 1.25rem 1rem; text-align: center;
-      font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px;
-      box-shadow: 0 2px 12px rgba(249,168,37,0.3); position: sticky; top: 0; z-index: 40;
-    }
-
-    .notif-item {
-      background: #fff; border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;
-      border-left: 4px solid var(--amarelo-escuro); box-shadow: var(--sombra-card);
-      transition: var(--transicao);
-    }
-    .notif-item.read { opacity: 0.7; border-left-color: var(--marrom-claro); }
-    .notif-item h4 { font-size: 0.95rem; margin-bottom: 0.25rem; color: var(--texto-principal); }
-    .notif-item p { font-size: 0.85rem; color: var(--texto-secundario); line-height: 1.4; }
-
-    .stars { display: flex; gap: 0.35rem; font-size: 1.6rem; justify-content: center; margin: 0.5rem 0; }
-    .star { cursor: pointer; color: #E0E0E0; transition: var(--transicao); }
-    .star.active { color: var(--amarelo-vivo); text-shadow: 0 1px 4px rgba(249,168,37,0.4); }
-
-    .client-row {
-      background: #fff; border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;
-      box-shadow: var(--sombra-card); display: flex; flex-direction: column; gap: 0.75rem;
-    }
-    .client-row .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-    .client-row .actions .btn { width: auto; flex: 1; min-width: 80px; padding: 0.6rem; font-size: 0.8rem; }
-
-    ::-webkit-scrollbar { width: 0px; background: transparent; }
-    .pb-nav { padding-bottom: 80px; }
-
-    .loader {
-      width: 36px; height: 36px; border: 4px solid var(--amarelo-claro);
-      border-top-color: var(--amarelo-escuro); border-radius: 50%;
-      animation: spin 0.8s linear infinite; margin: 1rem auto;
+    @keyframes ringPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(201, 154, 46, 0.35); }
+      50% { box-shadow: 0 0 0 10px rgba(201, 154, 46, 0); }
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .page { animation: fadeIn 0.4s ease both; }
 
-    .confetti {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90;
+    .container { max-width: 460px; margin: 0 auto; width: 100%; padding: 1.1rem 1.1rem 0; flex: 1; }
+    .pb-nav { padding-bottom: 92px; }
+
+    /* -- Header -- */
+    .app-header {
+      background: var(--husk-900);
+      color: var(--gold-300);
+      padding: 0.95rem 1.1rem;
+      display: flex; align-items: center; gap: 0.65rem;
+      position: sticky; top: 0; z-index: 40;
+      border-bottom: 3px solid var(--gold-600);
     }
-    .confetti-piece {
-      position: absolute; width: 8px; height: 8px; background: var(--amarelo-vivo);
-      animation: confettiFall 2.5s ease-out forwards;
+    .app-header .wordmark {
+      font-family: var(--font-display); font-weight: 600; font-size: 1.15rem;
+      color: #fff; letter-spacing: 0.2px;
     }
-    @keyframes confettiFall {
-      0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    .app-header .tagline { font-size: 0.68rem; color: var(--husk-300); letter-spacing: 0.2px; }
+    .logo-seal { width: 38px; height: 38px; flex-shrink: 0; color: var(--gold-300); stroke-width: 2.1; }
+
+    /* -- Bottom nav -- */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--husk-900);
+      display: flex; padding: 0.5rem 0.6rem calc(0.5rem + env(safe-area-inset-bottom));
+      z-index: 50; gap: 0.25rem;
     }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 0.64rem; color: var(--husk-300); text-decoration: none; font-weight: 500;
+      transition: color var(--ease); border: none; background: none; cursor: pointer;
+      padding: 0.45rem 0.2rem; border-radius: 12px; position: relative;
+    }
+    .nav-item .icon { width: 21px; height: 21px; }
+    .nav-item.active { color: var(--gold-300); background: rgba(201, 154, 46, 0.16); }
+
+    /* -- Surfaces -- */
+    .surface {
+      background: var(--cream-card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+    }
+    .surface-title {
+      font-family: var(--font-display); font-weight: 600; font-size: 1.02rem;
+      color: var(--husk-900); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .page-title {
+      font-family: var(--font-display); font-weight: 600; font-size: 1.35rem;
+      color: var(--husk-900); margin: 0.9rem 0 1rem; display: flex; align-items: center; gap: 0.55rem;
+    }
+    .page-title .icon { color: var(--gold-700); width: 24px; height: 24px; }
+
+    /* -- Buttons -- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      width: 100%; padding: 0.95rem 1rem; border: none; border-radius: var(--radius-sm);
+      font-size: 0.96rem; font-weight: 600; cursor: pointer; transition: transform var(--ease), filter var(--ease);
+      font-family: var(--font-body);
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--gold-600); color: var(--husk-900); }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-secondary { background: var(--husk-900); color: var(--gold-300); }
+    .btn-danger { background: transparent; color: var(--error); border: 1.5px solid rgba(168, 67, 43, 0.4); }
+    .btn-success { background: var(--husk-700); color: #fff; }
+    .btn-outline { background: transparent; border: 1.5px solid var(--line); color: var(--husk-900); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+
+    /* -- Inputs -- */
+    .input {
+      width: 100%; padding: 0.85rem 1rem; border: 1.5px solid var(--line);
+      border-radius: var(--radius-sm); font-size: 0.96rem; background: #fff; color: var(--ink);
+      transition: border-color var(--ease), box-shadow var(--ease); outline: none;
+    }
+    .input:focus { border-color: var(--gold-600); box-shadow: 0 0 0 3px rgba(201, 154, 46, 0.18); }
+    .input::placeholder { color: var(--ink-faint); }
+    .label { display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.82rem; color: var(--ink-soft); }
+
+    /* -- Auth screens -- */
+    .auth-wrap { min-height: calc(100vh - 60px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem 0 2rem; }
+    .auth-seal { width: 72px; height: 72px; color: var(--husk-900); margin-bottom: 0.6rem; stroke-width: 1.6; }
+    .auth-wrap h1 { font-family: var(--font-display); font-size: 1.55rem; font-weight: 600; color: var(--husk-900); text-align: center; }
+    .auth-wrap .sub { color: var(--ink-soft); margin: 0.2rem 0 1.5rem; text-align: center; font-size: 0.92rem; }
+    .auth-card { width: 100%; max-width: 360px; }
+    .switch-link { text-align: center; margin-top: 1rem; font-size: 0.88rem; color: var(--ink-soft); }
+    .switch-link button { background: none; border: none; color: var(--gold-700); font-weight: 600; cursor: pointer; font-size: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+    /* -- Loyalty ticket card -- */
+    .ticket-card {
+      position: relative;
+      background: var(--cream-card);
+      border-radius: var(--radius-lg);
+      padding: 1.4rem 1.25rem 1.6rem;
+      text-align: center;
+      box-shadow: 0 16px 32px -20px rgba(41, 51, 31, 0.45);
+      border: 1px solid var(--line);
+    }
+    .ticket-card::before, .ticket-card::after {
+      content: ''; position: absolute; left: 0; right: 0; height: 13px;
+      background-image: radial-gradient(circle at 13px 6.5px, var(--paper) 6.5px, transparent 7px);
+      background-size: 26px 13px; background-repeat: repeat-x;
+    }
+    .ticket-card::before { top: -7px; }
+    .ticket-card::after { bottom: -7px; transform: rotate(180deg); }
+    .ticket-label {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      color: var(--husk-700); font-weight: 700; font-size: 0.78rem;
+      letter-spacing: 0.4px; margin-bottom: 0.9rem;
+    }
+    .ticket-label .icon { width: 16px; height: 16px; color: var(--gold-700); }
+
+    .fidelity-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.65rem; margin-bottom: 0.5rem; }
+    .stamp-slot {
+      aspect-ratio: 1; border-radius: 50%;
+      background: transparent; border: 1.5px dashed var(--ink-faint);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-faint); transition: var(--ease);
+    }
+    .stamp-slot .icon { width: 58%; height: 58%; }
+    .stamp-slot.filled {
+      background: var(--gold-100); border: 1.5px solid var(--gold-600); color: var(--husk-900);
+      animation: stampIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .stamp-slot.winner {
+      background: var(--husk-700); border-color: var(--husk-900); color: var(--gold-300);
+      animation: stampIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both, ringPulse 2.2s 0.6s infinite;
+    }
+    .card-status { font-weight: 600; color: var(--husk-700); margin-top: 0.7rem; font-size: 0.9rem; }
+    .card-status.complete { color: var(--husk-900); }
+
+    /* -- QR -- */
+    .qr-wrap {
+      background: var(--cream-card); padding: 1.25rem; border-radius: var(--radius-md);
+      display: flex; flex-direction: column; align-items: center; gap: 0.7rem;
+      border: 1px solid var(--line); text-align: center;
+    }
+    .qr-wrap img { max-width: 230px; width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+
+    /* -- Toast -- */
+    .toast {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%) translateY(-130%);
+      background: var(--husk-900); color: #fff; padding: 0.85rem 1.3rem;
+      border-radius: 12px; font-weight: 500; font-size: 0.9rem; z-index: 100;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.25); transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+      max-width: 88vw; text-align: center; pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--husk-700); }
+    .toast.error { background: var(--error); }
+
+    /* -- Rows: notifications, history, clients -- */
+    .row {
+      background: var(--cream-card); border-radius: var(--radius-sm); padding: 0.95rem 1rem; margin-bottom: 0.6rem;
+      border: 1px solid var(--line); border-left: 3px solid var(--gold-600);
+    }
+    .row.is-read { border-left-color: var(--line); opacity: 0.72; }
+    .row h4 { font-size: 0.93rem; font-weight: 600; margin-bottom: 0.2rem; color: var(--ink); }
+    .row p { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.4; }
+    .row-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.55rem; }
+    .row-foot .text-xs { color: var(--ink-faint); }
+    .link-btn {
+      background: none; border: none; color: var(--husk-700); font-weight: 600; font-size: 0.78rem;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem;
+    }
+
+    .empty-state { text-align: center; padding: 2.2rem 1rem; color: var(--ink-soft); }
+    .empty-state .icon { width: 34px; height: 34px; color: var(--ink-faint); margin: 0 auto 0.6rem; }
+    .empty-state p { font-size: 0.88rem; max-width: 260px; margin: 0 auto; }
+
+    /* -- Stars -- */
+    .stars { display: flex; gap: 0.5rem; justify-content: center; margin: 0.6rem 0 1rem; }
+    .star-btn { background: none; border: none; cursor: pointer; padding: 0.2rem; color: var(--line); transition: var(--ease); }
+    .star-btn .icon { width: 30px; height: 30px; }
+    .star-btn.active { color: var(--gold-600); }
+    .star-btn.active .icon { fill: currentColor; }
+
+    /* -- Admin -- */
+    .client-row { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 0.6rem; }
+    .client-row .top { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+    .client-row .name { font-weight: 600; font-size: 0.94rem; color: var(--ink); }
+    .client-row .phone { font-size: 0.8rem; color: var(--ink-soft); margin-top: 1px; }
+    .client-row .count { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; color: var(--gold-700); flex-shrink: 0; }
+    .client-row .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.75rem; }
+    .client-row .actions .btn { width: auto; flex: 1; min-width: 74px; padding: 0.55rem; font-size: 0.76rem; gap: 0.3rem; }
+    .section-gap { margin-bottom: 1.1rem; }
+
+    ::-webkit-scrollbar { width: 0; background: transparent; }
+
+    .loader { width: 32px; height: 32px; border: 3px solid var(--gold-100); border-top-color: var(--gold-600); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 1.2rem auto; }
+
+    .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 90; }
+    .confetti-piece { position: absolute; width: 7px; height: 7px; animation: confettiFall 2.4s ease-out forwards; }
+    @keyframes confettiFall { 0% { transform: translateY(-8vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(100vh) rotate(600deg); opacity: 0; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+    :focus-visible { outline: 2px solid var(--gold-700); outline-offset: 2px; }
   </style>
 </head>
 <body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-kernel" viewBox="0 0 24 24">
+        <path d="M12 4.2c1.5 0 2.7 1.6 2.7 4.3v7c0 2.1-1.2 4.3-2.7 4.3s-2.7-2.2-2.7-4.3v-7c0-2.7 1.2-4.3 2.7-4.3Z"/>
+        <path d="M12 8.4v0M12 12v0M12 15.6v0" stroke-width="2.6"/>
+      </symbol>
+      <symbol id="i-ticket" viewBox="0 0 24 24">
+        <path d="M2.7 7.2a1 1 0 0 1 1-1h16.6a1 1 0 0 1 1 1V10a2 2 0 0 0 0 4v2.8a1 1 0 0 1-1 1H3.7a1 1 0 0 1-1-1V14a2 2 0 0 0 0-4V7.2Z"/>
+        <path d="M9 6.5v11" stroke-dasharray="1.8 2.2"/>
+      </symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24">
+        <path d="M12 3a5 5 0 0 0-5 5v3.1c0 .5-.16 1-.46 1.4L5 15h14l-1.54-2.5a2.3 2.3 0 0 1-.46-1.4V8a5 5 0 0 0-5-5Z"/>
+        <path d="M9.6 18a2.4 2.4 0 0 0 4.8 0"/>
+      </symbol>
+      <symbol id="i-star" viewBox="0 0 24 24">
+        <path d="M12 3.6l2.35 5 5.45.58-4.05 3.75 1.12 5.47L12 15.6l-4.87 2.8 1.12-5.47-4.05-3.75 5.45-.58L12 3.6Z"/>
+      </symbol>
+      <symbol id="i-user" viewBox="0 0 24 24">
+        <circle cx="12" cy="8.3" r="3.3"/>
+        <path d="M4.8 20c1-3.7 4-5.6 7.2-5.6s6.2 1.9 7.2 5.6"/>
+      </symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M12 3.4l6.8 2.5v4.9c0 4.9-2.9 8.3-6.8 9.8-3.9-1.5-6.8-4.9-6.8-9.8V5.9L12 3.4Z"/>
+        <path d="M8.8 12.1l2.1 2.1 4.1-4.3"/>
+      </symbol>
+      <symbol id="i-qr" viewBox="0 0 24 24">
+        <rect x="3.5" y="3.5" width="6" height="6" rx="1"/>
+        <rect x="14.5" y="3.5" width="6" height="6" rx="1"/>
+        <rect x="3.5" y="14.5" width="6" height="6" rx="1"/>
+        <path d="M14.5 14.5h3v3h-3zM20.5 14.5v3M14.5 20.5h3"/>
+      </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24">
+        <path d="M4.5 12a7.5 7.5 0 0 1 12.8-5.3L19.5 8"/>
+        <path d="M19.5 4v4h-4"/>
+        <path d="M19.5 12a7.5 7.5 0 0 1-12.8 5.3L4.5 16"/>
+        <path d="M4.5 20v-4h4"/>
+      </symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24">
+        <path d="M13 4H6.5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1H13"/>
+        <path d="M9.5 12H20m0 0-3.2-3.2M20 12l-3.2 3.2"/>
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="10.3" cy="10.3" r="6.3"/>
+        <path d="M19.8 19.8l-4.7-4.7"/>
+      </symbol>
+      <symbol id="i-send" viewBox="0 0 24 24">
+        <path d="M4 12.2 20 4l-6.4 16-3.1-6.3-6.5-2.5Z" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24">
+        <path d="M12 3.5v5.5"/>
+        <path d="M17.9 7.6a8 8 0 1 1-11.8 0"/>
+      </symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24">
+        <path d="M4.5 7h15M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8.5 0 .9 12.1a1 1 0 0 0 1 .9h7.2a1 1 0 0 0 1-.9L18.5 7"/>
+        <path d="M10.2 11v6.2M13.8 11v6.2"/>
+      </symbol>
+      <symbol id="i-history" viewBox="0 0 24 24">
+        <circle cx="12" cy="13" r="7.4"/>
+        <path d="M12 9.2v4l3 2"/>
+        <path d="M8.6 3.6 6.1 5.6M15.4 3.6l2.5 2"/>
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M4.8 12.6l4.4 4.4L19.2 7.4"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24">
+        <path d="M5 4.5h11.3L19.5 8v11.5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1Z"/>
+        <path d="M8 4.5V9h7V4.5"/>
+        <path d="M8 20v-6h8v6"/>
+      </symbol>
+      <symbol id="i-mail" viewBox="0 0 24 24">
+        <rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/>
+        <path d="M4.5 7 12 12.5 19.5 7"/>
+      </symbol>
+      <symbol id="i-broom" viewBox="0 0 24 24">
+        <path d="M14 3 6 15"/>
+        <path d="M4.5 20 6 15l4.5 3-2 3.2a1.6 1.6 0 0 1-2.2.5L4.9 21a1.4 1.4 0 0 1-.4-1Z"/>
+        <path d="M14 3l4 3.2-4.7 6.9-4-2.9Z"/>
+      </symbol>
+      <symbol id="i-seal" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="20.5"/>
+        <circle cx="24" cy="24" r="15.5" stroke-dasharray="2.6 3.4"/>
+        <path d="M24 15.4c2.7 0 4.9 2.9 4.9 7.7v6.7c0 3.7-2.2 7.7-4.9 7.7s-4.9-4-4.9-7.7v-6.7c0-4.8 2.2-7.7 4.9-7.7Z" fill="none"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <div id="app">
-    <div class="app-header">🌽 Pamonha Net Fidelidade</div>
+    <header class="app-header">
+      <svg class="logo-seal" viewBox="0 0 48 48"><use href="#i-seal"/></svg>
+      <div>
+        <div class="wordmark">Pamonha Net</div>
+        <div class="tagline">Cartão fidelidade</div>
+      </div>
+    </header>
     <div class="container pb-nav" id="main-container"></div>
 
     <nav class="bottom-nav hidden" id="bottom-nav">
       <button class="nav-item active" data-page="card" onclick="router.go('card')">
-        <span class="icon">🎫</span><span>Cartão</span>
+        <svg class="icon"><use href="#i-ticket"/></svg><span>Cartão</span>
       </button>
       <button class="nav-item" data-page="notifications" onclick="router.go('notifications')">
-        <span class="icon">🔔</span><span>Avisos</span>
+        <svg class="icon"><use href="#i-bell"/></svg><span>Avisos</span>
       </button>
       <button class="nav-item" data-page="feedback" onclick="router.go('feedback')">
-        <span class="icon">⭐</span><span>Avaliar</span>
+        <svg class="icon"><use href="#i-star"/></svg><span>Avaliar</span>
       </button>
       <button class="nav-item" data-page="profile" onclick="router.go('profile')">
-        <span class="icon">👤</span><span>Perfil</span>
+        <svg class="icon"><use href="#i-user"/></svg><span>Perfil</span>
       </button>
       <button class="nav-item hidden" data-page="admin" id="nav-admin" onclick="router.go('admin')">
-        <span class="icon">🛡️</span><span>Gerenciar</span>
+        <svg class="icon"><use href="#i-shield"/></svg><span>Gerenciar</span>
       </button>
     </nav>
   </div>
@@ -250,6 +414,7 @@
     const API_URL = '';
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const icon = (name, cls='icon') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
 
     const toast = {
       el: $('#toast'),
@@ -271,7 +436,7 @@
 
     function formatDate(iso) {
       const d = new Date(iso);
-      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+      return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     }
 
     const api = {
@@ -287,15 +452,12 @@
         localStorage.removeItem('pnf_token'); localStorage.removeItem('pnf_user');
       },
       async req(method, endpoint, body=null) {
-        const opts = {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-        };
+        const opts = { method, headers: { 'Content-Type': 'application/json' } };
         if (this.token) opts.headers['Authorization'] = 'Bearer ' + this.token;
         if (body) opts.body = JSON.stringify(body);
         const res = await fetch(API_URL + endpoint, opts);
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || 'Erro na requisição');
+        if (!res.ok) throw new Error(data.error || 'Não foi possível concluir. Tente novamente.');
         return data;
       },
       get(endpoint) { return this.req('GET', endpoint); },
@@ -327,11 +489,11 @@
 
     router.register('login', (container) => {
       container.innerHTML = `
-        <div class="page active flex flex-col items-center justify-center" style="min-height:70vh">
-          <div style="font-size:4rem; margin-bottom:0.5rem">🌽</div>
-          <h1 style="font-size:1.6rem; color:var(--marrom-escuro); margin-bottom:0.25rem">Pamonha Net</h1>
-          <p style="color:var(--texto-secundario); margin-bottom:1.5rem">Cartão Fidelidade Digital</p>
-          <div class="card w-full" style="max-width:360px">
+        <div class="page auth-wrap">
+          <svg class="auth-seal" viewBox="0 0 48 48"><use href="#i-seal"/></svg>
+          <h1>Pamonha Net</h1>
+          <p class="sub">Entre para ver seu cartão e seus selos</p>
+          <div class="surface auth-card">
             <div class="mb-1"><label class="label">Telefone</label>
               <input class="input" id="login-phone" placeholder="(21) 91234-5678" type="tel" inputmode="tel" />
             </div>
@@ -339,10 +501,12 @@
               <input class="input" id="login-pass" placeholder="Mínimo 6 caracteres" type="password" />
             </div>
             <button class="btn btn-primary" id="btn-login">Entrar</button>
-            <button class="btn btn-outline mt-1" onclick="router.go('register')">Criar conta</button>
           </div>
+          <div class="switch-link">Ainda não tem cartão? <button onclick="router.go('register')">Criar conta</button></div>
         </div>
       `;
+      $('#login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-pass').focus(); });
+      $('#login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btn-login').click(); });
       $('#btn-login').onclick = async () => {
         const phone = $('#login-phone').value.trim();
         const pass = $('#login-pass').value;
@@ -350,7 +514,7 @@
         try {
           const data = await api.post('/api/auth/login', { phone, password: pass });
           api.setAuth(data.token, data.user);
-          toast.show('Bem-vindo, ' + data.user.fullName.split(' ')[0] + '! 🌽');
+          toast.show('Bem-vindo de volta, ' + data.user.fullName.split(' ')[0] + '!');
           updateNav();
           router.go('card', true);
         } catch (e) { toast.show(e.message, 'error'); }
@@ -359,10 +523,11 @@
 
     router.register('register', (container) => {
       container.innerHTML = `
-        <div class="page active flex flex-col items-center justify-center" style="min-height:70vh">
-          <div style="font-size:3rem; margin-bottom:0.5rem">🌽</div>
-          <h1 style="font-size:1.4rem; margin-bottom:1rem">Criar Conta</h1>
-          <div class="card w-full" style="max-width:360px">
+        <div class="page auth-wrap">
+          <svg class="auth-seal" viewBox="0 0 48 48"><use href="#i-seal"/></svg>
+          <h1>Criar conta</h1>
+          <p class="sub">Leva menos de um minuto</p>
+          <div class="surface auth-card">
             <div class="mb-1"><label class="label">Nome completo</label>
               <input class="input" id="reg-name" placeholder="Seu nome" />
             </div>
@@ -372,9 +537,9 @@
             <div class="mb-2"><label class="label">Senha</label>
               <input class="input" id="reg-pass" placeholder="Mínimo 6 caracteres" type="password" />
             </div>
-            <button class="btn btn-primary" id="btn-reg">Cadastrar</button>
-            <button class="btn btn-outline mt-1" onclick="router.go('login')">Já tenho conta</button>
+            <button class="btn btn-primary" id="btn-reg">Criar minha conta</button>
           </div>
+          <div class="switch-link">Já tem cartão? <button onclick="router.go('login')">Entrar</button></div>
         </div>
       `;
       $('#btn-reg').onclick = async () => {
@@ -385,7 +550,7 @@
         try {
           const data = await api.post('/api/auth/register', { fullName, phone, password });
           api.setAuth(data.token, data.user);
-          toast.show('Conta criada! 🎉');
+          toast.show('Conta criada! Seu cartão já está pronto.');
           updateNav();
           router.go('card', true);
         } catch (e) { toast.show(e.message, 'error'); }
@@ -395,28 +560,25 @@
     router.register('card', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
-        <div class="page active">
+        <div class="page">
           <div class="text-center mt-1 mb-1">
-            <h2 style="font-size:1.15rem; color:var(--marrom-rustico)">Olá, <span id="card-name">...</span>! 👋</h2>
-            <p class="text-sm" style="color:var(--texto-secundario)">Seu cartão de fidelidade</p>
+            <h2 style="font-family:var(--font-display); font-weight:600; font-size:1.2rem; color:var(--husk-900)">Olá, <span id="card-name">...</span></h2>
+            <p class="text-sm muted">A cada compra, um selo mais perto do prêmio</p>
           </div>
-          <div class="card card-creme text-center">
-            <div style="display:flex; justify-content:center; align-items:center; gap:0.5rem; margin-bottom:0.5rem">
-              <span style="font-size:1.6rem">🌽</span>
-              <span style="font-weight:800; color:var(--marrom-escuro); font-size:1.1rem">CARTÃO PAMONHA NET</span>
-            </div>
+          <div class="ticket-card">
+            <div class="ticket-label">${icon('kernel')} Cartão Pamonha Net</div>
             <div class="fidelity-grid" id="stamp-grid"></div>
-            <div id="card-status" style="font-weight:700; color:var(--marrom-rustico); margin-top:0.5rem"></div>
+            <div class="card-status" id="card-status"></div>
           </div>
           <div class="qr-wrap mt-2 hidden" id="qr-area">
-            <p class="text-sm font-bold" style="color:var(--marrom-rustico)">Apresente este QR Code na loja</p>
-            <img id="qr-img" alt="QR Code" />
-            <p class="text-xs" style="color:var(--texto-secundario)">Válido por 5 minutos</p>
-            <button class="btn btn-outline" onclick="generateQr()">🔄 Gerar novo QR Code</button>
+            <p class="text-sm font-bold" style="color:var(--husk-900)">Mostre este QR Code no balcão</p>
+            <img id="qr-img" alt="QR Code para acúmulo de selo" />
+            <p class="text-xs muted">Válido por 5 minutos</p>
+            <button class="btn btn-outline" onclick="generateQr()">${icon('refresh', 'icon icon-sm')} Gerar novo QR Code</button>
           </div>
-          <button class="btn btn-primary mt-2" id="btn-qr" onclick="generateQr()">📷 Gerar QR Code</button>
+          <button class="btn btn-primary mt-2" id="btn-qr" onclick="generateQr()">${icon('qr', 'icon icon-sm')} Gerar QR Code</button>
           <div class="mt-2">
-            <h3 style="font-size:1rem; margin-bottom:0.5rem; color:var(--marrom-rustico)">📜 Histórico recente</h3>
+            <h3 class="surface-title" style="margin-bottom:0.6rem">${icon('history', 'icon icon-sm')} Histórico recente</h3>
             <div id="history-list"></div>
           </div>
         </div>
@@ -431,22 +593,24 @@
         renderStamps(data.stamps);
         const status = $('#card-status');
         if (data.stamps >= 10) {
-          status.innerHTML = `<span style="color:var(--verde-rural)">🎉 Cartão completo! Resgate sua recompensa!</span>`;
+          status.classList.add('complete');
+          status.innerHTML = `Cartão completo — fale com a equipe para resgatar seu prêmio`;
           showConfetti();
         } else {
-          status.textContent = `${data.stamps} de 10 selos — faltam ${10 - data.stamps}`;
+          status.textContent = `${data.stamps} de 10 selos · faltam ${10 - data.stamps} para o prêmio`;
         }
         const hist = data.history || [];
         const list = $('#history-list');
-        if (!hist.length) { list.innerHTML = '<p class="text-sm text-center" style="color:var(--texto-secundario)">Nenhum carimbo ainda.</p>'; }
-        else {
+        if (!hist.length) {
+          list.innerHTML = `<div class="empty-state">${icon('history', 'icon')}<p>Seu histórico de selos aparece aqui assim que você fizer sua primeira compra.</p></div>`;
+        } else {
           list.innerHTML = hist.map(h => `
-            <div class="notif-item" style="margin-bottom:0.5rem; padding:0.75rem">
-              <div class="flex justify-center" style="justify-content:space-between">
-                <span class="text-sm font-bold">${h.action === 'add' ? '🟢 Carimbo adicionado' : '🔴 Carimbo removido'}</span>
+            <div class="row" style="border-left-color:${h.action === 'add' ? 'var(--husk-700)' : 'var(--error)'}">
+              <div class="row-foot" style="margin-top:0">
+                <span class="text-sm font-bold">${h.action === 'add' ? 'Selo adicionado' : 'Selo removido'}</span>
                 <span class="text-xs">${formatDate(h.createdAt)}</span>
               </div>
-              <p class="text-xs" style="margin-top:0.25rem">Via: ${h.source === 'qr-scan' ? 'QR Code' : h.source === 'manual' ? 'Atendente' : 'Resgate'}</p>
+              <p class="text-xs mt-1">Via ${h.source === 'qr-scan' ? 'QR Code' : h.source === 'manual' ? 'atendente' : 'resgate'}</p>
             </div>
           `).join('');
         }
@@ -456,11 +620,12 @@
     function renderStamps(count) {
       const grid = $('#stamp-grid');
       grid.innerHTML = '';
+      const jitters = [-4,3,-2,5,-3,2,-5,4,-1,0];
       for (let i = 0; i < 10; i++) {
         const div = document.createElement('div');
-        div.className = 'stamp-slot' + (i < count ? ' filled animate-stamp' : '');
-        div.textContent = i < count ? '🌽' : '';
-        if (i === 9 && count >= 10) div.classList.add('winner');
+        const isWinner = i === 9 && count >= 10;
+        div.className = 'stamp-slot' + (i < count ? (isWinner ? ' winner' : ' filled') : '');
+        if (i < count) { div.style.setProperty('--jit', jitters[i] + 'deg'); div.innerHTML = icon('kernel'); }
         grid.appendChild(div);
       }
     }
@@ -473,16 +638,18 @@
         const data = await api.post('/api/client/generate-qr');
         $('#qr-img').src = data.qrImage;
         $('#qr-img').style.opacity = '1';
-        toast.show('QR Code gerado! Válido por 5 minutos.');
+        toast.show('QR Code gerado. Válido por 5 minutos.');
       } catch (e) { toast.show(e.message, 'error'); }
     }
 
     function showConfetti() {
       const el = document.createElement('div'); el.className = 'confetti';
-      for (let i = 0; i < 30; i++) {
+      const colors = ['#C99A2E', '#5F7440', '#A2653A'];
+      for (let i = 0; i < 26; i++) {
         const p = document.createElement('div'); p.className = 'confetti-piece';
         p.style.left = Math.random() * 100 + '%';
-        p.style.background = ['var(--amarelo-vivo)','var(--verde-palha)','var(--marrom-amadeirado)'][Math.floor(Math.random()*3)];
+        p.style.background = colors[Math.floor(Math.random()*3)];
+        p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
         p.style.animationDelay = Math.random() * 1 + 's';
         p.style.width = p.style.height = (6 + Math.random()*6) + 'px';
         el.appendChild(p);
@@ -494,8 +661,8 @@
     router.register('notifications', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
-        <div class="page active">
-          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">🔔 Central de Avisos</h2>
+        <div class="page">
+          <h2 class="page-title">${icon('bell')} Avisos</h2>
           <div id="notif-list"></div>
         </div>
       `;
@@ -507,16 +674,16 @@
         const data = await api.get('/api/client/notifications');
         const list = $('#notif-list');
         if (!data.notifications.length) {
-          list.innerHTML = '<div class="text-center text-sm" style="color:var(--texto-secundario); margin-top:2rem">Nenhum aviso no momento. 📭</div>';
+          list.innerHTML = `<div class="empty-state">${icon('mail', 'icon')}<p>Nenhum aviso por enquanto. Avisaremos quando houver novidade para você.</p></div>`;
           return;
         }
         list.innerHTML = data.notifications.map(n => `
-          <div class="notif-item ${n.read ? 'read' : ''}">
+          <div class="row ${n.read ? 'is-read' : ''}">
             <h4>${n.title}</h4>
             <p>${n.message}</p>
-            <div class="flex justify-center mt-1" style="justify-content:space-between; align-items:center">
-              <span class="text-xs" style="color:var(--texto-secundario)">${formatDate(n.createdAt)}</span>
-              ${!n.read ? `<button class="btn btn-success" style="width:auto; padding:0.4rem 0.8rem; font-size:0.75rem" onclick="markRead('${n._id}')">Marcar lida</button>` : '<span class="text-xs" style="color:var(--sucesso)">✓ Lida</span>'}
+            <div class="row-foot">
+              <span class="text-xs">${formatDate(n.createdAt)}</span>
+              ${!n.read ? `<button class="link-btn" onclick="markRead('${n._id}')">${icon('check', 'icon icon-sm')} Marcar lida</button>` : `<span class="text-xs" style="color:var(--success)">${icon('check','icon icon-sm')} Lida</span>`}
             </div>
           </div>
         `).join('');
@@ -524,24 +691,22 @@
     }
 
     async function markRead(id) {
-      try { await api.put('/api/client/notifications/' + id + '/read'); loadNotifications(); toast.show('Aviso marcado como lido'); }
+      try { await api.put('/api/client/notifications/' + id + '/read'); loadNotifications(); toast.show('Aviso marcado como lido.'); }
       catch (e) { toast.show(e.message, 'error'); }
     }
 
     router.register('feedback', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
-        <div class="page active">
-          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">⭐ Avalie nossa Pamonha</h2>
-          <div class="card text-center">
-            <p style="margin-bottom:0.75rem; color:var(--texto-secundario)">Como foi sua experiência?</p>
+        <div class="page">
+          <h2 class="page-title">${icon('star')} Avaliar</h2>
+          <div class="surface text-center">
+            <p class="mb-1" style="color:var(--ink-soft)">Como foi sua experiência com a Pamonha Net?</p>
             <div class="stars" id="star-box">
-              ${[1,2,3,4,5].map(i => `<span class="star" data-val="${i}" onclick="setStar(${i})">★</span>`).join('')}
+              ${[1,2,3,4,5].map(i => `<button class="star-btn" data-val="${i}" onclick="setStar(${i})">${icon('star', 'icon')}</button>`).join('')}
             </div>
-            <div class="mt-1 text-center">
-              <textarea class="input" id="fb-comment" rows="3" placeholder="Conte mais sobre o atendimento ou o sabor (opcional)" style="resize:none"></textarea>
-            </div>
-            <button class="btn btn-primary mt-1" onclick="sendFeedback()">Enviar Avaliação</button>
+            <textarea class="input" id="fb-comment" rows="3" placeholder="Conte mais sobre o atendimento ou o sabor (opcional)" style="resize:none"></textarea>
+            <button class="btn btn-primary mt-2" onclick="sendFeedback()">Enviar avaliação</button>
           </div>
         </div>
       `;
@@ -550,13 +715,13 @@
     let selectedRating = 0;
     window.setStar = (n) => {
       selectedRating = n;
-      $$('#star-box .star').forEach((s, i) => s.classList.toggle('active', i < n));
+      $$('#star-box .star-btn').forEach((s, i) => s.classList.toggle('active', i < n));
     };
     window.sendFeedback = async () => {
       if (!selectedRating) return toast.show('Selecione uma nota de 1 a 5 estrelas.', 'error');
       try {
         await api.post('/api/client/feedback', { rating: selectedRating, comment: $('#fb-comment').value });
-        toast.show('Obrigado pela avaliação! 🌽');
+        toast.show('Obrigado pela avaliação!');
         setStar(0); $('#fb-comment').value = '';
       } catch (e) { toast.show(e.message, 'error'); }
     };
@@ -564,9 +729,9 @@
     router.register('profile', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
-        <div class="page active">
-          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">👤 Meus Dados</h2>
-          <div class="card">
+        <div class="page">
+          <h2 class="page-title">${icon('user')} Meus dados</h2>
+          <div class="surface">
             <div class="mb-1"><label class="label">Nome completo</label>
               <input class="input" id="prof-name" />
             </div>
@@ -576,8 +741,8 @@
             <div class="mb-2"><label class="label">Nova senha (deixe em branco para manter)</label>
               <input class="input" id="prof-pass" type="password" placeholder="Mínimo 6 caracteres" />
             </div>
-            <button class="btn btn-primary" onclick="saveProfile()">💾 Salvar alterações</button>
-            <button class="btn btn-outline mt-1" onclick="logout()">🚪 Sair da conta</button>
+            <button class="btn btn-primary" onclick="saveProfile()">${icon('save', 'icon icon-sm')} Salvar alterações</button>
+            <button class="btn btn-outline mt-1" onclick="logout()">${icon('logout', 'icon icon-sm')} Sair da conta</button>
           </div>
         </div>
       `;
@@ -596,41 +761,47 @@
       try {
         const data = await api.put('/api/auth/profile', body);
         api.setAuth(api.token, data.user);
-        toast.show('Perfil atualizado!');
+        toast.show('Perfil atualizado.');
       } catch (e) { toast.show(e.message, 'error'); }
     };
-    window.logout = () => { api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo! 👋'); };
+    window.logout = () => { api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo!'); };
 
     router.register('admin', (container) => {
       if (!api.token || api.user?.role !== 'admin') return router.go('card');
       container.innerHTML = `
-        <div class="page active">
-          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">🛡️ Painel do Administrador</h2>
-          <div class="card" style="margin-bottom:1rem">
-            <h3 style="font-size:1rem; margin-bottom:0.75rem">📷 Escanear QR Code</h3>
+        <div class="page">
+          <h2 class="page-title">${icon('shield')} Painel do administrador</h2>
+
+          <div class="surface section-gap">
+            <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
             <input class="input mb-1" id="qr-scan-input" placeholder="Cole o conteúdo do QR Code aqui" />
-            <button class="btn btn-success" onclick="scanQr()">➕ Adicionar Carimbo via QR</button>
+            <button class="btn btn-success" onclick="scanQr()">${icon('plus', 'icon icon-sm')} Adicionar selo via QR</button>
           </div>
-          <div class="card" style="margin-bottom:1rem">
-            <h3 style="font-size:1rem; margin-bottom:0.75rem">🔔 Enviar Notificação</h3>
+
+          <div class="surface section-gap">
+            <h3 class="surface-title">${icon('mail', 'icon icon-sm')} Enviar notificação</h3>
             <input class="input mb-1" id="notif-title" placeholder="Título do aviso" />
             <textarea class="input mb-1" id="notif-msg" rows="2" placeholder="Mensagem" style="resize:none"></textarea>
-            <input class="input mb-1" id="notif-user" placeholder="ID do cliente (deixe vazio para todos)" />
-            <button class="btn btn-primary" onclick="sendNotif()">📨 Enviar Aviso</button>
+            <input class="input mb-1" id="notif-user" placeholder="ID do cliente (deixe vazio para enviar a todos)" />
+            <button class="btn btn-primary" onclick="sendNotif()">${icon('send', 'icon icon-sm')} Enviar aviso</button>
           </div>
-          <div class="card" style="margin-bottom:1rem">
-            <h3 style="font-size:1rem; margin-bottom:0.5rem">🧹 Limpeza de Dados</h3>
+
+          <div class="surface section-gap">
+            <h3 class="surface-title">${icon('broom', 'icon icon-sm')} Limpeza de dados</h3>
             <div class="flex gap-1">
-              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('all')">🗑️ Todas Notif.</button>
-              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('broadcast')">🗑️ Gerais</button>
+              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('all')">Todas</button>
+              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('broadcast')">Gerais</button>
+              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('individual')">Individuais</button>
             </div>
           </div>
-          <div style="margin-bottom:0.75rem">
-            <input class="input" id="search-clients" placeholder="🔍 Buscar por nome ou telefone" oninput="searchClients()" />
+
+          <div class="mb-1">
+            <input class="input" id="search-clients" placeholder="Buscar cliente por nome ou telefone" oninput="searchClients()" />
           </div>
           <div id="admin-clients"></div>
+
           <div class="mt-2">
-            <h3 style="font-size:1rem; margin-bottom:0.5rem">💬 Avaliações dos Clientes</h3>
+            <h3 class="surface-title">${icon('star', 'icon icon-sm')} Avaliações dos clientes</h3>
             <div id="admin-feedbacks"></div>
           </div>
         </div>
@@ -650,21 +821,21 @@
 
     function renderAdminClients(list) {
       const box = $('#admin-clients');
-      if (!list.length) { box.innerHTML = '<p class="text-sm text-center">Nenhum cliente encontrado.</p>'; return; }
+      if (!list.length) { box.innerHTML = `<div class="empty-state"><p>Nenhum cliente encontrado.</p></div>`; return; }
       box.innerHTML = list.map(c => `
-        <div class="client-row animate-fade-in">
-          <div class="flex justify-center" style="justify-content:space-between; align-items:center">
+        <div class="client-row">
+          <div class="top">
             <div>
-              <div class="font-bold" style="color:var(--texto-principal)">${c.fullName}</div>
-              <div class="text-sm" style="color:var(--texto-secundario)">${formatPhone(c.phone)}</div>
+              <div class="name">${c.fullName}</div>
+              <div class="phone">${formatPhone(c.phone)}</div>
             </div>
-            <div class="font-bold" style="font-size:1.2rem; color:var(--amarelo-escuro)">${c.stamps}/10</div>
+            <div class="count">${c.stamps}/10</div>
           </div>
           <div class="actions">
-            <button class="btn btn-success" style="flex:1" onclick="addStamp('${c._id}')">➕ Carimbo</button>
-            <button class="btn btn-danger" style="flex:1" onclick="removeStamp('${c._id}')">➖ Carimbo</button>
-            <button class="btn btn-secondary" style="flex:1" onclick="resetCard('${c._id}')">🔄 Zerar</button>
-            <button class="btn btn-outline" style="flex:1; color:var(--erro); border-color:var(--erro)" onclick="deleteHistory('${c._id}')">🗑️ Histórico</button>
+            <button class="btn btn-success" onclick="addStamp('${c._id}')">${icon('plus', 'icon icon-sm')} Selo</button>
+            <button class="btn btn-danger" onclick="removeStamp('${c._id}')">${icon('minus', 'icon icon-sm')} Selo</button>
+            <button class="btn btn-secondary" onclick="resetCard('${c._id}')">${icon('reset', 'icon icon-sm')} Zerar</button>
+            <button class="btn btn-outline" onclick="deleteHistory('${c._id}')">${icon('trash', 'icon icon-sm')} Histórico</button>
           </div>
         </div>
       `).join('');
@@ -681,14 +852,14 @@
     window.addStamp = async (id) => {
       try {
         await api.post('/api/admin/clients/' + id + '/stamps', { action: 'add' });
-        toast.show('Carimbo adicionado!');
+        toast.show('Selo adicionado.');
         loadAdminClients();
       } catch (e) { toast.show(e.message, 'error'); }
     };
     window.removeStamp = async (id) => {
       try {
         await api.post('/api/admin/clients/' + id + '/stamps', { action: 'remove' });
-        toast.show('Carimbo removido.');
+        toast.show('Selo removido.');
         loadAdminClients();
       } catch (e) { toast.show(e.message, 'error'); }
     };
@@ -701,10 +872,10 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
     window.deleteHistory = async (id) => {
-      if (!confirm('Apagar TODO o histórico de carimbos deste cliente? Esta ação não pode ser desfeita.')) return;
+      if (!confirm('Apagar todo o histórico de selos deste cliente? Esta ação não pode ser desfeita.')) return;
       try {
         await api.del('/api/admin/clients/' + id + '/history');
-        toast.show('Histórico apagado com sucesso.');
+        toast.show('Histórico apagado.');
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
@@ -713,7 +884,7 @@
       if (!raw) return toast.show('Cole o conteúdo do QR Code.', 'error');
       try {
         const data = await api.post('/api/admin/scan-qr', { qrToken: raw });
-        toast.show(data.message || 'Carimbo adicionado via QR!');
+        toast.show(data.message || 'Selo adicionado via QR Code.');
         $('#qr-scan-input').value = '';
         loadAdminClients();
       } catch (e) { toast.show(e.message, 'error'); }
@@ -726,13 +897,13 @@
       if (!title || !message) return toast.show('Preencha título e mensagem.', 'error');
       try {
         await api.post('/api/admin/notifications', { title, message, userId: userId || null });
-        toast.show('Aviso enviado com sucesso! 📨');
+        toast.show('Aviso enviado com sucesso.');
         $('#notif-title').value = ''; $('#notif-msg').value = ''; $('#notif-user').value = '';
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
     window.clearNotifs = async (scope) => {
-      const label = scope === 'all' ? 'TODAS as notificações' : scope === 'broadcast' ? 'as notificações gerais' : 'as notificações individuais';
+      const label = scope === 'all' ? 'todas as notificações' : scope === 'broadcast' ? 'as notificações gerais' : 'as notificações individuais';
       if (!confirm(`Tem certeza que deseja apagar ${label}?`)) return;
       try {
         await api.del('/api/admin/notifications?scope=' + scope);
@@ -745,20 +916,20 @@
         const data = await api.get('/api/admin/feedbacks');
         const box = $('#admin-feedbacks');
         if (!data.feedbacks.length) {
-          box.innerHTML = '<p class="text-sm text-center" style="color:var(--texto-secundario)">Nenhuma avaliação recebida ainda.</p>';
+          box.innerHTML = `<div class="empty-state"><p>Nenhuma avaliação recebida ainda.</p></div>`;
           return;
         }
         box.innerHTML = data.feedbacks.map(f => `
-          <div class="client-row animate-fade-in">
-            <div class="flex justify-center" style="justify-content:space-between; align-items:center">
+          <div class="client-row">
+            <div class="top">
               <div>
-                <div class="font-bold">${f.userId?.fullName || 'Cliente'}</div>
-                <div class="text-xs" style="color:var(--texto-secundario)">${formatDate(f.createdAt)}</div>
+                <div class="name">${f.userId?.fullName || 'Cliente'}</div>
+                <div class="text-xs muted mt-1">${formatDate(f.createdAt)}</div>
               </div>
-              <div style="font-size:1.2rem; color:var(--amarelo-vivo)">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</div>
+              <div style="display:flex; gap:2px">${[1,2,3,4,5].map(i => `<span style="color:${i <= f.rating ? 'var(--gold-600)' : 'var(--line)'}"><svg class="icon icon-sm" style="${i <= f.rating ? 'fill:currentColor' : ''}"><use href="#i-star"/></svg></span>`).join('')}</div>
             </div>
-            ${f.comment ? `<p class="text-sm mt-1" style="color:var(--texto-secundario)">"${f.comment}"</p>` : ''}
-            <button class="btn btn-danger" style="width:auto; padding:0.4rem 0.8rem; font-size:0.75rem; margin-top:0.5rem" onclick="deleteFeedback('${f._id}')">🗑️ Excluir avaliação</button>
+            ${f.comment ? `<p class="text-sm mt-1" style="color:var(--ink-soft)">"${f.comment}"</p>` : ''}
+            <button class="link-btn mt-1" style="color:var(--error)" onclick="deleteFeedback('${f._id}')">${icon('trash', 'icon icon-sm')} Excluir avaliação</button>
           </div>
         `).join('');
       } catch (e) { /* silencioso no painel */ }
@@ -778,11 +949,8 @@
       const adminBtn = $('#nav-admin');
       if (api.token) {
         nav.classList.remove('hidden');
-        if (api.user?.role === 'admin') {
-          adminBtn.classList.remove('hidden');
-        } else {
-          adminBtn.classList.add('hidden');
-        }
+        if (api.user?.role === 'admin') { adminBtn.classList.remove('hidden'); }
+        else { adminBtn.classList.add('hidden'); }
       } else {
         nav.classList.add('hidden');
       }
