@@ -1,5 +1,6 @@
 // models/User.js
-// Representa um usuário do sistema: pode ser "client" (cliente da pamonharia) ou "admin".
+// Representa um usuário do sistema: "client" (cliente da pamonharia) ou "admin".
+
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(

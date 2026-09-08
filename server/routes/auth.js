@@ -1,5 +1,6 @@
 // routes/auth.js
-// Rotas públicas de autenticação: cadastro, login e "quem sou eu".
+// Rotas públicas de autenticação: cadastro, login, "quem sou eu" e atualização de perfil.
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -23,9 +24,11 @@ function normalizePhone(phone) {
 }
 
 function signToken(user) {
-  return jwt.sign({ id: user._id.toString(), role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN,
-  });
+  return jwt.sign(
+    { id: user._id.toString(), role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
 }
 
 function toPublicUser(user) {
@@ -122,6 +125,47 @@ router.get('/me', auth, async (req, res) => {
   } catch (err) {
     console.error('Erro ao buscar usuário:', err);
     res.status(500).json({ error: 'Não foi possível carregar os dados do usuário.' });
+  }
+});
+
+// PUT /api/auth/profile — Atualização de dados do cliente (nome, telefone, senha)
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { fullName, phone, password } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
+    if (fullName) {
+      if (fullName.trim().length < 3) {
+        return res.status(400).json({ error: 'Nome precisa ter pelo menos 3 caracteres.' });
+      }
+      user.fullName = fullName.trim();
+    }
+
+    if (phone) {
+      const normalizedPhone = normalizePhone(phone);
+      if (!isValidBrazilianPhone(phone)) {
+        return res.status(400).json({ error: 'Telefone inválido.' });
+      }
+      const existing = await User.findOne({ phone: normalizedPhone, _id: { $ne: user._id } });
+      if (existing) {
+        return res.status(409).json({ error: 'Telefone já cadastrado por outro usuário.' });
+      }
+      user.phone = normalizedPhone;
+    }
+
+    if (password) {
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Senha precisa ter pelo menos 6 caracteres.' });
+      }
+      user.password = await bcrypt.hash(password, SALT_ROUNDS);
+    }
+
+    await user.save();
+    res.json({ user: toPublicUser(user) });
+  } catch (err) {
+    console.error('Erro ao atualizar perfil:', err);
+    res.status(500).json({ error: 'Não foi possível atualizar o perfil.' });
   }
 });
 

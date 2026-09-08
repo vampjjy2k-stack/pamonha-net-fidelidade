@@ -1,6 +1,7 @@
-// models/Stamp.js
-// Representa o histórico de carimbos (adições/remoções), para auditoria de quem
-// alterou o cartão de cada cliente e quando. Coleção no MongoDB: "stampHistory".
+// models/StampHistory.js
+// Histórico de carimbos (adições/remoções), para auditoria de quem
+// alterou o cartão de cada cliente e quando. Coleção: "stampHistory".
+
 const mongoose = require('mongoose');
 
 const stampHistorySchema = new mongoose.Schema(
@@ -21,7 +22,7 @@ const stampHistorySchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
-    // Guardamos também a origem, útil para diferenciar carimbo manual x escaneado por QR.
+    // Origem: manual (admin), qr-scan (leitura de QR) ou redeem-reset (resgate/zeramento).
     source: {
       type: String,
       enum: ['manual', 'qr-scan', 'redeem-reset'],

@@ -1,5 +1,7 @@
 // server.js
-// Ponto de entrada da API do cartão fidelidade da Pamonha Net.
+// Ponto de entrada da API — Pamonha Net Fidelidade v2.0
+// Responsabilidade: conexão MongoDB, middlewares globais, rotas e fallback SPA.
+
 require('dotenv').config();
 
 const path = require('path');
@@ -15,6 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// --- Validação de variáveis obrigatórias ---
 if (!MONGODB_URI) {
   console.error('❌ MONGODB_URI não definida. Configure o arquivo .env antes de iniciar o servidor.');
   process.exit(1);
@@ -33,7 +36,7 @@ app.use(
 );
 app.use(express.json());
 
-// --- Servir o frontend estático (client/) ---
+// --- Servir o frontend estático (client/) ANTES do fallback ---
 const clientDir = path.join(__dirname, '..', 'client');
 app.use(express.static(clientDir));
 
@@ -42,28 +45,28 @@ app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Rota de verificação de saúde da API (útil para o serviço de hospedagem)
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Qualquer rota /api/* que não bateu em nenhum router acima → 404 em JSON
+// 404 para rotas /api/* não encontradas
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Rota da API não encontrada.' });
 });
 
-// Qualquer outra rota não-API cai no index.html (SPA-like fallback simples)
-app.get(/^(?!\/api\/).*/, (req, res) => {
+// Fallback SPA: qualquer rota não-API cai no index.html
+app.get('*', (req, res) => {
   res.sendFile(path.join(clientDir, 'index.html'));
 });
 
-// --- Handler de erro genérico (fallback) ---
+// Handler de erro genérico
 app.use((err, req, res, next) => {
   console.error('Erro não tratado:', err);
   res.status(500).json({ error: 'Erro interno do servidor.' });
 });
 
-// --- Conexão com o MongoDB e inicialização do servidor ---
+// --- Conexão MongoDB + inicialização ---
 mongoose
   .connect(MONGODB_URI)
   .then(() => {

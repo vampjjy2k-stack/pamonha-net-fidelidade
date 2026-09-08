@@ -1,11 +1,10 @@
 // routes/qr.js
 // Módulo auxiliar de QR Code, usado pelas rotas de cliente (gerar) e admin (escanear).
-// Não é montado como um router próprio: suas funções são importadas por client.js e admin.js.
+// NÃO é montado como router próprio: suas funções são importadas por client.js e admin.js.
 //
-// O QR Code NUNCA contém só o userId "cru" — isso permitiria que qualquer pessoa forjasse
-// um QR de outro cliente. Em vez disso, geramos um token JWT de curtíssima duração (5 minutos)
-// e com um propósito específico ("qr-stamp"), assinado com o mesmo JWT_SECRET do sistema.
-// O backend valida a assinatura, o propósito e a validade antes de liberar o carimbo.
+// O QR Code NUNCA contém só o userId "cru" — isso permitiria forjamento.
+// Em vez disso, geramos um token JWT de curtíssima duração (5 minutos)
+// com propósito específico ("qr-stamp"), assinado com o JWT_SECRET do sistema.
 
 const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
@@ -57,17 +56,21 @@ function verifyQrToken(rawToken) {
 
 /**
  * Gera a imagem do QR Code em base64 (data URL) a partir de um token.
+ * Cores: paleta rural (marrom rústico sobre creme milho).
  * @param {string} token
- * @returns {Promise<string>} data URL "data:image/png;base64,..."
+ * @returns {Promise} data URL "data:image/png;base64,..."
  */
 async function generateQrImage(token) {
+  const darkColor = process.env.QR_COLOR_DARK || '#5D4037';
+  const lightColor = process.env.QR_COLOR_LIGHT || '#FFFDE7';
+
   return QRCode.toDataURL(token, {
     errorCorrectionLevel: 'M',
     margin: 2,
     width: 320,
     color: {
-      dark: '#2E7D32', // verde folha
-      light: '#FFF8E1', // creme
+      dark: darkColor,
+      light: lightColor,
     },
   });
 }

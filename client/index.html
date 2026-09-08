@@ -2,181 +2,810 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pamonha Net Fiel — Cartão Fidelidade Digital</title>
-  <meta name="description" content="Cartão fidelidade digital da Pamonha Net: compre 10, ganhe 1 pamonha grátis!" />
-  <link rel="icon" type="image/png" href="assets/logo-pamonha-net.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#FFD700" />
+  <meta name="description" content="Cartão Fidelidade Digital da Pamonha Net — Ganhe selos e resgate prêmios!" />
+  <title>Pamonha Net Fidelidade</title>
+  <style>
+    :root {
+      --amarelo-vivo: #FFD700;
+      --amarelo-escuro: #F9A825;
+      --amarelo-claro: #FFF9C4;
+      --amarelo-suave: #FFF59D;
+      --marrom-rustico: #5D4037;
+      --marrom-amadeirado: #8D6E63;
+      --marrom-escuro: #3E2723;
+      --marrom-claro: #A1887F;
+      --verde-palha: #7CB342;
+      --verde-rural: #558B2F;
+      --verde-escuro: #33691E;
+      --creme: #FFFDE7;
+      --creme-escuro: #F5F5DC;
+      --linho: #FAF3E0;
+      --texto-principal: #3E2723;
+      --texto-secundario: #6D4C41;
+      --sucesso: #43A047;
+      --erro: #D32F2F;
+      --aviso: #F57C00;
+      --sombra-card: 0 4px 16px rgba(94, 64, 55, 0.12);
+      --sombra-botao: 0 4px 12px rgba(249, 168, 37, 0.35);
+      --borda-arredondada: 18px;
+      --borda-botao: 14px;
+      --transicao: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--linho); color: var(--texto-principal); overflow-x: hidden; }
+    #app { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .gap-1 { gap: 0.5rem; }
+    .gap-2 { gap: 1rem; }
+    .w-full { width: 100%; }
+    .mt-1 { margin-top: 0.5rem; }
+    .mt-2 { margin-top: 1rem; }
+    .mb-1 { margin-bottom: 0.5rem; }
+    .mb-2 { margin-bottom: 1rem; }
+    .p-1 { padding: 0.75rem; }
+    .p-2 { padding: 1.25rem; }
+    .text-center { text-align: center; }
+    .text-sm { font-size: 0.875rem; }
+    .text-xs { font-size: 0.75rem; }
+    .font-bold { font-weight: 700; }
+    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    @keyframes stampPop {
+      0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+      60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(255, 215, 0, 0); }
+    }
+    .animate-fade-in { animation: fadeIn 0.4s ease both; }
+    .animate-stamp { animation: stampPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    .animate-pulse-glow { animation: pulseGlow 2s infinite; }
+
+    .container { max-width: 480px; margin: 0 auto; width: 100%; padding: 1rem; flex: 1; }
+    .page { display: none; animation: fadeIn 0.35s ease; }
+    .page.active { display: block; }
+
+    .card {
+      background: #fff;
+      border-radius: var(--borda-arredondada);
+      box-shadow: var(--sombra-card);
+      padding: 1.25rem;
+      border: 1px solid rgba(141, 110, 99, 0.12);
+    }
+    .card-creme {
+      background: var(--creme);
+      border: 2px dashed var(--amarelo-escuro);
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      width: 100%; padding: 1rem; border: none; border-radius: var(--borda-botao);
+      font-size: 1rem; font-weight: 700; cursor: pointer; transition: var(--transicao);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--amarelo-vivo), var(--amarelo-escuro));
+      color: var(--marrom-escuro);
+      box-shadow: var(--sombra-botao);
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary {
+      background: var(--marrom-rustico); color: #fff;
+    }
+    .btn-danger { background: var(--erro); color: #fff; }
+    .btn-success { background: var(--sucesso); color: #fff; }
+    .btn-outline {
+      background: transparent; border: 2px solid var(--marrom-amadeirado); color: var(--marrom-rustico);
+    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
+
+    .input {
+      width: 100%; padding: 0.9rem 1rem; border: 2px solid #E0E0E0;
+      border-radius: 12px; font-size: 1rem; background: #fff; color: var(--texto-principal);
+      transition: var(--transicao); outline: none;
+    }
+    .input:focus { border-color: var(--amarelo-escuro); box-shadow: 0 0 0 3px rgba(249, 168, 37, 0.2); }
+    .label { display: block; margin-bottom: 0.35rem; font-weight: 600; font-size: 0.875rem; color: var(--texto-secundario); }
+
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: #fff; border-top: 1px solid rgba(141,110,99,0.15);
+      display: flex; justify-around: space-around; padding: 0.5rem 0; z-index: 50;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      font-size: 0.65rem; color: var(--marrom-claro); text-decoration: none; font-weight: 600;
+      transition: var(--transicao); border: none; background: none; cursor: pointer;
+    }
+    .nav-item.active { color: var(--amarelo-escuro); }
+    .nav-item .icon { font-size: 1.35rem; line-height: 1; }
+
+    .fidelity-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem; margin: 1.25rem 0;
+    }
+    .stamp-slot {
+      aspect-ratio: 1; border-radius: 50%;
+      background: var(--creme-escuro); border: 2px dashed var(--marrom-claro);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; transition: var(--transicao);
+    }
+    .stamp-slot.filled {
+      background: linear-gradient(135deg, var(--amarelo-vivo), var(--amarelo-escuro));
+      border: 2px solid var(--amarelo-escuro); color: var(--marrom-escuro);
+      box-shadow: 0 2px 8px rgba(249,168,37,0.35);
+    }
+    .stamp-slot.winner {
+      background: linear-gradient(135deg, var(--verde-palha), var(--verde-rural));
+      border-color: var(--verde-escuro); color: #fff;
+      animation: stampPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    .qr-wrap {
+      background: #fff; padding: 1rem; border-radius: var(--borda-arredondada);
+      display: flex; flex-direction: column; align-items: center; gap: 0.75rem;
+      box-shadow: var(--sombra-card);
+    }
+    .qr-wrap img { max-width: 260px; width: 100%; border-radius: 12px; }
+
+    .toast {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%) translateY(-120%);
+      background: var(--marrom-escuro); color: #fff; padding: 0.9rem 1.4rem;
+      border-radius: 12px; font-weight: 600; font-size: 0.95rem; z-index: 100;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25); transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      max-width: 90vw; text-align: center; pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { background: var(--sucesso); }
+    .toast.error { background: var(--erro); }
+
+    .app-header {
+      background: linear-gradient(135deg, var(--amarelo-vivo), var(--amarelo-escuro));
+      color: var(--marrom-escuro); padding: 1.25rem 1rem; text-align: center;
+      font-weight: 800; font-size: 1.1rem; letter-spacing: 0.5px;
+      box-shadow: 0 2px 12px rgba(249,168,37,0.3); position: sticky; top: 0; z-index: 40;
+    }
+
+    .notif-item {
+      background: #fff; border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;
+      border-left: 4px solid var(--amarelo-escuro); box-shadow: var(--sombra-card);
+      transition: var(--transicao);
+    }
+    .notif-item.read { opacity: 0.7; border-left-color: var(--marrom-claro); }
+    .notif-item h4 { font-size: 0.95rem; margin-bottom: 0.25rem; color: var(--texto-principal); }
+    .notif-item p { font-size: 0.85rem; color: var(--texto-secundario); line-height: 1.4; }
+
+    .stars { display: flex; gap: 0.35rem; font-size: 1.6rem; justify-content: center; margin: 0.5rem 0; }
+    .star { cursor: pointer; color: #E0E0E0; transition: var(--transicao); }
+    .star.active { color: var(--amarelo-vivo); text-shadow: 0 1px 4px rgba(249,168,37,0.4); }
+
+    .client-row {
+      background: #fff; border-radius: 14px; padding: 1rem; margin-bottom: 0.75rem;
+      box-shadow: var(--sombra-card); display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .client-row .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .client-row .actions .btn { width: auto; flex: 1; min-width: 80px; padding: 0.6rem; font-size: 0.8rem; }
+
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    .pb-nav { padding-bottom: 80px; }
+
+    .loader {
+      width: 36px; height: 36px; border: 4px solid var(--amarelo-claro);
+      border-top-color: var(--amarelo-escuro); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 1rem auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .confetti {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90;
+    }
+    .confetti-piece {
+      position: absolute; width: 8px; height: 8px; background: var(--amarelo-vivo);
+      animation: confettiFall 2.5s ease-out forwards;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+  </style>
 </head>
 <body>
-  <div id="toast-container" aria-live="polite"></div>
+  <div id="app">
+    <div class="app-header">🌽 Pamonha Net Fidelidade</div>
+    <div class="container pb-nav" id="main-container"></div>
 
-  <header class="site-header">
-    <div class="container">
-      <a href="index.html" class="brand">
-        <img src="assets/logo-pamonha-net.png" alt="Logotipo Pamonha Net" width="42" height="42" />
-        <span class="brand-name">Pamonha Net<small>Cartão Fiel</small></span>
-      </a>
-    </div>
-  </header>
+    <nav class="bottom-nav hidden" id="bottom-nav">
+      <button class="nav-item active" data-page="card" onclick="router.go('card')">
+        <span class="icon">🎫</span><span>Cartão</span>
+      </button>
+      <button class="nav-item" data-page="notifications" onclick="router.go('notifications')">
+        <span class="icon">🔔</span><span>Avisos</span>
+      </button>
+      <button class="nav-item" data-page="feedback" onclick="router.go('feedback')">
+        <span class="icon">⭐</span><span>Avaliar</span>
+      </button>
+      <button class="nav-item" data-page="profile" onclick="router.go('profile')">
+        <span class="icon">👤</span><span>Perfil</span>
+      </button>
+      <button class="nav-item hidden" data-page="admin" id="nav-admin" onclick="router.go('admin')">
+        <span class="icon">🛡️</span><span>Gerenciar</span>
+      </button>
+    </nav>
+  </div>
 
-  <!-- ===== HERO ===== -->
-  <section class="hero">
-    <div class="container">
-      <span class="hero-mascote" aria-hidden="true">🌽</span>
-      <h1>Compre 10 pamonhas,<br /><span>ganhe 1 de presente</span></h1>
-      <p class="lead">O cartão fidelidade da Pamonha Net agora é digital. Sem plastiquinho para perder — seu progresso fica guardado no seu celular.</p>
-      <div class="hero-cta">
-        <a href="#auth" class="btn btn-primary">Quero meu cartão</a>
-        <a href="#como-funciona" class="btn btn-ghost">Como funciona</a>
-      </div>
-    </div>
-    <svg class="divisor-folha" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
-      <path d="M0,32 C240,70 480,0 720,24 C960,48 1200,10 1440,32 L1440,60 L0,60 Z" fill="#FFF8E1" />
-    </svg>
-  </section>
+  <div class="toast" id="toast"></div>
 
-  <!-- ===== COMO FUNCIONA ===== -->
-  <section class="como-funciona" id="como-funciona">
-    <div class="container">
-      <span class="section-eyebrow">Simples assim</span>
-      <h2 class="section-title">Como funciona</h2>
-      <div class="passos">
-        <div class="passo">
-          <span class="emoji" aria-hidden="true">📱</span>
-          <h3>Crie seu cartão</h3>
-          <p>Cadastre-se com nome e telefone. Leva menos de 1 minuto.</p>
-        </div>
-        <div class="passo">
-          <span class="emoji" aria-hidden="true">🌽</span>
-          <h3>Ganhe carimbos</h3>
-          <p>A cada pamonha comprada, mostre seu QR Code e ganhe um carimbo.</p>
-        </div>
-        <div class="passo">
-          <span class="emoji" aria-hidden="true">🎁</span>
-          <h3>Resgate seu prêmio</h3>
-          <p>Ao completar 10 carimbos, escolha seu produto grátis.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  <script>
+    const API_URL = '';
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-  <!-- ===== ONDE ENCONTRAR ===== -->
-  <section class="onde-encontrar">
-    <div class="container">
-      <span class="section-eyebrow">Venha nos visitar</span>
-      <h2 class="section-title">Onde encontrar</h2>
-      <div class="locais">
-        <div class="local-card">
-          <span class="emoji" aria-hidden="true">📍</span>
-          <div>
-            <h4>Endereço fixo</h4>
-            <p>R. Dr. Osmundo Bezerra Duarte, s/n<br />Duque de Caxias/RJ</p>
+    const toast = {
+      el: $('#toast'),
+      timer: null,
+      show(msg, type='success') {
+        this.el.textContent = msg;
+        this.el.className = `toast ${type} show`;
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => this.el.classList.remove('show'), 3000);
+      }
+    };
+
+    function formatPhone(n) {
+      if (!n || n.length < 10) return n;
+      return n.length === 11
+        ? `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`
+        : `(${n.slice(0,2)}) ${n.slice(2,6)}-${n.slice(6)}`;
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    }
+
+    const api = {
+      token: localStorage.getItem('pnf_token') || null,
+      user: JSON.parse(localStorage.getItem('pnf_user') || 'null'),
+      setAuth(t, u) {
+        this.token = t; this.user = u;
+        if (t) localStorage.setItem('pnf_token', t);
+        if (u) localStorage.setItem('pnf_user', JSON.stringify(u));
+      },
+      clearAuth() {
+        this.token = null; this.user = null;
+        localStorage.removeItem('pnf_token'); localStorage.removeItem('pnf_user');
+      },
+      async req(method, endpoint, body=null) {
+        const opts = {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+        };
+        if (this.token) opts.headers['Authorization'] = 'Bearer ' + this.token;
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(API_URL + endpoint, opts);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Erro na requisição');
+        return data;
+      },
+      get(endpoint) { return this.req('GET', endpoint); },
+      post(endpoint, body) { return this.req('POST', endpoint, body); },
+      put(endpoint, body) { return this.req('PUT', endpoint, body); },
+      del(endpoint) { return this.req('DELETE', endpoint); }
+    };
+
+    const router = {
+      routes: {},
+      current: '',
+      register(path, renderFn) { this.routes[path] = renderFn; },
+      go(path, skipHistory=false) {
+        this.current = path;
+        if (!skipHistory) history.pushState(null, '', '#'+path);
+        this.render();
+      },
+      render() {
+        const hash = location.hash.replace('#','') || 'card';
+        const fn = this.routes[hash] || this.routes['card'];
+        $('#main-container').innerHTML = '';
+        fn($('#main-container'));
+        $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === hash));
+        window.scrollTo(0,0);
+      }
+    };
+
+    window.addEventListener('popstate', () => router.render());
+
+    router.register('login', (container) => {
+      container.innerHTML = `
+        <div class="page active flex flex-col items-center justify-center" style="min-height:70vh">
+          <div style="font-size:4rem; margin-bottom:0.5rem">🌽</div>
+          <h1 style="font-size:1.6rem; color:var(--marrom-escuro); margin-bottom:0.25rem">Pamonha Net</h1>
+          <p style="color:var(--texto-secundario); margin-bottom:1.5rem">Cartão Fidelidade Digital</p>
+          <div class="card w-full" style="max-width:360px">
+            <div class="mb-1"><label class="label">Telefone</label>
+              <input class="input" id="login-phone" placeholder="(21) 91234-5678" type="tel" inputmode="tel" />
+            </div>
+            <div class="mb-2"><label class="label">Senha</label>
+              <input class="input" id="login-pass" placeholder="Mínimo 6 caracteres" type="password" />
+            </div>
+            <button class="btn btn-primary" id="btn-login">Entrar</button>
+            <button class="btn btn-outline mt-1" onclick="router.go('register')">Criar conta</button>
           </div>
         </div>
-        <div class="local-card">
-          <span class="emoji" aria-hidden="true">🗓️</span>
-          <div>
-            <h4>Feiras</h4>
-            <p><strong>Sábados:</strong> Figueira e Xerém<br /><strong>Domingos:</strong> Santa Cruz da Serra</p>
+      `;
+      $('#btn-login').onclick = async () => {
+        const phone = $('#login-phone').value.trim();
+        const pass = $('#login-pass').value;
+        if (!phone || !pass) return toast.show('Preencha telefone e senha.', 'error');
+        try {
+          const data = await api.post('/api/auth/login', { phone, password: pass });
+          api.setAuth(data.token, data.user);
+          toast.show('Bem-vindo, ' + data.user.fullName.split(' ')[0] + '! 🌽');
+          updateNav();
+          router.go('card', true);
+        } catch (e) { toast.show(e.message, 'error'); }
+      };
+    });
+
+    router.register('register', (container) => {
+      container.innerHTML = `
+        <div class="page active flex flex-col items-center justify-center" style="min-height:70vh">
+          <div style="font-size:3rem; margin-bottom:0.5rem">🌽</div>
+          <h1 style="font-size:1.4rem; margin-bottom:1rem">Criar Conta</h1>
+          <div class="card w-full" style="max-width:360px">
+            <div class="mb-1"><label class="label">Nome completo</label>
+              <input class="input" id="reg-name" placeholder="Seu nome" />
+            </div>
+            <div class="mb-1"><label class="label">Telefone</label>
+              <input class="input" id="reg-phone" placeholder="(21) 91234-5678" type="tel" inputmode="tel" />
+            </div>
+            <div class="mb-2"><label class="label">Senha</label>
+              <input class="input" id="reg-pass" placeholder="Mínimo 6 caracteres" type="password" />
+            </div>
+            <button class="btn btn-primary" id="btn-reg">Cadastrar</button>
+            <button class="btn btn-outline mt-1" onclick="router.go('login')">Já tenho conta</button>
           </div>
         </div>
-      </div>
-      <div class="mapa-wrap">
-        <iframe
-          title="Mapa até a Pamonha Net"
-          src="https://www.google.com/maps?q=R.+Dr.+Osmundo+Bezerra+Duarte,+Duque+de+Caxias+-+RJ&output=embed"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-        ></iframe>
-      </div>
-    </div>
-  </section>
+      `;
+      $('#btn-reg').onclick = async () => {
+        const fullName = $('#reg-name').value.trim();
+        const phone = $('#reg-phone').value.trim();
+        const password = $('#reg-pass').value;
+        if (!fullName || !phone || !password) return toast.show('Preencha todos os campos.', 'error');
+        try {
+          const data = await api.post('/api/auth/register', { fullName, phone, password });
+          api.setAuth(data.token, data.user);
+          toast.show('Conta criada! 🎉');
+          updateNav();
+          router.go('card', true);
+        } catch (e) { toast.show(e.message, 'error'); }
+      };
+    });
 
-  <!-- ===== LOGIN / CADASTRO ===== -->
-  <section class="auth-section" id="auth">
-    <div class="container">
-      <span class="section-eyebrow">Acesse sua conta</span>
-      <h2 class="section-title">Entrar no Cartão Fiel</h2>
-
-      <div class="auth-card">
-        <div class="auth-toggle" role="tablist" aria-label="Tipo de acesso">
-          <button type="button" class="active" data-perfil="cliente" role="tab" aria-selected="true">🌽 Sou Cliente</button>
-          <button type="button" data-perfil="admin" role="tab" aria-selected="false">🔑 Sou Admin</button>
+    router.register('card', (container) => {
+      if (!api.token) return router.go('login');
+      container.innerHTML = `
+        <div class="page active">
+          <div class="text-center mt-1 mb-1">
+            <h2 style="font-size:1.15rem; color:var(--marrom-rustico)">Olá, <span id="card-name">...</span>! 👋</h2>
+            <p class="text-sm" style="color:var(--texto-secundario)">Seu cartão de fidelidade</p>
+          </div>
+          <div class="card card-creme text-center">
+            <div style="display:flex; justify-content:center; align-items:center; gap:0.5rem; margin-bottom:0.5rem">
+              <span style="font-size:1.6rem">🌽</span>
+              <span style="font-weight:800; color:var(--marrom-escuro); font-size:1.1rem">CARTÃO PAMONHA NET</span>
+            </div>
+            <div class="fidelity-grid" id="stamp-grid"></div>
+            <div id="card-status" style="font-weight:700; color:var(--marrom-rustico); margin-top:0.5rem"></div>
+          </div>
+          <div class="qr-wrap mt-2 hidden" id="qr-area">
+            <p class="text-sm font-bold" style="color:var(--marrom-rustico)">Apresente este QR Code na loja</p>
+            <img id="qr-img" alt="QR Code" />
+            <p class="text-xs" style="color:var(--texto-secundario)">Válido por 5 minutos</p>
+            <button class="btn btn-outline" onclick="generateQr()">🔄 Gerar novo QR Code</button>
+          </div>
+          <button class="btn btn-primary mt-2" id="btn-qr" onclick="generateQr()">📷 Gerar QR Code</button>
+          <div class="mt-2">
+            <h3 style="font-size:1rem; margin-bottom:0.5rem; color:var(--marrom-rustico)">📜 Histórico recente</h3>
+            <div id="history-list"></div>
+          </div>
         </div>
+      `;
+      loadCard();
+    });
 
-        <!-- Painel do cliente: alterna entre login e cadastro -->
-        <div id="painel-cliente" class="tab-panel active">
-          <form id="form-login" class="tab-panel active" data-form="login" data-perfil="cliente" novalidate>
-            <div class="campo">
-              <label for="login-telefone">Telefone</label>
-              <input id="login-telefone" type="tel" inputmode="numeric" placeholder="(21) 91234-5678" data-mascara="telefone" required />
+    async function loadCard() {
+      try {
+        const data = await api.get('/api/client/dashboard');
+        $('#card-name').textContent = data.fullName.split(' ')[0];
+        renderStamps(data.stamps);
+        const status = $('#card-status');
+        if (data.stamps >= 10) {
+          status.innerHTML = `<span style="color:var(--verde-rural)">🎉 Cartão completo! Resgate sua recompensa!</span>`;
+          showConfetti();
+        } else {
+          status.textContent = `${data.stamps} de 10 selos — faltam ${10 - data.stamps}`;
+        }
+        const hist = data.history || [];
+        const list = $('#history-list');
+        if (!hist.length) { list.innerHTML = '<p class="text-sm text-center" style="color:var(--texto-secundario)">Nenhum carimbo ainda.</p>'; }
+        else {
+          list.innerHTML = hist.map(h => `
+            <div class="notif-item" style="margin-bottom:0.5rem; padding:0.75rem">
+              <div class="flex justify-center" style="justify-content:space-between">
+                <span class="text-sm font-bold">${h.action === 'add' ? '🟢 Carimbo adicionado' : '🔴 Carimbo removido'}</span>
+                <span class="text-xs">${formatDate(h.createdAt)}</span>
+              </div>
+              <p class="text-xs" style="margin-top:0.25rem">Via: ${h.source === 'qr-scan' ? 'QR Code' : h.source === 'manual' ? 'Atendente' : 'Resgate'}</p>
             </div>
-            <div class="campo">
-              <label for="login-senha">Senha</label>
-              <input id="login-senha" type="password" placeholder="Sua senha" required />
-            </div>
-            <button type="submit" class="btn btn-primary">
-              <span class="btn-label">Entrar</span>
-              <span class="spinner" aria-hidden="true"></span>
-            </button>
-            <p class="forms-switch">Ainda não tem cartão? <button type="button" data-mostrar-form="cadastro">Cadastre-se</button></p>
-          </form>
+          `).join('');
+        }
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
 
-          <form id="form-cadastro" class="tab-panel" novalidate>
-            <div class="campo">
-              <label for="cadastro-nome">Nome completo</label>
-              <input id="cadastro-nome" type="text" placeholder="Seu nome completo" required />
-              <span class="erro-campo"></span>
-            </div>
-            <div class="campo">
-              <label for="cadastro-telefone">Telefone</label>
-              <input id="cadastro-telefone" type="tel" inputmode="numeric" placeholder="(21) 91234-5678" data-mascara="telefone" required />
-              <span class="erro-campo"></span>
-            </div>
-            <div class="campo">
-              <label for="cadastro-senha">Senha</label>
-              <input id="cadastro-senha" type="password" placeholder="Mínimo 6 caracteres" required />
-              <span class="erro-campo"></span>
-            </div>
-            <button type="submit" class="btn btn-primary">
-              <span class="btn-label">Criar meu cartão</span>
-              <span class="spinner" aria-hidden="true"></span>
-            </button>
-            <p class="forms-switch">Já tem cartão? <button type="button" data-mostrar-form="login">Fazer login</button></p>
-          </form>
+    function renderStamps(count) {
+      const grid = $('#stamp-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 10; i++) {
+        const div = document.createElement('div');
+        div.className = 'stamp-slot' + (i < count ? ' filled animate-stamp' : '');
+        div.textContent = i < count ? '🌽' : '';
+        if (i === 9 && count >= 10) div.classList.add('winner');
+        grid.appendChild(div);
+      }
+    }
+
+    async function generateQr() {
+      try {
+        $('#btn-qr').classList.add('hidden');
+        $('#qr-area').classList.remove('hidden');
+        $('#qr-img').style.opacity = '0.5';
+        const data = await api.post('/api/client/generate-qr');
+        $('#qr-img').src = data.qrImage;
+        $('#qr-img').style.opacity = '1';
+        toast.show('QR Code gerado! Válido por 5 minutos.');
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    function showConfetti() {
+      const el = document.createElement('div'); el.className = 'confetti';
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div'); p.className = 'confetti-piece';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.background = ['var(--amarelo-vivo)','var(--verde-palha)','var(--marrom-amadeirado)'][Math.floor(Math.random()*3)];
+        p.style.animationDelay = Math.random() * 1 + 's';
+        p.style.width = p.style.height = (6 + Math.random()*6) + 'px';
+        el.appendChild(p);
+      }
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    router.register('notifications', (container) => {
+      if (!api.token) return router.go('login');
+      container.innerHTML = `
+        <div class="page active">
+          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">🔔 Central de Avisos</h2>
+          <div id="notif-list"></div>
         </div>
+      `;
+      loadNotifications();
+    });
 
-        <!-- Painel do admin: apenas login -->
-        <div id="painel-admin" class="tab-panel">
-          <form data-form="login" data-perfil="admin" novalidate>
-            <div class="campo">
-              <label for="admin-telefone">Telefone</label>
-              <input id="admin-telefone" type="tel" inputmode="numeric" placeholder="(21) 91234-5678" data-mascara="telefone" required />
+    async function loadNotifications() {
+      try {
+        const data = await api.get('/api/client/notifications');
+        const list = $('#notif-list');
+        if (!data.notifications.length) {
+          list.innerHTML = '<div class="text-center text-sm" style="color:var(--texto-secundario); margin-top:2rem">Nenhum aviso no momento. 📭</div>';
+          return;
+        }
+        list.innerHTML = data.notifications.map(n => `
+          <div class="notif-item ${n.read ? 'read' : ''}">
+            <h4>${n.title}</h4>
+            <p>${n.message}</p>
+            <div class="flex justify-center mt-1" style="justify-content:space-between; align-items:center">
+              <span class="text-xs" style="color:var(--texto-secundario)">${formatDate(n.createdAt)}</span>
+              ${!n.read ? `<button class="btn btn-success" style="width:auto; padding:0.4rem 0.8rem; font-size:0.75rem" onclick="markRead('${n._id}')">Marcar lida</button>` : '<span class="text-xs" style="color:var(--sucesso)">✓ Lida</span>'}
             </div>
-            <div class="campo">
-              <label for="admin-senha">Senha</label>
-              <input id="admin-senha" type="password" placeholder="Sua senha" required />
+          </div>
+        `).join('');
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    async function markRead(id) {
+      try { await api.put('/api/client/notifications/' + id + '/read'); loadNotifications(); toast.show('Aviso marcado como lido'); }
+      catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    router.register('feedback', (container) => {
+      if (!api.token) return router.go('login');
+      container.innerHTML = `
+        <div class="page active">
+          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">⭐ Avalie nossa Pamonha</h2>
+          <div class="card text-center">
+            <p style="margin-bottom:0.75rem; color:var(--texto-secundario)">Como foi sua experiência?</p>
+            <div class="stars" id="star-box">
+              ${[1,2,3,4,5].map(i => `<span class="star" data-val="${i}" onclick="setStar(${i})">★</span>`).join('')}
             </div>
-            <button type="submit" class="btn btn-secondary">
-              <span class="btn-label">Entrar como Admin</span>
-              <span class="spinner" aria-hidden="true"></span>
-            </button>
-            <p class="form-hint" style="text-align:center;">Contas admin são criadas diretamente no banco de dados (veja o README).</p>
-          </form>
+            <div class="mt-1 text-center">
+              <textarea class="input" id="fb-comment" rows="3" placeholder="Conte mais sobre o atendimento ou o sabor (opcional)" style="resize:none"></textarea>
+            </div>
+            <button class="btn btn-primary mt-1" onclick="sendFeedback()">Enviar Avaliação</button>
+          </div>
         </div>
-      </div>
-    </div>
-  </section>
+      `;
+    });
 
-  <footer class="rodape">
-    <div class="container">🌽 Pamonha Net — feito com carinho em Duque de Caxias/RJ</div>
-  </footer>
+    let selectedRating = 0;
+    window.setStar = (n) => {
+      selectedRating = n;
+      $$('#star-box .star').forEach((s, i) => s.classList.toggle('active', i < n));
+    };
+    window.sendFeedback = async () => {
+      if (!selectedRating) return toast.show('Selecione uma nota de 1 a 5 estrelas.', 'error');
+      try {
+        await api.post('/api/client/feedback', { rating: selectedRating, comment: $('#fb-comment').value });
+        toast.show('Obrigado pela avaliação! 🌽');
+        setStar(0); $('#fb-comment').value = '';
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
 
-  <script src="js/app.js"></script>
-  <script src="js/auth.js"></script>
+    router.register('profile', (container) => {
+      if (!api.token) return router.go('login');
+      container.innerHTML = `
+        <div class="page active">
+          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">👤 Meus Dados</h2>
+          <div class="card">
+            <div class="mb-1"><label class="label">Nome completo</label>
+              <input class="input" id="prof-name" />
+            </div>
+            <div class="mb-1"><label class="label">Telefone</label>
+              <input class="input" id="prof-phone" type="tel" inputmode="tel" />
+            </div>
+            <div class="mb-2"><label class="label">Nova senha (deixe em branco para manter)</label>
+              <input class="input" id="prof-pass" type="password" placeholder="Mínimo 6 caracteres" />
+            </div>
+            <button class="btn btn-primary" onclick="saveProfile()">💾 Salvar alterações</button>
+            <button class="btn btn-outline mt-1" onclick="logout()">🚪 Sair da conta</button>
+          </div>
+        </div>
+      `;
+      $('#prof-name').value = api.user?.fullName || '';
+      $('#prof-phone').value = api.user?.phone ? formatPhone(api.user.phone) : '';
+    });
+
+    window.saveProfile = async () => {
+      const body = {};
+      const name = $('#prof-name').value.trim();
+      const phone = $('#prof-phone').value.trim();
+      const pass = $('#prof-pass').value;
+      if (name) body.fullName = name;
+      if (phone) body.phone = phone;
+      if (pass) body.password = pass;
+      try {
+        const data = await api.put('/api/auth/profile', body);
+        api.setAuth(api.token, data.user);
+        toast.show('Perfil atualizado!');
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.logout = () => { api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo! 👋'); };
+
+    router.register('admin', (container) => {
+      if (!api.token || api.user?.role !== 'admin') return router.go('card');
+      container.innerHTML = `
+        <div class="page active">
+          <h2 style="font-size:1.2rem; margin:0.5rem 0 1rem; color:var(--marrom-rustico)">🛡️ Painel do Administrador</h2>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="font-size:1rem; margin-bottom:0.75rem">📷 Escanear QR Code</h3>
+            <input class="input mb-1" id="qr-scan-input" placeholder="Cole o conteúdo do QR Code aqui" />
+            <button class="btn btn-success" onclick="scanQr()">➕ Adicionar Carimbo via QR</button>
+          </div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="font-size:1rem; margin-bottom:0.75rem">🔔 Enviar Notificação</h3>
+            <input class="input mb-1" id="notif-title" placeholder="Título do aviso" />
+            <textarea class="input mb-1" id="notif-msg" rows="2" placeholder="Mensagem" style="resize:none"></textarea>
+            <input class="input mb-1" id="notif-user" placeholder="ID do cliente (deixe vazio para todos)" />
+            <button class="btn btn-primary" onclick="sendNotif()">📨 Enviar Aviso</button>
+          </div>
+          <div class="card" style="margin-bottom:1rem">
+            <h3 style="font-size:1rem; margin-bottom:0.5rem">🧹 Limpeza de Dados</h3>
+            <div class="flex gap-1">
+              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('all')">🗑️ Todas Notif.</button>
+              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('broadcast')">🗑️ Gerais</button>
+            </div>
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <input class="input" id="search-clients" placeholder="🔍 Buscar por nome ou telefone" oninput="searchClients()" />
+          </div>
+          <div id="admin-clients"></div>
+          <div class="mt-2">
+            <h3 style="font-size:1rem; margin-bottom:0.5rem">💬 Avaliações dos Clientes</h3>
+            <div id="admin-feedbacks"></div>
+          </div>
+        </div>
+      `;
+      loadAdminClients();
+      loadAdminFeedbacks();
+    });
+
+    let adminClientCache = [];
+    async function loadAdminClients() {
+      try {
+        const data = await api.get('/api/admin/clients?limit=50');
+        adminClientCache = data.clients;
+        renderAdminClients(data.clients);
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    function renderAdminClients(list) {
+      const box = $('#admin-clients');
+      if (!list.length) { box.innerHTML = '<p class="text-sm text-center">Nenhum cliente encontrado.</p>'; return; }
+      box.innerHTML = list.map(c => `
+        <div class="client-row animate-fade-in">
+          <div class="flex justify-center" style="justify-content:space-between; align-items:center">
+            <div>
+              <div class="font-bold" style="color:var(--texto-principal)">${c.fullName}</div>
+              <div class="text-sm" style="color:var(--texto-secundario)">${formatPhone(c.phone)}</div>
+            </div>
+            <div class="font-bold" style="font-size:1.2rem; color:var(--amarelo-escuro)">${c.stamps}/10</div>
+          </div>
+          <div class="actions">
+            <button class="btn btn-success" style="flex:1" onclick="addStamp('${c._id}')">➕ Carimbo</button>
+            <button class="btn btn-danger" style="flex:1" onclick="removeStamp('${c._id}')">➖ Carimbo</button>
+            <button class="btn btn-secondary" style="flex:1" onclick="resetCard('${c._id}')">🔄 Zerar</button>
+            <button class="btn btn-outline" style="flex:1; color:var(--erro); border-color:var(--erro)" onclick="deleteHistory('${c._id}')">🗑️ Histórico</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.searchClients = () => {
+      const q = $('#search-clients').value.trim().toLowerCase();
+      const filtered = adminClientCache.filter(c =>
+        c.fullName.toLowerCase().includes(q) || c.phone.includes(q.replace(/\D/g, ''))
+      );
+      renderAdminClients(filtered);
+    };
+
+    window.addStamp = async (id) => {
+      try {
+        await api.post('/api/admin/clients/' + id + '/stamps', { action: 'add' });
+        toast.show('Carimbo adicionado!');
+        loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.removeStamp = async (id) => {
+      try {
+        await api.post('/api/admin/clients/' + id + '/stamps', { action: 'remove' });
+        toast.show('Carimbo removido.');
+        loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.resetCard = async (id) => {
+      if (!confirm('Tem certeza que deseja zerar o cartão deste cliente?')) return;
+      try {
+        await api.post('/api/admin/clients/' + id + '/reset');
+        toast.show('Cartão zerado.');
+        loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.deleteHistory = async (id) => {
+      if (!confirm('Apagar TODO o histórico de carimbos deste cliente? Esta ação não pode ser desfeita.')) return;
+      try {
+        await api.del('/api/admin/clients/' + id + '/history');
+        toast.show('Histórico apagado com sucesso.');
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.scanQr = async () => {
+      const raw = $('#qr-scan-input').value.trim();
+      if (!raw) return toast.show('Cole o conteúdo do QR Code.', 'error');
+      try {
+        const data = await api.post('/api/admin/scan-qr', { qrToken: raw });
+        toast.show(data.message || 'Carimbo adicionado via QR!');
+        $('#qr-scan-input').value = '';
+        loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.sendNotif = async () => {
+      const title = $('#notif-title').value.trim();
+      const message = $('#notif-msg').value.trim();
+      const userId = $('#notif-user').value.trim();
+      if (!title || !message) return toast.show('Preencha título e mensagem.', 'error');
+      try {
+        await api.post('/api/admin/notifications', { title, message, userId: userId || null });
+        toast.show('Aviso enviado com sucesso! 📨');
+        $('#notif-title').value = ''; $('#notif-msg').value = ''; $('#notif-user').value = '';
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.clearNotifs = async (scope) => {
+      const label = scope === 'all' ? 'TODAS as notificações' : scope === 'broadcast' ? 'as notificações gerais' : 'as notificações individuais';
+      if (!confirm(`Tem certeza que deseja apagar ${label}?`)) return;
+      try {
+        await api.del('/api/admin/notifications?scope=' + scope);
+        toast.show('Notificações removidas.');
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    async function loadAdminFeedbacks() {
+      try {
+        const data = await api.get('/api/admin/feedbacks');
+        const box = $('#admin-feedbacks');
+        if (!data.feedbacks.length) {
+          box.innerHTML = '<p class="text-sm text-center" style="color:var(--texto-secundario)">Nenhuma avaliação recebida ainda.</p>';
+          return;
+        }
+        box.innerHTML = data.feedbacks.map(f => `
+          <div class="client-row animate-fade-in">
+            <div class="flex justify-center" style="justify-content:space-between; align-items:center">
+              <div>
+                <div class="font-bold">${f.userId?.fullName || 'Cliente'}</div>
+                <div class="text-xs" style="color:var(--texto-secundario)">${formatDate(f.createdAt)}</div>
+              </div>
+              <div style="font-size:1.2rem; color:var(--amarelo-vivo)">${'★'.repeat(f.rating)}${'☆'.repeat(5 - f.rating)}</div>
+            </div>
+            ${f.comment ? `<p class="text-sm mt-1" style="color:var(--texto-secundario)">"${f.comment}"</p>` : ''}
+            <button class="btn btn-danger" style="width:auto; padding:0.4rem 0.8rem; font-size:0.75rem; margin-top:0.5rem" onclick="deleteFeedback('${f._id}')">🗑️ Excluir avaliação</button>
+          </div>
+        `).join('');
+      } catch (e) { /* silencioso no painel */ }
+    }
+
+    window.deleteFeedback = async (id) => {
+      if (!confirm('Excluir esta avaliação?')) return;
+      try {
+        await api.del('/api/admin/feedbacks/' + id);
+        toast.show('Avaliação removida.');
+        loadAdminFeedbacks();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    function updateNav() {
+      const nav = $('#bottom-nav');
+      const adminBtn = $('#nav-admin');
+      if (api.token) {
+        nav.classList.remove('hidden');
+        if (api.user?.role === 'admin') {
+          adminBtn.classList.remove('hidden');
+        } else {
+          adminBtn.classList.add('hidden');
+        }
+      } else {
+        nav.classList.add('hidden');
+      }
+    }
+
+    async function init() {
+      updateNav();
+      if (api.token) {
+        try {
+          const data = await api.get('/api/auth/me');
+          api.setAuth(api.token, data.user);
+          updateNav();
+        } catch (e) {
+          api.clearAuth();
+          updateNav();
+          router.go('login');
+          return;
+        }
+      }
+      router.render();
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 </body>
 </html>

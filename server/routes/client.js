@@ -1,24 +1,25 @@
 // routes/client.js
 // Rotas do cliente logado. Todas protegidas pelo middleware "auth".
+// Escopo enxuto: cartão fidelidade, QR Code, notificações, feedback e histórico.
+
 const express = require('express');
 const User = require('../models/User');
-const Redemption = require('../models/Redemption');
+const StampHistory = require('../models/StampHistory');
+const Notification = require('../models/Notification');
+const Feedback = require('../models/Feedback');
 const auth = require('../middleware/auth');
 const { generateQrToken, generateQrImage, QR_TOKEN_TTL_SECONDS } = require('./qr');
 
 const router = express.Router();
-
 router.use(auth);
 
 // GET /api/client/dashboard
 router.get('/dashboard', async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ error: 'Usuário não encontrado.' });
-    }
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-    const history = await Redemption.find({ userId: user._id }).sort({ createdAt: -1 }).limit(10);
+    const history = await StampHistory.find({ userId: user._id }).sort({ createdAt: -1 }).limit(20);
 
     res.json({
       fullName: user.fullName,
@@ -53,11 +54,58 @@ router.post('/generate-qr', async (req, res) => {
 // GET /api/client/history
 router.get('/history', async (req, res) => {
   try {
-    const history = await Redemption.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    const history = await StampHistory.find({ userId: req.user.id }).sort({ createdAt: -1 });
     res.json({ history });
   } catch (err) {
-    console.error('Erro ao carregar histórico:', err);
     res.status(500).json({ error: 'Não foi possível carregar o histórico.' });
+  }
+});
+
+// NOTIFICATIONS
+// GET /api/client/notifications
+router.get('/notifications', async (req, res) => {
+  try {
+    const list = await Notification.find({
+      $or: [{ userId: req.user.id }, { broadcast: true }],
+    }).sort({ createdAt: -1 });
+    res.json({ notifications: list });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao carregar notificações.' });
+  }
+});
+
+// PUT /api/client/notifications/:id/read
+router.put('/notifications/:id/read', async (req, res) => {
+  try {
+    const notif = await Notification.findById(req.params.id);
+    if (!notif) return res.status(404).json({ error: 'Notificação não encontrada.' });
+    if (!notif.broadcast && String(notif.userId) !== req.user.id) {
+      return res.status(403).json({ error: 'Acesso negado.' });
+    }
+    notif.read = true;
+    await notif.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao marcar notificação como lida.' });
+  }
+});
+
+// FEEDBACK
+// POST /api/client/feedback
+router.post('/feedback', async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Informe uma nota de 1 a 5 estrelas.' });
+    }
+    const fb = await Feedback.create({
+      userId: req.user.id,
+      rating,
+      comment: (comment || '').trim(),
+    });
+    res.status(201).json({ feedback: fb });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao enviar avaliação.' });
   }
 });
 

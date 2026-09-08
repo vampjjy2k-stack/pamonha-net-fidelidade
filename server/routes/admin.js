@@ -1,15 +1,17 @@
 // routes/admin.js
 // Rotas administrativas. Todas protegidas por auth + adminOnly (dupla verificação).
+// Escopo: gestão de clientes, scan QR, notificações, feedbacks e exclusão de históricos.
+
 const express = require('express');
 const User = require('../models/User');
-const Redemption = require('../models/Redemption');
-const StampHistory = require('../models/Stamp');
+const StampHistory = require('../models/StampHistory');
+const Notification = require('../models/Notification');
+const Feedback = require('../models/Feedback');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/admin');
 const { verifyQrToken } = require('./qr');
 
 const router = express.Router();
-
 router.use(auth, adminOnly);
 
 // GET /api/admin/clients?search=&sort=name|stamps&page=1&limit=20
@@ -54,7 +56,6 @@ router.get('/clients', async (req, res) => {
       },
     });
   } catch (err) {
-    console.error('Erro ao listar clientes:', err);
     res.status(500).json({ error: 'Não foi possível carregar a lista de clientes.' });
   }
 });
@@ -63,18 +64,15 @@ router.get('/clients', async (req, res) => {
 router.get('/clients/:id', async (req, res) => {
   try {
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
-    if (!client) {
-      return res.status(404).json({ error: 'Cliente não encontrado.' });
-    }
-    const history = await Redemption.find({ userId: client._id }).sort({ createdAt: -1 });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    const history = await StampHistory.find({ userId: client._id }).sort({ createdAt: -1 });
     res.json({ client, history });
   } catch (err) {
-    console.error('Erro ao buscar cliente:', err);
     res.status(500).json({ error: 'Não foi possível carregar o cliente.' });
   }
 });
 
-// POST /api/admin/clients/:id/stamps  { action: "add" | "remove", position }
+// POST /api/admin/clients/:id/stamps { action: "add" | "remove" }
 router.post('/clients/:id/stamps', async (req, res) => {
   try {
     const { action } = req.body;
@@ -83,9 +81,7 @@ router.post('/clients/:id/stamps', async (req, res) => {
     }
 
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
-    if (!client) {
-      return res.status(404).json({ error: 'Cliente não encontrado.' });
-    }
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
     if (action === 'add') {
       if (client.stamps >= 10) {
@@ -109,7 +105,6 @@ router.post('/clients/:id/stamps', async (req, res) => {
 
     res.json({ client });
   } catch (err) {
-    console.error('Erro ao atualizar carimbo:', err);
     res.status(500).json({ error: 'Não foi possível atualizar o carimbo.' });
   }
 });
@@ -118,9 +113,7 @@ router.post('/clients/:id/stamps', async (req, res) => {
 router.post('/clients/:id/reset', async (req, res) => {
   try {
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
-    if (!client) {
-      return res.status(404).json({ error: 'Cliente não encontrado.' });
-    }
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
     client.stamps = 0;
     await client.save();
@@ -133,59 +126,27 @@ router.post('/clients/:id/reset', async (req, res) => {
 
     res.json({ client });
   } catch (err) {
-    console.error('Erro ao resetar cartão:', err);
     res.status(500).json({ error: 'Não foi possível resetar o cartão.' });
   }
 });
 
-// POST /api/admin/clients/:id/redeem  { product }
-const VALID_PRODUCTS = ['Pamonha Doce', 'Pamonha Salgada', 'Pamonha Recheada', 'Curau'];
-
-router.post('/clients/:id/redeem', async (req, res) => {
+// DELETE /api/admin/clients/:id/history — Exclui histórico de selos do cliente
+router.delete('/clients/:id/history', async (req, res) => {
   try {
-    const { product } = req.body;
-    if (!VALID_PRODUCTS.includes(product)) {
-      return res.status(400).json({ error: 'Produto inválido.' });
-    }
-
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
-    if (!client) {
-      return res.status(404).json({ error: 'Cliente não encontrado.' });
-    }
-    if (client.stamps < 10) {
-      return res.status(400).json({ error: 'Este cliente ainda não completou os 10 carimbos.' });
-    }
-
-    const redemption = await Redemption.create({
-      userId: client._id,
-      product,
-      status: 'confirmed',
-    });
-
-    client.stamps = 0;
-    await client.save();
-    await StampHistory.create({
-      userId: client._id,
-      action: 'remove',
-      adminId: req.user.id,
-      source: 'redeem-reset',
-    });
-
-    res.json({ redemption, client });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    await StampHistory.deleteMany({ userId: client._id });
+    res.json({ message: 'Histórico de carimbos apagado com sucesso.' });
   } catch (err) {
-    console.error('Erro ao confirmar resgate:', err);
-    res.status(500).json({ error: 'Não foi possível confirmar o resgate.' });
+    res.status(500).json({ error: 'Erro ao apagar histórico de carimbos.' });
   }
 });
 
-// POST /api/admin/scan-qr  { qrToken }
-// Lê o conteúdo de um QR Code gerado pelo cliente e adiciona 1 carimbo automaticamente.
+// POST /api/admin/scan-qr { qrToken }
 router.post('/scan-qr', async (req, res) => {
   try {
     const { qrToken } = req.body;
-    if (!qrToken) {
-      return res.status(400).json({ error: 'Nenhum QR Code informado.' });
-    }
+    if (!qrToken) return res.status(400).json({ error: 'Nenhum QR Code informado.' });
 
     let userId;
     try {
@@ -195,9 +156,7 @@ router.post('/scan-qr', async (req, res) => {
     }
 
     const client = await User.findOne({ _id: userId, role: 'client' });
-    if (!client) {
-      return res.status(404).json({ error: 'Cliente do QR Code não foi encontrado.' });
-    }
+    if (!client) return res.status(404).json({ error: 'Cliente do QR Code não foi encontrado.' });
     if (client.stamps >= 10) {
       return res.status(400).json({ error: `O cartão de ${client.fullName} já está completo (10/10).` });
     }
@@ -216,8 +175,80 @@ router.post('/scan-qr', async (req, res) => {
       client,
     });
   } catch (err) {
-    console.error('Erro ao escanear QR Code:', err);
     res.status(500).json({ error: 'Não foi possível processar o QR Code.' });
+  }
+});
+
+// NOTIFICATIONS ADMIN
+// POST /api/admin/notifications
+router.post('/notifications', async (req, res) => {
+  try {
+    const { title, message, userId } = req.body;
+    if (!title || !message) return res.status(400).json({ error: 'Título e mensagem são obrigatórios.' });
+    const notif = await Notification.create({
+      title: title.trim(),
+      message: message.trim(),
+      userId: userId || null,
+      broadcast: !userId,
+    });
+    res.status(201).json({ notification: notif });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao criar notificação.' });
+  }
+});
+
+// GET /api/admin/notifications
+router.get('/notifications', async (req, res) => {
+  try {
+    const list = await Notification.find().sort({ createdAt: -1 }).populate('userId', 'fullName phone');
+    res.json({ notifications: list });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar notificações.' });
+  }
+});
+
+// DELETE /api/admin/notifications/:id
+router.delete('/notifications/:id', async (req, res) => {
+  try {
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Notificação removida.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao remover notificação.' });
+  }
+});
+
+// DELETE /api/admin/notifications — limpa notificações em massa
+router.delete('/notifications', async (req, res) => {
+  try {
+    const { scope } = req.query; // 'all', 'broadcast', 'individual'
+    const filter = {};
+    if (scope === 'broadcast') filter.broadcast = true;
+    if (scope === 'individual') filter.broadcast = false;
+    await Notification.deleteMany(filter);
+    res.json({ message: 'Notificações removidas com sucesso.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao limpar notificações.' });
+  }
+});
+
+// FEEDBACK ADMIN
+// GET /api/admin/feedbacks
+router.get('/feedbacks', async (req, res) => {
+  try {
+    const list = await Feedback.find().sort({ createdAt: -1 }).populate('userId', 'fullName phone');
+    res.json({ feedbacks: list });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar avaliações.' });
+  }
+});
+
+// DELETE /api/admin/feedbacks/:id
+router.delete('/feedbacks/:id', async (req, res) => {
+  try {
+    await Feedback.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Avaliação removida.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao remover avaliação.' });
   }
 });
 

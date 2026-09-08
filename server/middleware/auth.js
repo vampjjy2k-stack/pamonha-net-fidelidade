@@ -1,6 +1,7 @@
 // middleware/auth.js
-// Verifica se a requisição tem um token JWT válido no header Authorization.
-// Se válido, anexa os dados do usuário em req.user e deixa a requisição seguir.
+// Verifica se a requisição possui um token JWT válido no header Authorization.
+// Se válido, anexa os dados do usuário em req.user e libera a requisição.
+
 const jwt = require('jsonwebtoken');
 
 function auth(req, res, next) {
