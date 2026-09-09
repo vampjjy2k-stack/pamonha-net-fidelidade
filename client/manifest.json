@@ -1,0 +1,13 @@
+{
+  "name": "Pamonha Net — Cartão Fidelidade",
+  "short_name": "Pamonha Net",
+  "description": "Cartão fidelidade digital da Pamonha Net. Junte selos e ganhe prêmios.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7D65A",
+  "theme_color": "#3E5A2C",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

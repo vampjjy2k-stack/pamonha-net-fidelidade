@@ -12,6 +12,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/client');
 const adminRoutes = require('./routes/admin');
+const { ensureConfigured } = require('./utils/webPush');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +37,9 @@ app.use(
 );
 app.use(express.json());
 
+// Avisa no boot se as notificações push reais não estiverem configuradas (não impede o servidor de subir).
+ensureConfigured();
+
 // --- Servir o frontend estático (client/) ANTES do fallback ---
 const clientDir = path.join(__dirname, '..', 'client');
 app.use(express.static(clientDir));
@@ -48,6 +52,14 @@ app.use('/api/admin', adminRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Chave pública VAPID — não é secreta, o app do cliente precisa dela para se inscrever no push.
+app.get('/api/push/vapid-public-key', (req, res) => {
+  if (!process.env.VAPID_PUBLIC_KEY) {
+    return res.status(503).json({ error: 'Notificações push não configuradas no servidor.' });
+  }
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
 
 // 404 para rotas /api/* não encontradas

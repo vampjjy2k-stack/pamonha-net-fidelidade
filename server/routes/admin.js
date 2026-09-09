@@ -10,6 +10,7 @@ const Feedback = require('../models/Feedback');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/admin');
 const { verifyQrToken } = require('./qr');
+const { sendPushToUser } = require('../utils/webPush');
 
 const router = express.Router();
 router.use(auth, adminOnly);
@@ -180,7 +181,9 @@ router.post('/scan-qr', async (req, res) => {
 });
 
 // NOTIFICATIONS ADMIN
-// POST /api/admin/notifications
+// POST /api/admin/notifications { title, message, userId? }
+// Salva o aviso no app (aba "Avisos") E dispara uma notificação push real para o celular do cliente,
+// caso ele tenha ativado notificações no dispositivo.
 router.post('/notifications', async (req, res) => {
   try {
     const { title, message, userId } = req.body;
@@ -191,7 +194,14 @@ router.post('/notifications', async (req, res) => {
       userId: userId || null,
       broadcast: !userId,
     });
-    res.status(201).json({ notification: notif });
+
+    const pushResult = await sendPushToUser({
+      userId: userId || null,
+      title: title.trim(),
+      body: message.trim(),
+    });
+
+    res.status(201).json({ notification: notif, push: pushResult });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao criar notificação.' });
   }

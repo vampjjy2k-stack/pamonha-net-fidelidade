@@ -86,6 +86,20 @@ O servidor já usa a porta fornecida pelo Render. Depois que o primeiro deploy t
 8. Teste `https://SUA-URL.onrender.com/api/health`. A resposta esperada contém `"status":"ok"`.
 9. Abra `https://SUA-URL.onrender.com` para ver o sistema.
 
+## 3.1 Ativar as notificações push (avisos no celular do cliente)
+
+O sistema já vem com um par de chaves prontas em `server/.env.example` (`VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`). Basta copiá-las também como variáveis de ambiente no Render, junto das outras:
+
+| Nome | Valor |
+|---|---|
+| `VAPID_PUBLIC_KEY` | copie de `server/.env.example` |
+| `VAPID_PRIVATE_KEY` | copie de `server/.env.example` |
+| `VAPID_SUBJECT` | `mailto:seuemail@pamonhanet.com.br` |
+
+Sem essas três variáveis, o app funciona normalmente — só que os avisos aparecem apenas dentro da aba "Avisos", sem chegar como notificação no celular.
+
+**Importante sobre iPhone:** por regra da Apple, notificações push em site só funcionam depois que o cliente toca em "Adicionar à Tela de Início" no Safari e abre o app por esse atalho. No Android, funciona direto pelo Chrome, sem esse passo. O app já avisa o cliente sobre isso na tela "Perfil".
+
 ## 4. Criar o primeiro administrador
 
 O cadastro normal cria usuários comuns. Para transformar um usuário em administrador, depois de ele se cadastrar, abra o Atlas:

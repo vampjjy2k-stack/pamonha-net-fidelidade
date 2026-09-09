@@ -5,33 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#2E3A22" />
   <meta name="description" content="Cartão fidelidade digital da Pamonha Net. Junte selos a cada compra e troque por prêmios." />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
   <title>Pamonha Net · Fidelidade</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      /* -- Paleta: milho, palha e terra -- */
-      --paper: #F7F1E1;
-      --paper-deep: #F0E7D0;
-      --cream-card: #FFFCF4;
-      --husk-900: #29331F;
-      --husk-700: #40502C;
-      --husk-500: #5F7440;
-      --husk-300: #A9B98A;
-      --gold-700: #A97A1E;
-      --gold-600: #C99A2E;
-      --gold-300: #F0D889;
-      --gold-100: #FBEFC9;
+      /* -- Paleta: milho vivo, palha e terra -- */
+      --paper: #F7D65A;
+      --paper-deep: #F0C632;
+      --cream-card: #FFFBEF;
+      --husk-900: #3E5A2C;
+      --husk-700: #4F7238;
+      --husk-500: #79974F;
+      --husk-300: #D7E6B8;
+      --gold-700: #A9720B;
+      --gold-600: #E0A215;
+      --gold-300: #FFE38A;
+      --gold-100: #FFF3CF;
       --clay-600: #A2653A;
       --clay-100: #F1E0CE;
       --ink: #2A2118;
       --ink-soft: #6D6151;
-      --ink-faint: #9C8F7C;
-      --line: rgba(41, 51, 31, 0.14);
-      --line-soft: rgba(41, 51, 31, 0.08);
+      --ink-faint: #8C7F68;
+      --line: rgba(62, 90, 44, 0.18);
+      --line-soft: rgba(62, 90, 44, 0.1);
       --success: #4C7A34;
-      --error: #A8432B;
+      --error: #B23A22;
       --radius-lg: 22px;
       --radius-md: 16px;
       --radius-sm: 12px;
@@ -230,6 +232,23 @@
     }
     .qr-wrap img { max-width: 230px; width: 100%; border-radius: 10px; border: 1px solid var(--line); }
 
+    /* -- Live QR scanner (admin) -- */
+    .scan-frame {
+      position: relative; width: 100%; aspect-ratio: 1; border-radius: var(--radius-md);
+      overflow: hidden; background: #10160b; border: 2px solid var(--husk-900);
+    }
+    .scan-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .scan-reticle {
+      position: absolute; inset: 14%; border: 3px solid var(--gold-300); border-radius: 18px;
+      box-shadow: 0 0 0 2000px rgba(0,0,0,0.28); pointer-events: none;
+    }
+    .scan-flash {
+      position: absolute; inset: 0; background: var(--husk-700); opacity: 0; pointer-events: none;
+      transition: opacity 0.15s ease;
+    }
+    .scan-flash.hit { opacity: 0.55; }
+    details > summary::-webkit-details-marker { display: none; }
+
     /* -- Toast -- */
     .toast {
       position: fixed; top: 14px; left: 50%; transform: translateX(-50%) translateY(-130%);
@@ -257,14 +276,29 @@
       cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem;
     }
 
+    .rate-cta {
+      width: 100%; display: flex; align-items: center; gap: 0.75rem; text-align: left;
+      background: linear-gradient(135deg, var(--gold-300), var(--gold-100));
+      border: 1.5px solid var(--gold-600); border-radius: var(--radius-md);
+      padding: 0.85rem 1rem; cursor: pointer; color: var(--husk-900); font-family: inherit;
+    }
+    .rate-cta:active { transform: scale(0.98); }
+    .rate-cta-icon { color: var(--gold-700); flex-shrink: 0; }
+    .rate-cta-text { display: flex; flex-direction: column; flex: 1; line-height: 1.3; }
+    .rate-cta-text strong { font-size: 0.92rem; }
+    .rate-cta-text span:last-child { font-size: 0.78rem; color: var(--husk-700); }
+    .rate-cta-arrow { color: var(--gold-700); flex-shrink: 0; }
+
     .empty-state { text-align: center; padding: 2.2rem 1rem; color: var(--ink-soft); }
     .empty-state .icon { width: 34px; height: 34px; color: var(--ink-faint); margin: 0 auto 0.6rem; }
     .empty-state p { font-size: 0.88rem; max-width: 260px; margin: 0 auto; }
 
     /* -- Stars -- */
-    .stars { display: flex; gap: 0.5rem; justify-content: center; margin: 0.6rem 0 1rem; }
-    .star-btn { background: none; border: none; cursor: pointer; padding: 0.2rem; color: var(--line); transition: var(--ease); }
-    .star-btn .icon { width: 30px; height: 30px; }
+    .fb-question-title { font-weight: 600; font-size: 0.92rem; color: var(--husk-900); text-align: center; margin-bottom: 0.3rem; }
+    .stars { display: flex; gap: 0.5rem; justify-content: center; margin: 0.3rem 0 0.2rem; }
+    .star-btn { background: none; border: none; cursor: pointer; padding: 0.2rem; color: var(--line); transition: transform 0.15s ease, color var(--ease); }
+    .star-btn:active { transform: scale(1.25); }
+    .star-btn .icon { width: 28px; height: 28px; }
     .star-btn.active { color: var(--gold-600); }
     .star-btn.active .icon { fill: currentColor; }
 
@@ -277,6 +311,42 @@
     .client-row .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.75rem; }
     .client-row .actions .btn { width: auto; flex: 1; min-width: 74px; padding: 0.55rem; font-size: 0.76rem; gap: 0.3rem; }
     .section-gap { margin-bottom: 1.1rem; }
+
+    /* -- Audience picker (admin notifications) -- */
+    .audience-toggle { display: flex; gap: 0.5rem; }
+    .audience-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      padding: 0.6rem 0.5rem; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
+      background: #fff; color: var(--ink-soft); font-weight: 600; font-size: 0.8rem; cursor: pointer;
+    }
+    .audience-btn.active { background: var(--husk-900); border-color: var(--husk-900); color: var(--gold-300); }
+    .notif-client-list { display: flex; flex-direction: column; gap: 0.3rem; max-height: 190px; overflow-y: auto; }
+    .notif-client-item {
+      display: flex; justify-content: space-between; align-items: center; width: 100%;
+      background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 0.55rem 0.75rem;
+      font-size: 0.85rem; color: var(--ink); cursor: pointer; text-align: left;
+    }
+    .notif-client-item:active { background: var(--gold-100); }
+    .notif-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem; background: var(--gold-100);
+      border: 1px solid var(--gold-600); color: var(--husk-900); font-weight: 600; font-size: 0.82rem;
+      padding: 0.35rem 0.5rem 0.35rem 0.75rem; border-radius: 999px;
+    }
+    .notif-chip button { background: none; border: none; font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--husk-700); padding: 0 0.15rem; }
+
+    /* -- Feedback cards (admin) -- */
+    .fb-card { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 0.65rem; }
+    .fb-card-head { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.7rem; }
+    .fb-avatar {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--husk-900); color: var(--gold-300);
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-family: var(--font-display);
+      flex-shrink: 0; font-size: 1rem;
+    }
+    .fb-avg { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; flex-shrink: 0; }
+    .fb-breakdown { display: flex; flex-direction: column; gap: 0.32rem; padding: 0.6rem 0.7rem; background: var(--paper); border-radius: 10px; }
+    .fb-line { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--husk-900); font-weight: 500; }
+    .fb-line > span:first-child { color: var(--ink-soft); }
+    .fb-comment { font-size: 0.87rem; color: var(--ink-soft); font-style: italic; margin-top: 0.65rem; line-height: 1.4; }
 
     ::-webkit-scrollbar { width: 0; background: transparent; }
 
@@ -410,6 +480,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
   <script>
     const API_URL = '';
     const $ = (sel) => document.querySelector(sel);
@@ -476,6 +547,7 @@
         this.render();
       },
       render() {
+        if (typeof stopScanner === 'function') stopScanner();
         const hash = location.hash.replace('#','') || 'card';
         const fn = this.routes[hash] || this.routes['card'];
         $('#main-container').innerHTML = '';
@@ -577,6 +649,16 @@
             <button class="btn btn-outline" onclick="generateQr()">${icon('refresh', 'icon icon-sm')} Gerar novo QR Code</button>
           </div>
           <button class="btn btn-primary mt-2" id="btn-qr" onclick="generateQr()">${icon('qr', 'icon icon-sm')} Gerar QR Code</button>
+
+          <button class="rate-cta mt-2" onclick="router.go('feedback')">
+            <span class="rate-cta-icon">${icon('star', 'icon')}</span>
+            <span class="rate-cta-text">
+              <strong>Como foi sua pamonha?</strong>
+              <span>Avalie em 10 segundos</span>
+            </span>
+            <span class="rate-cta-arrow">${icon('send', 'icon icon-sm')}</span>
+          </button>
+
           <div class="mt-2">
             <h3 class="surface-title" style="margin-bottom:0.6rem">${icon('history', 'icon icon-sm')} Histórico recente</h3>
             <div id="history-list"></div>
@@ -695,34 +777,52 @@
       catch (e) { toast.show(e.message, 'error'); }
     }
 
+    const FEEDBACK_QUESTIONS = [
+      { key: 'experienceRating', q: 'Como foi sua experiência na Pamonha Net?' },
+      { key: 'tasteRating', q: 'O que você achou do sabor da Pamonha Net?' },
+      { key: 'serviceRating', q: 'Como foi o atendimento?' },
+    ];
+
     router.register('feedback', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
         <div class="page">
           <h2 class="page-title">${icon('star')} Avaliar</h2>
-          <div class="surface text-center">
-            <p class="mb-1" style="color:var(--ink-soft)">Como foi sua experiência com a Pamonha Net?</p>
-            <div class="stars" id="star-box">
-              ${[1,2,3,4,5].map(i => `<button class="star-btn" data-val="${i}" onclick="setStar(${i})">${icon('star', 'icon')}</button>`).join('')}
-            </div>
-            <textarea class="input" id="fb-comment" rows="3" placeholder="Conte mais sobre o atendimento ou o sabor (opcional)" style="resize:none"></textarea>
+          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Leva 10 segundos — toque nas estrelas de cada pergunta.</p>
+          <div class="surface">
+            ${FEEDBACK_QUESTIONS.map((f, idx) => `
+              <div class="fb-question ${idx > 0 ? 'mt-2' : ''}">
+                <p class="fb-question-title">${f.q}</p>
+                <div class="stars" id="star-box-${f.key}">
+                  ${[1,2,3,4,5].map(i => `<button class="star-btn" data-val="${i}" onclick="setStar('${f.key}', ${i})">${icon('star', 'icon')}</button>`).join('')}
+                </div>
+              </div>
+            `).join('')}
+            <textarea class="input mt-1" id="fb-comment" rows="2" placeholder="Quer contar mais alguma coisa? (opcional)" style="resize:none"></textarea>
             <button class="btn btn-primary mt-2" onclick="sendFeedback()">Enviar avaliação</button>
           </div>
         </div>
       `;
+      selectedRatings = {};
     });
 
-    let selectedRating = 0;
-    window.setStar = (n) => {
-      selectedRating = n;
-      $$('#star-box .star-btn').forEach((s, i) => s.classList.toggle('active', i < n));
+    let selectedRatings = {};
+    window.setStar = (key, n) => {
+      selectedRatings[key] = n;
+      $$(`#star-box-${key} .star-btn`).forEach((s, i) => s.classList.toggle('active', i < n));
     };
     window.sendFeedback = async () => {
-      if (!selectedRating) return toast.show('Selecione uma nota de 1 a 5 estrelas.', 'error');
+      const missing = FEEDBACK_QUESTIONS.find(f => !selectedRatings[f.key]);
+      if (missing) return toast.show('Responda todas as perguntas para enviar.', 'error');
       try {
-        await api.post('/api/client/feedback', { rating: selectedRating, comment: $('#fb-comment').value });
+        await api.post('/api/client/feedback', {
+          experienceRating: selectedRatings.experienceRating,
+          tasteRating: selectedRatings.tasteRating,
+          serviceRating: selectedRatings.serviceRating,
+          comment: $('#fb-comment').value,
+        });
         toast.show('Obrigado pela avaliação!');
-        setStar(0); $('#fb-comment').value = '';
+        router.go('card');
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
@@ -731,7 +831,7 @@
       container.innerHTML = `
         <div class="page">
           <h2 class="page-title">${icon('user')} Meus dados</h2>
-          <div class="surface">
+          <div class="surface mb-2">
             <div class="mb-1"><label class="label">Nome completo</label>
               <input class="input" id="prof-name" />
             </div>
@@ -744,10 +844,16 @@
             <button class="btn btn-primary" onclick="saveProfile()">${icon('save', 'icon icon-sm')} Salvar alterações</button>
             <button class="btn btn-outline mt-1" onclick="logout()">${icon('logout', 'icon icon-sm')} Sair da conta</button>
           </div>
+          <div class="surface" id="push-card">
+            <h3 class="surface-title">${icon('bell', 'icon icon-sm')} Notificações no celular</h3>
+            <p class="text-sm muted mb-1" id="push-desc">Verificando disponibilidade…</p>
+            <button class="btn btn-secondary" id="push-btn" onclick="togglePush()">Ativar notificações</button>
+          </div>
         </div>
       `;
       $('#prof-name').value = api.user?.fullName || '';
       $('#prof-phone').value = api.user?.phone ? formatPhone(api.user.phone) : '';
+      refreshPushUi();
     });
 
     window.saveProfile = async () => {
@@ -774,16 +880,49 @@
 
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
-            <input class="input mb-1" id="qr-scan-input" placeholder="Cole o conteúdo do QR Code aqui" />
-            <button class="btn btn-success" onclick="scanQr()">${icon('plus', 'icon icon-sm')} Adicionar selo via QR</button>
+            <div id="scanner-idle">
+              <p class="text-sm muted mb-1">Aponte a câmera para o QR Code do cliente. O selo é adicionado automaticamente, sem precisar tocar em nada.</p>
+              <button class="btn btn-success" onclick="startScanner()">${icon('qr', 'icon icon-sm')} Ativar câmera</button>
+            </div>
+            <div id="scanner-active" class="hidden">
+              <div class="scan-frame">
+                <video id="scan-video" playsinline muted></video>
+                <div class="scan-reticle"></div>
+                <div class="scan-flash" id="scan-flash"></div>
+              </div>
+              <p class="text-xs text-center mt-1" id="scan-status">Procurando QR Code…</p>
+              <button class="btn btn-outline mt-1" onclick="stopScanner()">Parar câmera</button>
+            </div>
+            <details class="mt-1">
+              <summary class="text-xs muted" style="cursor:pointer">Sem câmera? Colar código manualmente</summary>
+              <input class="input mt-1 mb-1" id="qr-scan-input" placeholder="Cole o conteúdo do QR Code aqui" />
+              <button class="btn btn-outline" onclick="scanQr()">Adicionar selo com o código colado</button>
+            </details>
           </div>
 
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('mail', 'icon icon-sm')} Enviar notificação</h3>
-            <input class="input mb-1" id="notif-title" placeholder="Título do aviso" />
-            <textarea class="input mb-1" id="notif-msg" rows="2" placeholder="Mensagem" style="resize:none"></textarea>
-            <input class="input mb-1" id="notif-user" placeholder="ID do cliente (deixe vazio para enviar a todos)" />
-            <button class="btn btn-primary" onclick="sendNotif()">${icon('send', 'icon icon-sm')} Enviar aviso</button>
+            <p class="text-xs muted mb-1">Aparece na aba Avisos e, se o cliente tiver ativado, chega como notificação no celular dele.</p>
+
+            <div class="audience-toggle mb-1">
+              <button class="audience-btn active" id="aud-all" onclick="setAudience('all')">${icon('bell','icon icon-sm')} Todos</button>
+              <button class="audience-btn" id="aud-one" onclick="setAudience('one')">${icon('user','icon icon-sm')} Um cliente</button>
+            </div>
+
+            <div id="audience-picker" class="hidden mb-1">
+              <input class="input mb-1" id="notif-client-search" placeholder="Buscar cliente por nome ou telefone" oninput="filterNotifClients()" />
+              <div id="notif-client-list" class="notif-client-list"></div>
+              <div id="notif-selected-chip"></div>
+            </div>
+
+            <label class="label">Título</label>
+            <input class="input mb-1" id="notif-title" placeholder="Ex: Pamonha nova no cardápio" maxlength="60" />
+
+            <label class="label">Mensagem</label>
+            <textarea class="input" id="notif-msg" rows="3" placeholder="Escreva a mensagem exatamente como quer que o cliente veja" maxlength="300" oninput="$('#notif-msg-count').textContent = $('#notif-msg').value.length"></textarea>
+            <div class="text-xs muted text-center mt-1" style="text-align:right"><span id="notif-msg-count">0</span>/300</div>
+
+            <button class="btn btn-primary mt-1" onclick="sendNotif()">${icon('send', 'icon icon-sm')} Enviar aviso</button>
           </div>
 
           <div class="surface section-gap">
@@ -841,11 +980,53 @@
       `).join('');
     }
 
+    // -- Seletor de destinatário da notificação --
+    let notifAudience = 'all';
+    let notifSelectedClient = null;
+
+    window.setAudience = (mode) => {
+      notifAudience = mode;
+      $('#aud-all').classList.toggle('active', mode === 'all');
+      $('#aud-one').classList.toggle('active', mode === 'one');
+      $('#audience-picker').classList.toggle('hidden', mode !== 'one');
+    };
+
+    function matchesClientQuery(c, q) {
+      const digits = q.replace(/\D/g, '');
+      return c.fullName.toLowerCase().includes(q) || (digits.length > 0 && c.phone.includes(digits));
+    }
+
+    window.filterNotifClients = () => {
+      const q = $('#notif-client-search').value.trim().toLowerCase();
+      const list = $('#notif-client-list');
+      if (!q) { list.innerHTML = ''; return; }
+      const matches = adminClientCache.filter(c => matchesClientQuery(c, q)).slice(0, 6);
+      list.innerHTML = matches.length
+        ? matches.map(c => `
+            <button class="notif-client-item" onclick='selectNotifClient(${JSON.stringify(c._id)}, ${JSON.stringify(c.fullName)})'>
+              <span>${c.fullName}</span><span class="text-xs muted">${formatPhone(c.phone)}</span>
+            </button>
+          `).join('')
+        : `<p class="text-xs muted p-1">Nenhum cliente encontrado.</p>`;
+    };
+
+    window.selectNotifClient = (id, name) => {
+      notifSelectedClient = { id, name };
+      $('#notif-client-list').innerHTML = '';
+      $('#notif-client-search').value = '';
+      $('#notif-selected-chip').innerHTML = `
+        <span class="notif-chip">${name} <button onclick="clearNotifClient()" aria-label="Remover">×</button></span>
+      `;
+    };
+
+    window.clearNotifClient = () => {
+      notifSelectedClient = null;
+      $('#notif-selected-chip').innerHTML = '';
+    };
+
     window.searchClients = () => {
       const q = $('#search-clients').value.trim().toLowerCase();
-      const filtered = adminClientCache.filter(c =>
-        c.fullName.toLowerCase().includes(q) || c.phone.includes(q.replace(/\D/g, ''))
-      );
+      const filtered = adminClientCache.filter(c => matchesClientQuery(c, q));
       renderAdminClients(filtered);
     };
 
@@ -890,15 +1071,94 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
+    // -- Scanner de câmera ao vivo — feito para ser rápido no balcão/feira --
+    let scannerStream = null;
+    let scannerRAF = null;
+    let scannerCooldownUntil = 0;
+    let scanCanvas = null;
+
+    async function startScanner() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        scannerStream = stream;
+        const video = $('#scan-video');
+        video.srcObject = stream;
+        await video.play();
+        $('#scanner-idle').classList.add('hidden');
+        $('#scanner-active').classList.remove('hidden');
+        scanLoop();
+      } catch (e) {
+        toast.show('Não foi possível acessar a câmera. Use o código colado abaixo.', 'error');
+      }
+    }
+
+    function stopScanner() {
+      if (scannerRAF) cancelAnimationFrame(scannerRAF);
+      scannerRAF = null;
+      if (scannerStream) {
+        scannerStream.getTracks().forEach(t => t.stop());
+        scannerStream = null;
+      }
+      const idle = $('#scanner-idle');
+      const active = $('#scanner-active');
+      if (idle) idle.classList.remove('hidden');
+      if (active) active.classList.add('hidden');
+    }
+
+    function scanLoop() {
+      const video = $('#scan-video');
+      if (!video || !scannerStream) return;
+      scanCanvas = scanCanvas || document.createElement('canvas');
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        scanCanvas.width = video.videoWidth;
+        scanCanvas.height = video.videoHeight;
+        const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+        const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+        const code = window.jsQR && window.jsQR(imageData.data, imageData.width, imageData.height);
+        if (code && code.data && Date.now() > scannerCooldownUntil) {
+          handleScanResult(code.data);
+        }
+      }
+      scannerRAF = requestAnimationFrame(scanLoop);
+    }
+
+    async function handleScanResult(data) {
+      scannerCooldownUntil = Date.now() + 1500;
+      const flash = $('#scan-flash');
+      const status = $('#scan-status');
+      if (navigator.vibrate) navigator.vibrate(60);
+      if (flash) { flash.classList.add('hit'); setTimeout(() => flash.classList.remove('hit'), 220); }
+      if (status) status.textContent = 'Processando…';
+      try {
+        const res = await api.post('/api/admin/scan-qr', { qrToken: data });
+        toast.show(res.message || 'Selo adicionado!');
+        if (status) status.textContent = 'Selo adicionado! Pronto para o próximo cliente.';
+        loadAdminClients();
+      } catch (e) {
+        toast.show(e.message, 'error');
+        if (status) status.textContent = 'Procurando QR Code…';
+      }
+    }
+
+    window.startScanner = startScanner;
+    window.stopScanner = stopScanner;
+
     window.sendNotif = async () => {
       const title = $('#notif-title').value.trim();
       const message = $('#notif-msg').value.trim();
-      const userId = $('#notif-user').value.trim();
       if (!title || !message) return toast.show('Preencha título e mensagem.', 'error');
+      if (notifAudience === 'one' && !notifSelectedClient) {
+        return toast.show('Escolha um cliente ou mude para "Todos os clientes".', 'error');
+      }
       try {
-        await api.post('/api/admin/notifications', { title, message, userId: userId || null });
-        toast.show('Aviso enviado com sucesso.');
-        $('#notif-title').value = ''; $('#notif-msg').value = ''; $('#notif-user').value = '';
+        const userId = notifAudience === 'one' ? notifSelectedClient.id : null;
+        const data = await api.post('/api/admin/notifications', { title, message, userId });
+        const pushInfo = data.push && data.push.sent ? ` (${data.push.sent} celular${data.push.sent > 1 ? 'es' : ''} notificado${data.push.sent > 1 ? 's' : ''})` : '';
+        toast.show('Aviso enviado com sucesso.' + pushInfo);
+        $('#notif-title').value = ''; $('#notif-msg').value = ''; $('#notif-msg-count').textContent = '0';
+        clearNotifClient();
+        setAudience('all');
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
@@ -919,16 +1179,25 @@
           box.innerHTML = `<div class="empty-state"><p>Nenhuma avaliação recebida ainda.</p></div>`;
           return;
         }
+        const miniStars = (val) => [1,2,3,4,5].map(i => `<span style="color:${i <= val ? 'var(--gold-600)' : 'var(--line)'}"><svg class="icon" style="width:12px;height:12px;${i <= val ? 'fill:currentColor' : ''}"><use href="#i-star"/></svg></span>`).join('');
+        const scoreColor = (avg) => avg >= 4 ? 'var(--husk-700)' : avg >= 3 ? 'var(--gold-700)' : 'var(--error)';
+
         box.innerHTML = data.feedbacks.map(f => `
-          <div class="client-row">
-            <div class="top">
-              <div>
+          <div class="fb-card">
+            <div class="fb-card-head">
+              <div class="fb-avatar">${(f.userId?.fullName || '?').trim().charAt(0).toUpperCase()}</div>
+              <div style="flex:1">
                 <div class="name">${f.userId?.fullName || 'Cliente'}</div>
-                <div class="text-xs muted mt-1">${formatDate(f.createdAt)}</div>
+                <div class="text-xs muted">${formatDate(f.createdAt)}</div>
               </div>
-              <div style="display:flex; gap:2px">${[1,2,3,4,5].map(i => `<span style="color:${i <= f.rating ? 'var(--gold-600)' : 'var(--line)'}"><svg class="icon icon-sm" style="${i <= f.rating ? 'fill:currentColor' : ''}"><use href="#i-star"/></svg></span>`).join('')}</div>
+              <div class="fb-avg" style="color:${scoreColor(f.average || 0)}">${(f.average ?? '-')}</div>
             </div>
-            ${f.comment ? `<p class="text-sm mt-1" style="color:var(--ink-soft)">"${f.comment}"</p>` : ''}
+            <div class="fb-breakdown">
+              <div class="fb-line"><span>Experiência</span>${miniStars(f.experienceRating)}</div>
+              <div class="fb-line"><span>Sabor</span>${miniStars(f.tasteRating)}</div>
+              <div class="fb-line"><span>Atendimento</span>${miniStars(f.serviceRating)}</div>
+            </div>
+            ${f.comment ? `<p class="fb-comment">"${f.comment}"</p>` : ''}
             <button class="link-btn mt-1" style="color:var(--error)" onclick="deleteFeedback('${f._id}')">${icon('trash', 'icon icon-sm')} Excluir avaliação</button>
           </div>
         `).join('');
@@ -956,8 +1225,112 @@
       }
     }
 
+    // -- Notificações push reais (Web Push) --
+    let swRegistration = null;
+
+    function pushSupported() {
+      return 'serviceWorker' in navigator && 'PushManager' in window;
+    }
+
+    async function registerServiceWorker() {
+      if (!pushSupported()) return null;
+      try {
+        swRegistration = await navigator.serviceWorker.register('/sw.js');
+        return swRegistration;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+    }
+
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+    async function refreshPushUi() {
+      const desc = $('#push-desc');
+      const btn = $('#push-btn');
+      if (!desc || !btn) return;
+
+      if (!pushSupported()) {
+        desc.textContent = 'Este navegador não suporta notificações. Tente pelo Chrome (Android) ou Safari (iPhone, após adicionar à tela de início).';
+        btn.classList.add('hidden');
+        return;
+      }
+      if (isIos && !isStandalone) {
+        desc.textContent = 'No iPhone: toque em Compartilhar → "Adicionar à Tela de Início" e abra o app por lá para poder ativar as notificações.';
+        btn.classList.add('hidden');
+        return;
+      }
+
+      btn.classList.remove('hidden');
+      const reg = swRegistration || (await registerServiceWorker());
+      const sub = reg ? await reg.pushManager.getSubscription() : null;
+
+      if (sub) {
+        desc.textContent = 'Ativadas neste celular. Você vai receber os avisos da Pamonha Net mesmo com o app fechado.';
+        btn.textContent = 'Desativar notificações';
+        btn.classList.remove('btn-secondary'); btn.classList.add('btn-outline');
+      } else {
+        desc.textContent = 'Ative para receber avisos da Pamonha Net direto no seu celular, mesmo com o app fechado.';
+        btn.textContent = 'Ativar notificações';
+        btn.classList.remove('btn-outline'); btn.classList.add('btn-secondary');
+      }
+    }
+
+    window.togglePush = async () => {
+      const btn = $('#push-btn');
+      const reg = swRegistration || (await registerServiceWorker());
+      if (!reg) return toast.show('Não foi possível preparar as notificações neste navegador.', 'error');
+
+      const existing = await reg.pushManager.getSubscription();
+      if (existing) {
+        try {
+          await api.req('DELETE', '/api/client/push-subscribe', { endpoint: existing.endpoint });
+          await existing.unsubscribe();
+          toast.show('Notificações desativadas neste celular.');
+        } catch (e) { toast.show('Erro ao desativar.', 'error'); }
+        return refreshPushUi();
+      }
+
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          toast.show('Permissão de notificação negada.', 'error');
+          return;
+        }
+        const { publicKey } = await api.get('/api/push/vapid-public-key');
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+        await api.post('/api/client/push-subscribe', {
+          endpoint: sub.endpoint,
+          keys: { p256dh: arrayBufferToBase64Url(sub.getKey('p256dh')), auth: arrayBufferToBase64Url(sub.getKey('auth')) },
+          userAgent: navigator.userAgent,
+        });
+        toast.show('Notificações ativadas neste celular!');
+      } catch (e) {
+        toast.show('Não foi possível ativar. Tente novamente.', 'error');
+      }
+      refreshPushUi();
+    };
+
+    function arrayBufferToBase64Url(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      bytes.forEach((b) => { binary += String.fromCharCode(b); });
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
     async function init() {
       updateNav();
+      registerServiceWorker();
       if (api.token) {
         try {
           const data = await api.get('/api/auth/me');

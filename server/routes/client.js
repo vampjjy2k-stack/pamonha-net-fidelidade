@@ -7,6 +7,7 @@ const User = require('../models/User');
 const StampHistory = require('../models/StampHistory');
 const Notification = require('../models/Notification');
 const Feedback = require('../models/Feedback');
+const PushSubscription = require('../models/PushSubscription');
 const auth = require('../middleware/auth');
 const { generateQrToken, generateQrImage, QR_TOKEN_TTL_SECONDS } = require('./qr');
 
@@ -91,21 +92,56 @@ router.put('/notifications/:id/read', async (req, res) => {
 });
 
 // FEEDBACK
-// POST /api/client/feedback
+// POST /api/client/feedback { experienceRating, tasteRating, serviceRating, comment }
 router.post('/feedback', async (req, res) => {
   try {
-    const { rating, comment } = req.body;
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ error: 'Informe uma nota de 1 a 5 estrelas.' });
+    const { experienceRating, tasteRating, serviceRating, comment } = req.body;
+    const notes = { experienceRating, tasteRating, serviceRating };
+    for (const [key, val] of Object.entries(notes)) {
+      if (!val || val < 1 || val > 5) {
+        return res.status(400).json({ error: 'Responda as 3 perguntas com uma nota de 1 a 5.' });
+      }
     }
     const fb = await Feedback.create({
       userId: req.user.id,
-      rating,
+      experienceRating,
+      tasteRating,
+      serviceRating,
       comment: (comment || '').trim(),
     });
     res.status(201).json({ feedback: fb });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao enviar avaliação.' });
+  }
+});
+
+// PUSH NOTIFICATIONS (Web Push)
+// POST /api/client/push-subscribe — registra este dispositivo para receber notificações reais
+router.post('/push-subscribe', async (req, res) => {
+  try {
+    const { endpoint, keys, userAgent } = req.body;
+    if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+      return res.status(400).json({ error: 'Inscrição de notificação inválida.' });
+    }
+    await PushSubscription.findOneAndUpdate(
+      { endpoint },
+      { userId: req.user.id, endpoint, keys, userAgent: (userAgent || '').slice(0, 300) },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível ativar as notificações neste dispositivo.' });
+  }
+});
+
+// DELETE /api/client/push-subscribe — desativa notificações neste dispositivo
+router.delete('/push-subscribe', async (req, res) => {
+  try {
+    const { endpoint } = req.body;
+    if (endpoint) await PushSubscription.deleteOne({ endpoint, userId: req.user.id });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao desativar notificações.' });
   }
 });
 
