@@ -27,17 +27,11 @@ mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pamonha_net?retryWrites=tr
 
 Não envie essa URI em mensagens públicas, commits ou screenshots.
 
-## 2. Criar o repositório no GitHub
+## 2. Repositório no GitHub
 
-A conta GitHub conectada nesta sessão não tem permissão para criar repositórios automaticamente. Faça assim:
+O repositório `vampjjy2k-stack/pamonha-net-fidelidade` já existe e contém a versão atual do projeto.
 
-1. Acesse <https://github.com/new>.
-2. Nome: `pamonha-net-fidelidade`.
-3. Escolha **Private**.
-4. Não marque as opções de README, `.gitignore` ou licença, pois o projeto já possui esses arquivos.
-5. Clique em **Create repository**.
-6. Na página seguinte, copie a URL HTTPS do repositório.
-7. Envie o conteúdo da pasta do projeto, mantendo esta estrutura:
+O projeto publicado mantém esta estrutura:
 
 ```text
 client/
@@ -46,14 +40,7 @@ README.md
 .gitignore
 ```
 
-Se usar o GitHub Desktop, escolha **Add existing repository** e selecione a pasta do projeto. Depois clique em **Publish repository**.
-
-Se preferir o terminal, dentro da pasta do projeto execute:
-
-```bash
-git remote add origin https://github.com/SEU_USUARIO/pamonha-net-fidelidade.git
-git push -u origin main
-```
+Não coloque arquivos `.env` nem senhas no GitHub.
 
 ## 3. Criar o serviço no Render
 
@@ -88,13 +75,19 @@ O servidor já usa a porta fornecida pelo Render. Depois que o primeiro deploy t
 
 ## 3.1 Ativar as notificações push (avisos no celular do cliente)
 
-O sistema já vem com um par de chaves prontas em `server/.env.example` (`VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`). Basta copiá-las também como variáveis de ambiente no Render, junto das outras:
+As notificações push são opcionais. Para ativá-las, gere um par de chaves no computador com:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+O comando mostra uma **Public Key** e uma **Private Key**. Copie cada uma para a variável correspondente no Render. A chave privada deve ficar somente no Render, nunca no GitHub.
 
 | Nome | Valor |
 |---|---|
-| `VAPID_PUBLIC_KEY` | copie de `server/.env.example` |
-| `VAPID_PRIVATE_KEY` | copie de `server/.env.example` |
-| `VAPID_SUBJECT` | `mailto:seuemail@pamonhanet.com.br` |
+| `VAPID_PUBLIC_KEY` | a Public Key gerada |
+| `VAPID_PRIVATE_KEY` | a Private Key gerada |
+| `VAPID_SUBJECT` | seu e-mail, no formato `mailto:voce@exemplo.com` |
 
 Sem essas três variáveis, o app funciona normalmente — só que os avisos aparecem apenas dentro da aba "Avisos", sem chegar como notificação no celular.
 
