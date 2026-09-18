@@ -4,6 +4,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
@@ -36,8 +37,11 @@ function toPublicUser(user) {
     id: user._id,
     fullName: user.fullName,
     phone: user.phone,
+    email: user.email || '',
     role: user.role,
     stamps: user.stamps,
+    completedCards: user.completedCards || 0,
+    lastStampAt: user.lastStampAt || null,
     createdAt: user.createdAt,
   };
 }
@@ -45,13 +49,16 @@ function toPublicUser(user) {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { fullName, phone, password } = req.body;
+    const { fullName, email, phone, password } = req.body;
 
-    if (!fullName || !phone || !password) {
-      return res.status(400).json({ error: 'Preencha nome, telefone e senha.' });
+    if (!fullName || !email || !phone || !password) {
+      return res.status(400).json({ error: 'Preencha nome, e-mail, telefone e senha.' });
     }
     if (fullName.trim().length < 3) {
       return res.status(400).json({ error: 'Informe seu nome completo.' });
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      return res.status(400).json({ error: 'Informe um e-mail válido.' });
     }
     if (!isValidBrazilianPhone(phone)) {
       return res.status(400).json({ error: 'Informe um telefone válido com DDD, ex: (21) 91234-5678.' });
@@ -61,16 +68,18 @@ router.post('/register', async (req, res) => {
     }
 
     const normalizedPhone = normalizePhone(phone);
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const existing = await User.findOne({ phone: normalizedPhone });
+    const existing = await User.findOne({ $or: [{ phone: normalizedPhone }, { email: normalizedEmail }] });
     if (existing) {
-      return res.status(409).json({ error: 'Este telefone já está cadastrado. Faça login.' });
+      return res.status(409).json({ error: existing.email === normalizedEmail ? 'Este e-mail já está cadastrado.' : 'Este telefone já está cadastrado. Faça login.' });
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     const user = await User.create({
       fullName: fullName.trim(),
+      email: normalizedEmail,
       phone: normalizedPhone,
       password: passwordHash,
       role: 'client',
@@ -90,20 +99,22 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { phone, password } = req.body;
-    if (!phone || !password) {
-      return res.status(400).json({ error: 'Informe telefone e senha.' });
+    const { identifier, phone, email, password } = req.body;
+    const loginValue = (identifier || email || phone || '').trim();
+    if (!loginValue || !password) {
+      return res.status(400).json({ error: 'Informe e-mail ou telefone e sua senha.' });
     }
 
-    const normalizedPhone = normalizePhone(phone);
-    const user = await User.findOne({ phone: normalizedPhone });
+    const isEmail = loginValue.includes('@');
+    const query = isEmail ? { email: loginValue.toLowerCase() } : { phone: normalizePhone(loginValue) };
+    const user = await User.findOne(query);
     if (!user) {
-      return res.status(401).json({ error: 'Telefone ou senha incorretos.' });
+      return res.status(401).json({ error: 'E-mail/telefone ou senha incorretos.' });
     }
 
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) {
-      return res.status(401).json({ error: 'Telefone ou senha incorretos.' });
+      return res.status(401).json({ error: 'E-mail/telefone ou senha incorretos.' });
     }
 
     const token = signToken(user);
@@ -131,7 +142,7 @@ router.get('/me', auth, async (req, res) => {
 // PUT /api/auth/profile — Atualização de dados do cliente (nome, telefone, senha)
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { fullName, phone, password } = req.body;
+    const { fullName, email, phone, password } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
@@ -140,6 +151,14 @@ router.put('/profile', auth, async (req, res) => {
         return res.status(400).json({ error: 'Nome precisa ter pelo menos 3 caracteres.' });
       }
       user.fullName = fullName.trim();
+    }
+
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) return res.status(400).json({ error: 'E-mail inválido.' });
+      const existingEmail = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+      if (existingEmail) return res.status(409).json({ error: 'E-mail já cadastrado por outro usuário.' });
+      user.email = normalizedEmail;
     }
 
     if (phone) {
@@ -167,6 +186,49 @@ router.put('/profile', auth, async (req, res) => {
     console.error('Erro ao atualizar perfil:', err);
     res.status(500).json({ error: 'Não foi possível atualizar o perfil.' });
   }
+});
+
+
+// POST /api/auth/forgot-password — cria um token de recuperação.
+// O envio por e-mail é deixado para o provedor de e-mail configurado no ambiente.
+router.post('/forgot-password', async (req, res) => {
+  const email = (req.body.email || '').trim().toLowerCase();
+  const generic = { message: 'Se este e-mail estiver cadastrado, você receberá instruções para recuperar a conta.' };
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.json(generic);
+  const user = await User.findOne({ email }).select('+resetTokenHash +resetTokenExpiresAt');
+  if (!user) return res.json(generic);
+  const rawToken = crypto.randomBytes(32).toString('hex');
+  user.resetTokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+  user.resetTokenExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  await user.save();
+  // Em produção, conectar este token a um provedor de e-mail (SMTP/Resend).
+  console.info(`Token de recuperação criado para ${email}. Configure o provedor de e-mail para enviá-lo.`);
+  if (process.env.NODE_ENV !== 'production') console.info(`RESET_TOKEN=${rawToken}`);
+  res.json(generic);
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password || password.length < 6) return res.status(400).json({ error: 'Token e senha válida são obrigatórios.' });
+  const hash = crypto.createHash('sha256').update(token).digest('hex');
+  const user = await User.findOne({ resetTokenHash: hash, resetTokenExpiresAt: { $gt: new Date() } }).select('+resetTokenHash +resetTokenExpiresAt');
+  if (!user) return res.status(400).json({ error: 'Link de recuperação inválido ou expirado.' });
+  user.password = await bcrypt.hash(password, SALT_ROUNDS);
+  user.resetTokenHash = null;
+  user.resetTokenExpiresAt = null;
+  await user.save();
+  res.json({ message: 'Senha alterada. Você já pode entrar.' });
+});
+
+// DELETE /api/auth/account — confirmação dupla no cliente e senha no servidor.
+router.delete('/account', auth, async (req, res) => {
+  const { confirmation, password } = req.body;
+  if (confirmation !== 'EXCLUIR MINHA CONTA' || !password) return res.status(400).json({ error: 'Digite a confirmação e sua senha.' });
+  const user = await User.findById(req.user.id);
+  if (!user || !(await bcrypt.compare(password, user.password))) return res.status(401).json({ error: 'Senha incorreta.' });
+  await User.deleteOne({ _id: user._id });
+  res.json({ message: 'Conta excluída.' });
 });
 
 module.exports = router;

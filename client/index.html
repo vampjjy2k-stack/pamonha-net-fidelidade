@@ -466,6 +466,9 @@
       <button class="nav-item" data-page="notifications" onclick="router.go('notifications')">
         <svg class="icon"><use href="#i-bell"/></svg><span>Avisos</span>
       </button>
+      <button class="nav-item" data-page="ranking" onclick="router.go('ranking')">
+        <svg class="icon"><use href="#i-trophy"/></svg><span>Ranking</span>
+      </button>
       <button class="nav-item" data-page="feedback" onclick="router.go('feedback')">
         <svg class="icon"><use href="#i-star"/></svg><span>Avaliar</span>
       </button>
@@ -534,7 +537,7 @@
       get(endpoint) { return this.req('GET', endpoint); },
       post(endpoint, body) { return this.req('POST', endpoint, body); },
       put(endpoint, body) { return this.req('PUT', endpoint, body); },
-      del(endpoint) { return this.req('DELETE', endpoint); }
+      del(endpoint, body) { return this.req('DELETE', endpoint, body); }
     };
 
     const router = {
@@ -566,25 +569,25 @@
           <h1>Pamonha Net</h1>
           <p class="sub">Entre para ver seu cartão e seus selos</p>
           <div class="surface auth-card">
-            <div class="mb-1"><label class="label">Telefone</label>
-              <input class="input" id="login-phone" placeholder="(21) 91234-5678" type="tel" inputmode="tel" />
+            <div class="mb-1"><label class="label">E-mail ou telefone</label>
+              <input class="input" id="login-identifier" placeholder="voce@email.com ou (21) 91234-5678" />
             </div>
             <div class="mb-2"><label class="label">Senha</label>
               <input class="input" id="login-pass" placeholder="Mínimo 6 caracteres" type="password" />
             </div>
             <button class="btn btn-primary" id="btn-login">Entrar</button>
           </div>
-          <div class="switch-link">Ainda não tem cartão? <button onclick="router.go('register')">Criar conta</button></div>
+          <div class="switch-link"><button onclick="router.go('forgot-password')">Esqueci minha senha</button></div><div class="switch-link">Ainda não tem cartão? <button onclick="router.go('register')">Criar conta</button></div>
         </div>
       `;
-      $('#login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-pass').focus(); });
+      $('#login-identifier').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-pass').focus(); });
       $('#login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btn-login').click(); });
       $('#btn-login').onclick = async () => {
-        const phone = $('#login-phone').value.trim();
+        const identifier = $('#login-identifier').value.trim();
         const pass = $('#login-pass').value;
-        if (!phone || !pass) return toast.show('Preencha telefone e senha.', 'error');
+        if (!identifier || !pass) return toast.show('Preencha e-mail/telefone e senha.', 'error');
         try {
-          const data = await api.post('/api/auth/login', { phone, password: pass });
+          const data = await api.post('/api/auth/login', { identifier, password: pass });
           api.setAuth(data.token, data.user);
           toast.show('Bem-vindo de volta, ' + data.user.fullName.split(' ')[0] + '!');
           updateNav();
@@ -603,6 +606,9 @@
             <div class="mb-1"><label class="label">Nome completo</label>
               <input class="input" id="reg-name" placeholder="Seu nome" />
             </div>
+            <div class="mb-1"><label class="label">E-mail</label>
+              <input class="input" id="reg-email" placeholder="voce@email.com" type="email" inputmode="email" />
+            </div>
             <div class="mb-1"><label class="label">Telefone</label>
               <input class="input" id="reg-phone" placeholder="(21) 91234-5678" type="tel" inputmode="tel" />
             </div>
@@ -616,11 +622,12 @@
       `;
       $('#btn-reg').onclick = async () => {
         const fullName = $('#reg-name').value.trim();
+        const email = $('#reg-email').value.trim();
         const phone = $('#reg-phone').value.trim();
         const password = $('#reg-pass').value;
-        if (!fullName || !phone || !password) return toast.show('Preencha todos os campos.', 'error');
+        if (!fullName || !email || !phone || !password) return toast.show('Preencha todos os campos.', 'error');
         try {
-          const data = await api.post('/api/auth/register', { fullName, phone, password });
+          const data = await api.post('/api/auth/register', { fullName, email, phone, password });
           api.setAuth(data.token, data.user);
           toast.show('Conta criada! Seu cartão já está pronto.');
           updateNav();
@@ -629,13 +636,33 @@
       };
     });
 
+    router.register('forgot-password', (container) => {
+      container.innerHTML = `
+        <div class="page auth-wrap">
+          <svg class="auth-seal" viewBox="0 0 48 48"><use href="#i-seal"/></svg>
+          <h1>Recuperar conta</h1>
+          <p class="sub">Informe o e-mail usado no cadastro.</p>
+          <div class="surface auth-card">
+            <label class="label">E-mail</label>
+            <input class="input mb-1" id="forgot-email" type="email" placeholder="voce@email.com" />
+            <button class="btn btn-primary" id="btn-forgot">Enviar instruções</button>
+          </div>
+          <div class="switch-link"><button onclick="router.go('login')">Voltar para entrar</button></div>
+        </div>`;
+      $('#btn-forgot').onclick = async () => {
+        const email = $('#forgot-email').value.trim();
+        if (!email) return toast.show('Informe seu e-mail.', 'error');
+        try { const data = await api.post('/api/auth/forgot-password', { email }); toast.show(data.message); }
+        catch (e) { toast.show(e.message, 'error'); }
+      };
+    });
     router.register('card', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
         <div class="page">
           <div class="text-center mt-1 mb-1">
             <h2 style="font-family:var(--font-display); font-weight:600; font-size:1.2rem; color:var(--husk-900)">Olá, <span id="card-name">...</span></h2>
-            <p class="text-sm muted">A cada compra, um selo mais perto do prêmio</p>
+            <p class="text-sm muted">A cada compra, um selo mais perto do prêmio</p><p class="text-xs muted" id="completed-count"></p>
           </div>
           <div class="ticket-card">
             <div class="ticket-label">${icon('kernel')} Cartão Pamonha Net</div>
@@ -650,10 +677,11 @@
           </div>
           <button class="btn btn-primary mt-2" id="btn-qr" onclick="generateQr()">${icon('qr', 'icon icon-sm')} Gerar QR Code</button>
 
+          <button class="btn btn-secondary mt-1" onclick="shareMyCard()">Compartilhar meu cartão</button>
           <button class="rate-cta mt-2" onclick="router.go('feedback')">
             <span class="rate-cta-icon">${icon('star', 'icon')}</span>
             <span class="rate-cta-text">
-              <strong>Como foi sua pamonha?</strong>
+              <strong>Como foi sua experiência?</strong>
               <span>Avalie em 10 segundos</span>
             </span>
             <span class="rate-cta-arrow">${icon('send', 'icon icon-sm')}</span>
@@ -673,6 +701,7 @@
         const data = await api.get('/api/client/dashboard');
         $('#card-name').textContent = data.fullName.split(' ')[0];
         renderStamps(data.stamps);
+        if ($('#completed-count')) $('#completed-count').textContent = `${data.completedCards || 0} cartão${(data.completedCards || 0) === 1 ? '' : 'ões'} concluído${(data.completedCards || 0) === 1 ? '' : 's'}`;
         const status = $('#card-status');
         if (data.stamps >= 10) {
           status.classList.add('complete');
@@ -712,6 +741,32 @@
       }
     }
 
+    async function shareMyCard() {
+      try {
+        const data = await api.get('/api/client/dashboard');
+        const canvas = document.createElement('canvas'); canvas.width = 1200; canvas.height = 760;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#F7D65A'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#FFFBEF'; ctx.roundRect(55, 55, 1090, 650, 28, 28); ctx.fill();
+        ctx.fillStyle = '#3E5A2C'; ctx.font = '700 54px Work Sans, sans-serif'; ctx.fillText('P@MONHA NET FIEL', 105, 145);
+        ctx.font = '500 34px Work Sans, sans-serif'; ctx.fillText(data.fullName, 105, 205);
+        ctx.font = '600 30px Work Sans, sans-serif'; ctx.fillText(`${data.stamps}/10 selos`, 105, 260);
+        for (let i = 0; i < 10; i++) {
+          const x = 125 + (i % 5) * 180, y = 355 + Math.floor(i / 5) * 155;
+          ctx.beginPath(); ctx.arc(x, y, 52, 0, Math.PI * 2); ctx.fillStyle = i < data.stamps ? '#4F7238' : '#FFFBEF'; ctx.fill();
+          ctx.lineWidth = 5; ctx.strokeStyle = '#4F7238'; ctx.stroke();
+          if (i < data.stamps) { ctx.fillStyle = '#FFE38A'; ctx.font = '700 36px sans-serif'; ctx.fillText('✓', x - 13, y + 13); }
+        }
+        ctx.fillStyle = '#3E5A2C'; ctx.font = '600 28px Work Sans, sans-serif'; ctx.fillText('Compre 10 produtos, ganhe 1 produto grátis.', 105, 665);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        const file = new File([blob], 'cartao-pamonha-net.png', { type: 'image/png' });
+        const text = data.stamps >= 10 ? 'Meu cartão está completo! Fale com a Pamonha Net para resgatar seu prêmio.' : `Já tenho ${data.stamps} de 10 selos na Pamonha Net!`;
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ title: 'Meu cartão Pamonha Net', text, files: [file] });
+        else if (navigator.share) await navigator.share({ title: 'Meu cartão Pamonha Net', text });
+        else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = file.name; a.click(); URL.revokeObjectURL(url); toast.show('Imagem salva para você compartilhar.'); }
+      } catch (e) { if (e.name !== 'AbortError') toast.show('Não foi possível compartilhar agora.', 'error'); }
+    }
+
     async function generateQr() {
       try {
         $('#btn-qr').classList.add('hidden');
@@ -740,6 +795,15 @@
       setTimeout(() => el.remove(), 3000);
     }
 
+    router.register('ranking', (container) => {
+      if (!api.token) return router.go('login');
+      container.innerHTML = `<div class="page"><h2 class="page-title">Ranking de cartões</h2><div class="surface"><p class="text-sm muted mb-1">Quem mais completou cartões Pamonha Net.</p><div id="ranking-list"><div class="empty-state">Carregando ranking…</div></div></div></div>`;
+      api.get('/api/client/ranking').then(({ ranking }) => {
+        const box = $('#ranking-list');
+        if (!ranking.length) { box.innerHTML = '<div class="empty-state">Ainda não há cartões concluídos.</div>'; return; }
+        box.innerHTML = ranking.map(item => `<div class="client-row" style="display:flex;justify-content:space-between;align-items:center"><span><strong>${item.position}º</strong> ${item.name}</span><strong>${item.completedCards} cartão${item.completedCards === 1 ? '' : 'ões'}</strong></div>`).join('');
+      }).catch(e => toast.show(e.message, 'error'));
+    });
     router.register('notifications', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
@@ -835,6 +899,9 @@
             <div class="mb-1"><label class="label">Nome completo</label>
               <input class="input" id="prof-name" />
             </div>
+            <div class="mb-1"><label class="label">E-mail</label>
+              <input class="input" id="prof-email" type="email" inputmode="email" />
+            </div>
             <div class="mb-1"><label class="label">Telefone</label>
               <input class="input" id="prof-phone" type="tel" inputmode="tel" />
             </div>
@@ -843,6 +910,7 @@
             </div>
             <button class="btn btn-primary" onclick="saveProfile()">${icon('save', 'icon icon-sm')} Salvar alterações</button>
             <button class="btn btn-outline mt-1" onclick="logout()">${icon('logout', 'icon icon-sm')} Sair da conta</button>
+            <button class="btn btn-danger mt-1" onclick="deleteAccount()">Excluir minha conta</button>
           </div>
           <div class="surface" id="push-card">
             <h3 class="surface-title">${icon('bell', 'icon icon-sm')} Notificações no celular</h3>
@@ -852,6 +920,7 @@
         </div>
       `;
       $('#prof-name').value = api.user?.fullName || '';
+      $('#prof-email').value = api.user?.email || '';
       $('#prof-phone').value = api.user?.phone ? formatPhone(api.user.phone) : '';
       refreshPushUi();
     });
@@ -859,9 +928,11 @@
     window.saveProfile = async () => {
       const body = {};
       const name = $('#prof-name').value.trim();
+      const email = $('#prof-email').value.trim();
       const phone = $('#prof-phone').value.trim();
       const pass = $('#prof-pass').value;
       if (name) body.fullName = name;
+      if (email) body.email = email;
       if (phone) body.phone = phone;
       if (pass) body.password = pass;
       try {
@@ -870,13 +941,20 @@
         toast.show('Perfil atualizado.');
       } catch (e) { toast.show(e.message, 'error'); }
     };
+    window.deleteAccount = async () => {
+      const confirmation = prompt('Para confirmar, digite: EXCLUIR MINHA CONTA');
+      if (confirmation !== 'EXCLUIR MINHA CONTA') return toast.show('Exclusão cancelada.');
+      const password = prompt('Digite sua senha para confirmar:');
+      if (!password) return;
+      try { await api.del('/api/auth/account', { confirmation, password }); api.clearAuth(); updateNav(); router.go('login'); toast.show('Conta excluída.'); } catch (e) { toast.show(e.message, 'error'); }
+    };
     window.logout = () => { api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo!'); };
 
     router.register('admin', (container) => {
       if (!api.token || api.user?.role !== 'admin') return router.go('card');
       container.innerHTML = `
         <div class="page">
-          <h2 class="page-title">${icon('shield')} Painel do administrador</h2>
+          <h2 class="page-title">${icon('shield')} Painel do administrador</h2><button class="btn btn-outline mb-1" onclick="resetRanking()">Reiniciar ranking</button>
 
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
@@ -950,6 +1028,16 @@
     });
 
     let adminClientCache = [];
+    function inactivityLabel(lastStampAt) {
+      if (!lastStampAt) return 'ainda sem carimbo';
+      const weeks = Math.floor((Date.now() - new Date(lastStampAt).getTime()) / (7 * 24 * 60 * 60 * 1000));
+      return weeks > 0 ? `${weeks} semana${weeks === 1 ? '' : 's'} sem carimbar` : 'carimbado nesta semana';
+    }
+    window.resetRanking = async () => {
+      if (!confirm('Zerar a pontuação de cartões concluídos de todos os clientes?')) return;
+      try { await api.post('/api/admin/ranking/reset'); toast.show('Ranking reiniciado.'); loadAdminClients(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
     async function loadAdminClients() {
       try {
         const data = await api.get('/api/admin/clients?limit=50');
@@ -966,7 +1054,7 @@
           <div class="top">
             <div>
               <div class="name">${c.fullName}</div>
-              <div class="phone">${formatPhone(c.phone)}</div>
+              <div class="phone">${formatPhone(c.phone)} · ${inactivityLabel(c.lastStampAt)}</div>
             </div>
             <div class="count">${c.stamps}/10</div>
           </div>

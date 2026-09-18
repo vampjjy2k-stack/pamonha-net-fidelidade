@@ -40,7 +40,7 @@ router.get('/clients', async (req, res) => {
 
     const [clients, total] = await Promise.all([
       User.find(query)
-        .select('fullName phone stamps createdAt')
+        .select('fullName phone stamps completedCards lastStampAt createdAt')
         .sort(sortOption)
         .skip((pageNum - 1) * limitNum)
         .limit(limitNum),
@@ -89,6 +89,8 @@ router.post('/clients/:id/stamps', async (req, res) => {
         return res.status(400).json({ error: 'O cartão deste cliente já está completo (10/10).' });
       }
       client.stamps += 1;
+      client.lastStampAt = new Date();
+      if (client.stamps === 10) client.completedCards = (client.completedCards || 0) + 1;
     } else {
       if (client.stamps <= 0) {
         return res.status(400).json({ error: 'Este cliente não possui carimbos para remover.' });
@@ -163,6 +165,8 @@ router.post('/scan-qr', async (req, res) => {
     }
 
     client.stamps += 1;
+    client.lastStampAt = new Date();
+    if (client.stamps === 10) client.completedCards = (client.completedCards || 0) + 1;
     await client.save();
     await StampHistory.create({
       userId: client._id,
@@ -259,6 +263,17 @@ router.delete('/feedbacks/:id', async (req, res) => {
     res.json({ message: 'Avaliação removida.' });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao remover avaliação.' });
+  }
+});
+
+
+// POST /api/admin/ranking/reset — reinicia apenas o placar acumulado.
+router.post('/ranking/reset', async (req, res) => {
+  try {
+    const result = await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } });
+    res.json({ message: 'Ranking reiniciado.', changed: result.modifiedCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível reiniciar o ranking.' });
   }
 });
 

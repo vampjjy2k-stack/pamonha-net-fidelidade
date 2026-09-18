@@ -145,4 +145,26 @@ router.delete('/push-subscribe', async (req, res) => {
   }
 });
 
+// GET /api/client/ranking — ranking acumulado de cartões concluídos.
+router.get('/ranking', async (req, res) => {
+  try {
+    const users = await User.find({ role: 'client' }).select('fullName completedCards');
+    const firstNames = new Map();
+    users.forEach((u) => {
+      const first = u.fullName.trim().split(/\s+/)[0];
+      firstNames.set(first, (firstNames.get(first) || 0) + 1);
+    });
+    const ranking = users
+      .sort((a, b) => (b.completedCards || 0) - (a.completedCards || 0) || a.fullName.localeCompare(b.fullName))
+      .map((u, index) => {
+        const parts = u.fullName.trim().split(/\s+/);
+        const name = firstNames.get(parts[0]) > 1 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0];
+        return { position: index + 1, name, completedCards: u.completedCards || 0 };
+      });
+    res.json({ ranking });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar o ranking.' });
+  }
+});
+
 module.exports = router;

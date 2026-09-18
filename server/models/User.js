@@ -11,7 +11,15 @@ const userSchema = new mongoose.Schema(
       trim: true,
       minlength: [3, 'O nome precisa ter pelo menos 3 caracteres.'],
     },
-    // Telefone é o identificador único de login (em vez de e-mail), no formato BR.
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      sparse: true,
+      unique: true,
+      match: [/^\S+@\S+\.\S+$/, 'Informe um e-mail válido.'],
+    },
+    // Telefone é um identificador de login, no formato BR.
     phone: {
       type: String,
       required: [true, 'O telefone é obrigatório.'],
@@ -35,6 +43,17 @@ const userSchema = new mongoose.Schema(
       min: 0,
       max: 10,
     },
+    completedCards: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastStampAt: {
+      type: Date,
+      default: null,
+    },
+    resetTokenHash: { type: String, default: null, select: false },
+    resetTokenExpiresAt: { type: Date, default: null, select: false },
   },
   {
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
