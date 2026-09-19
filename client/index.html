@@ -1032,6 +1032,7 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
+    const FEIRA_NOME = 'Feira da Figueira';
     const FEIRA_ENDERECO = 'Estr. Velha do Pilar, 408 - Chácaras Rio-Petrópolis, Duque de Caxias - RJ, 25230-610';
 
     router.register('ranking', (container) => {
@@ -1132,7 +1133,7 @@
             <h3 class="surface-title">${icon('search', 'icon icon-sm')} Onde nos encontrar</h3>
             <p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px">Feira</p>
             <a class="find-link" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(FEIRA_ENDERECO)}" target="_blank" rel="noopener">
-              ${icon('pin', 'icon icon-sm')} ${FEIRA_ENDERECO}
+              ${icon('pin', 'icon icon-sm')} ${FEIRA_NOME}
             </a>
             <p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px;margin-top:.9rem">Contato</p>
             <a class="find-link" href="https://instagram.com/pamonhanet" target="_blank" rel="noopener">${icon('camera','icon icon-sm')} @pamonhanet</a>
