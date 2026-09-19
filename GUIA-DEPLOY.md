@@ -88,13 +88,13 @@ O servidor já usa a porta fornecida pelo Render. Depois que o primeiro deploy t
 
 ## 3.1 Ativar as notificações push (avisos no celular do cliente)
 
-Gere um par próprio de chaves no seu computador com `npx web-push generate-vapid-keys`. A chave pública pode ser usada pelo navegador; a chave privada deve ficar somente nas variáveis de ambiente do Render e nunca deve entrar no GitHub:
+O sistema já vem com um par de chaves prontas em `server/.env.example` (`VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`). Basta copiá-las também como variáveis de ambiente no Render, junto das outras:
 
 | Nome | Valor |
 |---|---|
-| `VAPID_PUBLIC_KEY` | chave pública gerada pelo comando |
-| `VAPID_PRIVATE_KEY` | chave privada gerada pelo comando |
-| `VAPID_SUBJECT` | seu e-mail, no formato `mailto:voce@exemplo.com` |
+| `VAPID_PUBLIC_KEY` | copie de `server/.env.example` |
+| `VAPID_PRIVATE_KEY` | copie de `server/.env.example` |
+| `VAPID_SUBJECT` | `mailto:seuemail@pamonhanet.com.br` |
 
 Sem essas três variáveis, o app funciona normalmente — só que os avisos aparecem apenas dentro da aba "Avisos", sem chegar como notificação no celular.
 

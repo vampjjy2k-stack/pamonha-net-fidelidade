@@ -6,6 +6,7 @@ const express = require('express');
 const User = require('../models/User');
 const StampHistory = require('../models/StampHistory');
 const Notification = require('../models/Notification');
+const NotificationRead = require('../models/NotificationRead');
 const Feedback = require('../models/Feedback');
 const PushSubscription = require('../models/PushSubscription');
 const auth = require('../middleware/auth');
@@ -20,7 +21,11 @@ router.get('/dashboard', async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-    const history = await StampHistory.find({ userId: user._id }).sort({ createdAt: -1 }).limit(20);
+    // Só os últimos 10 selos do ciclo atual, e só adições — remoções feitas por engano pelo admin
+    // já cancelam a própria entrada (ver rota de admin), então não sobra rastro nenhum aqui.
+    const history = await StampHistory.find({ userId: user._id, action: 'add' })
+      .sort({ createdAt: -1 })
+      .limit(10);
 
     res.json({
       fullName: user.fullName,
@@ -103,31 +108,56 @@ router.get('/leaderboard', async (req, res) => {
 });
 
 // NOTIFICATIONS
-// GET /api/client/notifications
+// GET /api/client/notifications — ao carregar, já marca tudo como visto por ESTE cliente
+// (cada um tem seu próprio status; um aviso geral não vira "lido" pra todo mundo de uma vez).
 router.get('/notifications', async (req, res) => {
   try {
     const list = await Notification.find({
       $or: [{ userId: req.user.id }, { broadcast: true }],
-    }).sort({ createdAt: -1 });
-    res.json({ notifications: list });
+    }).sort({ createdAt: -1 }).limit(50);
+
+    const reads = await NotificationRead.find({
+      userId: req.user.id,
+      notificationId: { $in: list.map((n) => n._id) },
+    }).select('notificationId');
+    const readSet = new Set(reads.map((r) => String(r.notificationId)));
+
+    const unseen = list.filter((n) => !readSet.has(String(n._id)));
+    if (unseen.length) {
+      await NotificationRead.insertMany(
+        unseen.map((n) => ({ notificationId: n._id, userId: req.user.id })),
+        { ordered: false }
+      ).catch(() => {}); // corrida rara com índice único: ignora duplicata
+    }
+
+    const notifications = list.map((n) => ({
+      ...n.toObject(),
+      // Reflete o status ANTES desta visita: assim o cliente ainda vê "novo" nos avisos que
+      // acabou de abrir agora; na próxima vez que entrar, aí sim aparecem como lidos.
+      read: readSet.has(String(n._id)),
+    }));
+
+    res.json({ notifications });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao carregar notificações.' });
   }
 });
 
-// PUT /api/client/notifications/:id/read
-router.put('/notifications/:id/read', async (req, res) => {
+// GET /api/client/notifications/unread-count — pro sininho da barra inferior
+router.get('/notifications/unread-count', async (req, res) => {
   try {
-    const notif = await Notification.findById(req.params.id);
-    if (!notif) return res.status(404).json({ error: 'Notificação não encontrada.' });
-    if (!notif.broadcast && String(notif.userId) !== req.user.id) {
-      return res.status(403).json({ error: 'Acesso negado.' });
-    }
-    notif.read = true;
-    await notif.save();
-    res.json({ success: true });
+    const list = await Notification.find({
+      $or: [{ userId: req.user.id }, { broadcast: true }],
+    }).select('_id');
+    const reads = await NotificationRead.find({
+      userId: req.user.id,
+      notificationId: { $in: list.map((n) => n._id) },
+    }).select('notificationId');
+    const readIds = new Set(reads.map((r) => String(r.notificationId)));
+    const count = list.filter((n) => !readIds.has(String(n._id))).length;
+    res.json({ count });
   } catch (err) {
-    res.status(500).json({ error: 'Erro ao marcar notificação como lida.' });
+    res.status(500).json({ error: 'Erro ao contar notificações.' });
   }
 });
 

@@ -6,6 +6,7 @@ const express = require('express');
 const User = require('../models/User');
 const StampHistory = require('../models/StampHistory');
 const Notification = require('../models/Notification');
+const NotificationRead = require('../models/NotificationRead');
 const Feedback = require('../models/Feedback');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/admin');
@@ -103,20 +104,25 @@ router.post('/clients/:id/stamps', async (req, res) => {
       }
       client.stamps += 1;
       client.lastStampAt = new Date();
+      await client.save();
+      await StampHistory.create({
+        userId: client._id,
+        action: 'add',
+        adminId: req.user.id,
+        source: 'manual',
+      });
     } else {
       if (client.stamps <= 0) {
         return res.status(400).json({ error: 'Este cliente não possui carimbos para remover.' });
       }
       client.stamps -= 1;
+      await client.save();
+      // Correção de engano: em vez de registrar uma "remoção" (que apareceria pro cliente como um
+      // aviso estranho), apagamos o carimbo mais recente do histórico. Fica como se nunca tivesse
+      // acontecido — sem gerar susto ou notificação para o cliente.
+      const lastAdd = await StampHistory.findOne({ userId: client._id, action: 'add' }).sort({ createdAt: -1 });
+      if (lastAdd) await StampHistory.deleteOne({ _id: lastAdd._id });
     }
-
-    await client.save();
-    await StampHistory.create({
-      userId: client._id,
-      action,
-      adminId: req.user.id,
-      source: 'manual',
-    });
 
     res.json({ client });
   } catch (err) {
@@ -136,12 +142,8 @@ router.post('/clients/:id/reset', async (req, res) => {
     }
     client.stamps = 0;
     await client.save();
-    await StampHistory.create({
-      userId: client._id,
-      action: 'remove',
-      adminId: req.user.id,
-      source: 'redeem-reset',
-    });
+    // O histórico recente é por ciclo: ao resetar, limpa tudo para o próximo cartão começar do zero.
+    await StampHistory.deleteMany({ userId: client._id });
 
     res.json({ client });
   } catch (err) {
@@ -243,6 +245,30 @@ router.delete('/notifications/:id', async (req, res) => {
     res.json({ message: 'Notificação removida.' });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao remover notificação.' });
+  }
+});
+
+// GET /api/admin/notifications/:id/views — quem já visualizou este aviso (sem precisar "marcar como lida")
+router.get('/notifications/:id/views', async (req, res) => {
+  try {
+    const notif = await Notification.findById(req.params.id);
+    if (!notif) return res.status(404).json({ error: 'Notificação não encontrada.' });
+
+    const totalClients = notif.broadcast
+      ? await User.countDocuments({ role: 'client' })
+      : 1;
+
+    const reads = await NotificationRead.find({ notificationId: notif._id })
+      .populate('userId', 'fullName phone')
+      .sort({ viewedAt: -1 });
+
+    res.json({
+      totalRecipients: totalClients,
+      viewedCount: reads.length,
+      viewers: reads.map((r) => ({ fullName: r.userId?.fullName, phone: r.userId?.phone, viewedAt: r.viewedAt })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar as visualizações.' });
   }
 });
 
