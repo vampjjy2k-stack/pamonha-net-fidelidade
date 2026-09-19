@@ -38,14 +38,27 @@ router.get('/clients', async (req, res) => {
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
 
-    const [clients, total] = await Promise.all([
+    const [clientsRaw, total] = await Promise.all([
       User.find(query)
-        .select('fullName phone stamps createdAt')
+        .select('fullName phone email stamps completedCards lastStampAt createdAt')
         .sort(sortOption)
         .skip((pageNum - 1) * limitNum)
         .limit(limitNum),
       User.countDocuments(query),
     ]);
+
+    const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const clients = clientsRaw.map((c) => {
+      const referenceDate = c.lastStampAt || c.createdAt;
+      const weeksInactive = referenceDate
+        ? Math.floor((Date.now() - new Date(referenceDate).getTime()) / MS_PER_WEEK)
+        : null;
+      return {
+        ...c.toObject(),
+        weeksInactive,
+        isInactive: weeksInactive !== null && weeksInactive >= 2,
+      };
+    });
 
     res.json({
       clients,
@@ -89,6 +102,7 @@ router.post('/clients/:id/stamps', async (req, res) => {
         return res.status(400).json({ error: 'O cartão deste cliente já está completo (10/10).' });
       }
       client.stamps += 1;
+      client.lastStampAt = new Date();
     } else {
       if (client.stamps <= 0) {
         return res.status(400).json({ error: 'Este cliente não possui carimbos para remover.' });
@@ -116,6 +130,10 @@ router.post('/clients/:id/reset', async (req, res) => {
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
+    // Reset a partir de um cartão completo conta como 1 cartão fechado no ranking.
+    if (client.stamps >= 10) {
+      client.completedCards = (client.completedCards || 0) + 1;
+    }
     client.stamps = 0;
     await client.save();
     await StampHistory.create({
@@ -163,6 +181,7 @@ router.post('/scan-qr', async (req, res) => {
     }
 
     client.stamps += 1;
+    client.lastStampAt = new Date();
     await client.save();
     await StampHistory.create({
       userId: client._id,
@@ -238,6 +257,16 @@ router.delete('/notifications', async (req, res) => {
     res.json({ message: 'Notificações removidas com sucesso.' });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao limpar notificações.' });
+  }
+});
+
+// POST /api/admin/leaderboard/reset — zera a contagem de cartões completados de todos os clientes
+router.post('/leaderboard/reset', async (req, res) => {
+  try {
+    await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } });
+    res.json({ message: 'Ranking reiniciado com sucesso.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível reiniciar o ranking.' });
   }
 });
 

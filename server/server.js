@@ -18,6 +18,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// Necessário no Render/Heroku/etc para req.protocol refletir https corretamente atrás do proxy
+// (usado para montar os links de QR Code e de redefinição de senha).
+app.set('trust proxy', 1);
+
 // --- Validação de variáveis obrigatórias ---
 if (!MONGODB_URI) {
   console.error('❌ MONGODB_URI não definida. Configure o arquivo .env antes de iniciar o servidor.');

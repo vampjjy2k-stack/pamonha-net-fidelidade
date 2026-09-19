@@ -26,6 +26,8 @@ router.get('/dashboard', async (req, res) => {
       fullName: user.fullName,
       phone: user.phone,
       stamps: user.stamps,
+      completedCards: user.completedCards || 0,
+      lastStampAt: user.lastStampAt,
       history,
     });
   } catch (err) {
@@ -39,7 +41,12 @@ router.get('/dashboard', async (req, res) => {
 router.post('/generate-qr', async (req, res) => {
   try {
     const token = generateQrToken(req.user.id);
-    const qrImageBase64 = await generateQrImage(token);
+    // O QR Code visual carrega um LINK completo (não só o token cru), para que QUALQUER câmera —
+    // a nativa do Android, a do iPhone, a do WhatsApp — consiga ler e abrir direto, sem precisar
+    // do scanner dentro do app. Ao abrir, a própria página processa o carimbo automaticamente.
+    const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host')}`;
+    const scanUrl = `${baseUrl}/?scan=${token}`;
+    const qrImageBase64 = await generateQrImage(scanUrl);
 
     res.json({
       qrToken: token,
@@ -59,6 +66,39 @@ router.get('/history', async (req, res) => {
     res.json({ history });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível carregar o histórico.' });
+  }
+});
+
+// GET /api/client/leaderboard — ranking de clientes por cartões completados.
+// Regra de exibição de nome: mostra só o primeiro nome quando ele é único entre os exibidos;
+// se dois ou mais clientes dividem o mesmo primeiro nome, todos eles passam a mostrar nome + sobrenome.
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const clients = await User.find({ role: 'client', completedCards: { $gt: 0 } })
+      .select('fullName completedCards')
+      .sort({ completedCards: -1, fullName: 1 })
+      .limit(50);
+
+    const firstNameCounts = {};
+    clients.forEach((c) => {
+      const first = c.fullName.trim().split(/\s+/)[0];
+      firstNameCounts[first] = (firstNameCounts[first] || 0) + 1;
+    });
+
+    const leaderboard = clients.map((c, index) => {
+      const first = c.fullName.trim().split(/\s+/)[0];
+      const displayName = firstNameCounts[first] > 1 ? c.fullName.trim() : first;
+      return {
+        position: index + 1,
+        displayName,
+        completedCards: c.completedCards,
+        isSelf: String(c._id) === req.user.id,
+      };
+    });
+
+    res.json({ leaderboard });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar o ranking.' });
   }
 });
 

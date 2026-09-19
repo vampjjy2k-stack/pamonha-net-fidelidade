@@ -27,11 +27,17 @@ mongodb+srv://USUARIO:SENHA@cluster.xxxxx.mongodb.net/pamonha_net?retryWrites=tr
 
 Não envie essa URI em mensagens públicas, commits ou screenshots.
 
-## 2. Repositório no GitHub
+## 2. Criar o repositório no GitHub
 
-O repositório `vampjjy2k-stack/pamonha-net-fidelidade` já existe e contém a versão atual do projeto.
+A conta GitHub conectada nesta sessão não tem permissão para criar repositórios automaticamente. Faça assim:
 
-O projeto publicado mantém esta estrutura:
+1. Acesse <https://github.com/new>.
+2. Nome: `pamonha-net-fidelidade`.
+3. Escolha **Private**.
+4. Não marque as opções de README, `.gitignore` ou licença, pois o projeto já possui esses arquivos.
+5. Clique em **Create repository**.
+6. Na página seguinte, copie a URL HTTPS do repositório.
+7. Envie o conteúdo da pasta do projeto, mantendo esta estrutura:
 
 ```text
 client/
@@ -40,7 +46,14 @@ README.md
 .gitignore
 ```
 
-Não coloque arquivos `.env` nem senhas no GitHub.
+Se usar o GitHub Desktop, escolha **Add existing repository** e selecione a pasta do projeto. Depois clique em **Publish repository**.
+
+Se preferir o terminal, dentro da pasta do projeto execute:
+
+```bash
+git remote add origin https://github.com/SEU_USUARIO/pamonha-net-fidelidade.git
+git push -u origin main
+```
 
 ## 3. Criar o serviço no Render
 
@@ -75,23 +88,35 @@ O servidor já usa a porta fornecida pelo Render. Depois que o primeiro deploy t
 
 ## 3.1 Ativar as notificações push (avisos no celular do cliente)
 
-As notificações push são opcionais. Para ativá-las, gere um par de chaves no computador com:
-
-```bash
-npx web-push generate-vapid-keys
-```
-
-O comando mostra uma **Public Key** e uma **Private Key**. Copie cada uma para a variável correspondente no Render. A chave privada deve ficar somente no Render, nunca no GitHub.
+O sistema já vem com um par de chaves prontas em `server/.env.example` (`VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`). Basta copiá-las também como variáveis de ambiente no Render, junto das outras:
 
 | Nome | Valor |
 |---|---|
-| `VAPID_PUBLIC_KEY` | a Public Key gerada |
-| `VAPID_PRIVATE_KEY` | a Private Key gerada |
-| `VAPID_SUBJECT` | seu e-mail, no formato `mailto:voce@exemplo.com` |
+| `VAPID_PUBLIC_KEY` | copie de `server/.env.example` |
+| `VAPID_PRIVATE_KEY` | copie de `server/.env.example` |
+| `VAPID_SUBJECT` | `mailto:seuemail@pamonhanet.com.br` |
 
 Sem essas três variáveis, o app funciona normalmente — só que os avisos aparecem apenas dentro da aba "Avisos", sem chegar como notificação no celular.
 
 **Importante sobre iPhone:** por regra da Apple, notificações push em site só funcionam depois que o cliente toca em "Adicionar à Tela de Início" no Safari e abre o app por esse atalho. No Android, funciona direto pelo Chrome, sem esse passo. O app já avisa o cliente sobre isso na tela "Perfil".
+
+## 3.2 Ativar o envio de e-mail (recuperação de senha)
+
+Sem essa parte configurada, o botão "Esqueci minha senha" não quebra, mas também não envia nada (fica registrado só no log do servidor). Para funcionar de verdade, de graça, com uma conta Gmail:
+
+1. Ative a verificação em duas etapas na conta Gmail que vai enviar os e-mails (Configurações da Conta Google → Segurança).
+2. Crie uma "senha de app" em https://myaccount.google.com/apppasswords (escolha "Outro" como aplicativo).
+3. No Render, adicione as variáveis:
+
+| Nome | Valor |
+|---|---|
+| `EMAIL_HOST` | `smtp.gmail.com` |
+| `EMAIL_PORT` | `587` |
+| `EMAIL_USER` | seu e-mail do Gmail |
+| `EMAIL_PASS` | a senha de app de 16 letras (não a senha normal) |
+| `EMAIL_FROM` | mesmo e-mail do `EMAIL_USER` |
+
+Qualquer outro provedor SMTP (Zoho, Outlook, Brevo, Resend) funciona do mesmo jeito, só trocando `EMAIL_HOST`/`EMAIL_PORT`.
 
 ## 4. Criar o primeiro administrador
 

@@ -13,14 +13,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      /* -- Paleta: milho vivo, palha e terra -- */
-      --paper: #F7D65A;
-      --paper-deep: #F0C632;
-      --cream-card: #FFFBEF;
-      --husk-900: #3E5A2C;
-      --husk-700: #4F7238;
-      --husk-500: #79974F;
-      --husk-300: #D7E6B8;
+      /* -- Paleta: milho vivo, palha e terra (ajustada para amarelo e verde mais claros) -- */
+      --paper: #FFE14D;
+      --paper-deep: #FFD400;
+      --cream-card: #FFFDF5;
+      --husk-900: #4F7A2E;
+      --husk-700: #6B9A3E;
+      --husk-500: #8FB863;
+      --husk-300: #E2F0C7;
       --gold-700: #A9720B;
       --gold-600: #E0A215;
       --gold-300: #FFE38A;
@@ -30,8 +30,8 @@
       --ink: #2A2118;
       --ink-soft: #6D6151;
       --ink-faint: #8C7F68;
-      --line: rgba(62, 90, 44, 0.18);
-      --line-soft: rgba(62, 90, 44, 0.1);
+      --line: rgba(79, 122, 46, 0.2);
+      --line-soft: rgba(79, 122, 46, 0.1);
       --success: #4C7A34;
       --error: #B23A22;
       --radius-lg: 22px;
@@ -70,6 +70,7 @@
     .p-1 { padding: 0.75rem; }
     .p-2 { padding: 1.25rem; }
     .text-center { text-align: center; }
+    .text-right { text-align: right; }
     .text-sm { font-size: 0.875rem; }
     .text-xs { font-size: 0.78rem; }
     .font-bold { font-weight: 600; }
@@ -111,7 +112,7 @@
       color: #fff; letter-spacing: 0.2px;
     }
     .app-header .tagline { font-size: 0.68rem; color: var(--husk-300); letter-spacing: 0.2px; }
-    .logo-seal { width: 38px; height: 38px; flex-shrink: 0; color: var(--gold-300); stroke-width: 2.1; }
+    .logo-seal { width: 42px; height: 42px; flex-shrink: 0; border-radius: 50%; object-fit: cover; }
 
     /* -- Bottom nav -- */
     .bottom-nav {
@@ -174,7 +175,7 @@
 
     /* -- Auth screens -- */
     .auth-wrap { min-height: calc(100vh - 60px); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem 0 2rem; }
-    .auth-seal { width: 72px; height: 72px; color: var(--husk-900); margin-bottom: 0.6rem; stroke-width: 1.6; }
+    .auth-seal { width: 96px; height: 96px; margin-bottom: 0.6rem; border-radius: 50%; object-fit: cover; box-shadow: 0 10px 24px -10px rgba(79,122,46,0.5); }
     .auth-wrap h1 { font-family: var(--font-display); font-size: 1.55rem; font-weight: 600; color: var(--husk-900); text-align: center; }
     .auth-wrap .sub { color: var(--ink-soft); margin: 0.2rem 0 1.5rem; text-align: center; font-size: 0.92rem; }
     .auth-card { width: 100%; max-width: 360px; }
@@ -213,6 +214,8 @@
       color: var(--ink-faint); transition: var(--ease);
     }
     .stamp-slot .icon { width: 58%; height: 58%; }
+    .stamp-slot .stamp-img { width: 72%; height: 72%; object-fit: contain; }
+    .stamp-slot.winner .stamp-img { filter: brightness(0) saturate(100%) invert(88%) sepia(28%) saturate(500%) hue-rotate(1deg); }
     .stamp-slot.filled {
       background: var(--gold-100); border: 1.5px solid var(--gold-600); color: var(--husk-900);
       animation: stampIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -289,9 +292,60 @@
     .rate-cta-text span:last-child { font-size: 0.78rem; color: var(--husk-700); }
     .rate-cta-arrow { color: var(--gold-700); flex-shrink: 0; }
 
+    /* -- Modal (confirmações críticas) -- */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(30, 22, 12, 0.55); z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 1.2rem;
+      animation: fadeIn 0.2s ease both;
+    }
+    .modal-card {
+      background: var(--cream-card); border-radius: var(--radius-md); padding: 1.3rem;
+      width: 100%; max-width: 360px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+
+    /* -- Splash de abertura -- */
+    .splash-overlay {
+      position: fixed; inset: 0; background: var(--paper); z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    .splash-overlay.splash-out { opacity: 0; pointer-events: none; }
+    .splash-card-wrap { width: 100%; max-width: 320px; padding: 0 1.5rem; perspective: 1200px; }
+    .splash-card {
+      position: relative; width: 100%; min-height: 260px; transform-style: preserve-3d;
+      transition: transform 0.9s cubic-bezier(0.4, 0.1, 0.2, 1);
+    }
+    .splash-card.is-flipped { transform: rotateY(180deg); }
+    .splash-face {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      background: var(--cream-card); border-radius: var(--radius-lg); border: 1px solid var(--line);
+      box-shadow: 0 16px 32px -18px rgba(41,51,31,0.4);
+      padding: 1.4rem 1.1rem; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .splash-front { text-align: center; }
+    .splash-front .fidelity-grid { width: 100%; margin-top: 0.4rem; }
+    .splash-back { transform: rotateY(180deg); text-align: center; color: var(--husk-900); }
+    .splash-back p { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; line-height: 1.4; }
+
     .empty-state { text-align: center; padding: 2.2rem 1rem; color: var(--ink-soft); }
     .empty-state .icon { width: 34px; height: 34px; color: var(--ink-faint); margin: 0 auto 0.6rem; }
     .empty-state p { font-size: 0.88rem; max-width: 260px; margin: 0 auto; }
+
+    /* -- Ranking -- */
+    .rank-list { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-md); overflow: hidden; }
+    .rank-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--line-soft); }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-row.is-self { background: var(--gold-100); }
+    .rank-pos { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--husk-700); width: 2rem; text-align: center; flex-shrink: 0; }
+    .rank-name { flex: 1; font-weight: 600; font-size: 0.92rem; color: var(--ink); }
+    .rank-count { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--gold-700); }
+
+    /* -- Admin: inactivity badge + WhatsApp -- */
+    .inactive-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem; background: rgba(178,58,34,0.12);
+      color: var(--error); font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem;
+      border-radius: 999px; margin-top: 0.3rem;
+    }
 
     /* -- Stars -- */
     .fb-question-title { font-weight: 600; font-size: 0.92rem; color: var(--husk-900); text-align: center; margin-bottom: 0.3rem; }
@@ -311,6 +365,15 @@
     .client-row .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.75rem; }
     .client-row .actions .btn { width: auto; flex: 1; min-width: 74px; padding: 0.55rem; font-size: 0.76rem; gap: 0.3rem; }
     .section-gap { margin-bottom: 1.1rem; }
+    .cleanup-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+      padding: 0.65rem 0; border-bottom: 1px solid var(--line-soft);
+    }
+    .cleanup-row:last-child { border-bottom: none; }
+    .cleanup-row div { display: flex; flex-direction: column; }
+    .cleanup-row strong { font-size: 0.86rem; color: var(--ink); }
+    .cleanup-row span { font-size: 0.75rem; color: var(--ink-soft); }
+    .cleanup-row .btn { width: auto; padding: 0.5rem 0.9rem; font-size: 0.78rem; flex-shrink: 0; }
 
     /* -- Audience picker (admin notifications) -- */
     .audience-toggle { display: flex; gap: 0.5rem; }
@@ -441,6 +504,20 @@
         <path d="M4.5 20 6 15l4.5 3-2 3.2a1.6 1.6 0 0 1-2.2.5L4.9 21a1.4 1.4 0 0 1-.4-1Z"/>
         <path d="M14 3l4 3.2-4.7 6.9-4-2.9Z"/>
       </symbol>
+      <symbol id="i-trophy" viewBox="0 0 24 24">
+        <path d="M7 4.5h10v4a5 5 0 0 1-10 0v-4Z"/>
+        <path d="M7 5.5H4a1 1 0 0 0-1 1v1.2A3.3 3.3 0 0 0 6.3 11h.7M17 5.5h3a1 1 0 0 1 1 1v1.2A3.3 3.3 0 0 1 17.7 11H17"/>
+        <path d="M12 13.5v3M9 20.5h6M9.7 19.2c-.3-1 0-1.9.7-2.5.4-.3.6-.7.6-1.2"/>
+        <path d="M13.6 19.2c.3-1 0-1.9-.7-2.5-.4-.3-.6-.7-.6-1.2"/>
+      </symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24">
+        <path d="M4 8.5a1 1 0 0 1 1-1h2.2l1-1.7h7.6l1 1.7H19a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8.5Z"/>
+        <circle cx="12" cy="13" r="3.4"/>
+      </symbol>
+      <symbol id="i-whatsapp" viewBox="0 0 24 24">
+        <path d="M6.4 17.6 4.5 19.5l1.9-1.9a7.7 7.7 0 1 1 3 1.5l-3 .5Z"/>
+        <path d="M8.8 8.7c.2-.5.4-.5.7-.5h.5c.2 0 .4 0 .6.4.2.5.6 1.5.6 1.6.1.1.1.3 0 .4-.1.2-.1.3-.3.4-.1.2-.3.3-.4.5-.1.1-.3.3-.1.6.2.3.8 1.2 1.6 1.9 1.1 1 2 1.2 2.3 1.4.3.1.5.1.6-.1.2-.2.6-.7.8-1 .2-.2.4-.2.6-.1.2.1 1.5.7 1.7.8.2.1.4.2.4.3.1.3.1.8-.1 1.2-.3.5-1.3 1-1.8 1-.5 0-1.1.1-3.4-1-2.7-1.2-4.3-4-4.5-4.2-.1-.2-1-1.3-1-2.5 0-1.2.6-1.8.8-2Z" fill="currentColor" stroke="none"/>
+      </symbol>
       <symbol id="i-seal" viewBox="0 0 48 48">
         <circle cx="24" cy="24" r="20.5"/>
         <circle cx="24" cy="24" r="15.5" stroke-dasharray="2.6 3.4"/>
@@ -451,7 +528,7 @@
 
   <div id="app">
     <header class="app-header">
-      <svg class="logo-seal" viewBox="0 0 48 48"><use href="#i-seal"/></svg>
+      <img class="logo-seal" src="/logo.png" alt="Pamonha Net" />
       <div>
         <div class="wordmark">Pamonha Net</div>
         <div class="tagline">Cartão fidelidade</div>
@@ -481,6 +558,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
     const API_URL = '';
     const $ = (sel) => document.querySelector(sel);
@@ -544,6 +622,7 @@
       go(path, skipHistory=false) {
         this.current = path;
         if (!skipHistory) history.pushState(null, '', '#'+path);
+        else history.replaceState(null, '', '#'+path);
         this.render();
       },
       render() {
@@ -562,29 +641,30 @@
     router.register('login', (container) => {
       container.innerHTML = `
         <div class="page auth-wrap">
-          <svg class="auth-seal" viewBox="0 0 48 48"><use href="#i-seal"/></svg>
+          <img class="auth-seal" src="/logo.png" alt="Pamonha Net" />
           <h1>Pamonha Net</h1>
           <p class="sub">Entre para ver seu cartão e seus selos</p>
           <div class="surface auth-card">
-            <div class="mb-1"><label class="label">Telefone</label>
-              <input class="input" id="login-phone" placeholder="(21) 91234-5678" type="tel" inputmode="tel" />
+            <div class="mb-1"><label class="label">Telefone ou e-mail</label>
+              <input class="input" id="login-id" placeholder="(21) 91234-5678 ou seu@email.com" />
             </div>
-            <div class="mb-2"><label class="label">Senha</label>
+            <div class="mb-1"><label class="label">Senha</label>
               <input class="input" id="login-pass" placeholder="Mínimo 6 caracteres" type="password" />
             </div>
+            <div class="text-right mb-2"><button class="link-btn" style="padding:0" onclick="router.go('forgot')">Esqueci minha senha</button></div>
             <button class="btn btn-primary" id="btn-login">Entrar</button>
           </div>
           <div class="switch-link">Ainda não tem cartão? <button onclick="router.go('register')">Criar conta</button></div>
         </div>
       `;
-      $('#login-phone').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-pass').focus(); });
+      $('#login-id').addEventListener('keydown', e => { if (e.key === 'Enter') $('#login-pass').focus(); });
       $('#login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btn-login').click(); });
       $('#btn-login').onclick = async () => {
-        const phone = $('#login-phone').value.trim();
+        const identifier = $('#login-id').value.trim();
         const pass = $('#login-pass').value;
-        if (!phone || !pass) return toast.show('Preencha telefone e senha.', 'error');
+        if (!identifier || !pass) return toast.show('Preencha telefone/e-mail e senha.', 'error');
         try {
-          const data = await api.post('/api/auth/login', { phone, password: pass });
+          const data = await api.post('/api/auth/login', { identifier, password: pass });
           api.setAuth(data.token, data.user);
           toast.show('Bem-vindo de volta, ' + data.user.fullName.split(' ')[0] + '!');
           updateNav();
@@ -596,7 +676,7 @@
     router.register('register', (container) => {
       container.innerHTML = `
         <div class="page auth-wrap">
-          <svg class="auth-seal" viewBox="0 0 48 48"><use href="#i-seal"/></svg>
+          <img class="auth-seal" src="/logo.png" alt="Pamonha Net" />
           <h1>Criar conta</h1>
           <p class="sub">Leva menos de um minuto</p>
           <div class="surface auth-card">
@@ -605,6 +685,9 @@
             </div>
             <div class="mb-1"><label class="label">Telefone</label>
               <input class="input" id="reg-phone" placeholder="(21) 91234-5678" type="tel" inputmode="tel" />
+            </div>
+            <div class="mb-1"><label class="label">E-mail</label>
+              <input class="input" id="reg-email" placeholder="seu@email.com" type="email" />
             </div>
             <div class="mb-2"><label class="label">Senha</label>
               <input class="input" id="reg-pass" placeholder="Mínimo 6 caracteres" type="password" />
@@ -617,14 +700,69 @@
       $('#btn-reg').onclick = async () => {
         const fullName = $('#reg-name').value.trim();
         const phone = $('#reg-phone').value.trim();
+        const email = $('#reg-email').value.trim();
         const password = $('#reg-pass').value;
-        if (!fullName || !phone || !password) return toast.show('Preencha todos os campos.', 'error');
+        if (!fullName || !phone || !email || !password) return toast.show('Preencha todos os campos.', 'error');
         try {
-          const data = await api.post('/api/auth/register', { fullName, phone, password });
+          const data = await api.post('/api/auth/register', { fullName, phone, email, password });
           api.setAuth(data.token, data.user);
           toast.show('Conta criada! Seu cartão já está pronto.');
           updateNav();
           router.go('card', true);
+        } catch (e) { toast.show(e.message, 'error'); }
+      };
+    });
+
+    router.register('forgot', (container) => {
+      container.innerHTML = `
+        <div class="page auth-wrap">
+          <img class="auth-seal" src="/logo.png" alt="Pamonha Net" />
+          <h1>Recuperar senha</h1>
+          <p class="sub">Informe seu telefone ou e-mail cadastrado</p>
+          <div class="surface auth-card">
+            <div class="mb-2"><label class="label">Telefone ou e-mail</label>
+              <input class="input" id="forgot-id" placeholder="(21) 91234-5678 ou seu@email.com" />
+            </div>
+            <button class="btn btn-primary" id="btn-forgot">Enviar link de redefinição</button>
+          </div>
+          <div class="switch-link"><button onclick="router.go('login')">Voltar para o login</button></div>
+        </div>
+      `;
+      $('#btn-forgot').onclick = async () => {
+        const identifier = $('#forgot-id').value.trim();
+        if (!identifier) return toast.show('Informe telefone ou e-mail.', 'error');
+        try {
+          const data = await api.post('/api/auth/forgot-password', { identifier });
+          toast.show(data.message);
+          router.go('login');
+        } catch (e) { toast.show(e.message, 'error'); }
+      };
+    });
+
+    router.register('reset', (container) => {
+      const params = new URLSearchParams(location.search);
+      const token = params.get('reset') || '';
+      container.innerHTML = `
+        <div class="page auth-wrap">
+          <img class="auth-seal" src="/logo.png" alt="Pamonha Net" />
+          <h1>Nova senha</h1>
+          <p class="sub">Escolha uma nova senha para sua conta</p>
+          <div class="surface auth-card">
+            <div class="mb-2"><label class="label">Nova senha</label>
+              <input class="input" id="reset-pass" placeholder="Mínimo 6 caracteres" type="password" />
+            </div>
+            <button class="btn btn-primary" id="btn-reset">Salvar nova senha</button>
+          </div>
+        </div>
+      `;
+      $('#btn-reset').onclick = async () => {
+        const password = $('#reset-pass').value;
+        if (!password || password.length < 6) return toast.show('A senha precisa ter pelo menos 6 caracteres.', 'error');
+        try {
+          const data = await api.post('/api/auth/reset-password', { token, password });
+          toast.show(data.message);
+          history.replaceState(null, '', location.pathname);
+          router.go('login');
         } catch (e) { toast.show(e.message, 'error'); }
       };
     });
@@ -653,10 +791,19 @@
           <button class="rate-cta mt-2" onclick="router.go('feedback')">
             <span class="rate-cta-icon">${icon('star', 'icon')}</span>
             <span class="rate-cta-text">
-              <strong>Como foi sua pamonha?</strong>
+              <strong>Como foi sua experiência?</strong>
               <span>Avalie em 10 segundos</span>
             </span>
             <span class="rate-cta-arrow">${icon('send', 'icon icon-sm')}</span>
+          </button>
+
+          <button class="rate-cta mt-1" style="background:linear-gradient(135deg, var(--husk-300), var(--cream-card)); border-color:var(--husk-500)" onclick="router.go('ranking')">
+            <span class="rate-cta-icon" style="color:var(--husk-700)">${icon('trophy', 'icon')}</span>
+            <span class="rate-cta-text">
+              <strong id="completed-line">Cartões fechados: 0</strong>
+              <span style="color:var(--husk-700)">Ver ranking dos clientes</span>
+            </span>
+            <span class="rate-cta-arrow" style="color:var(--husk-700)">${icon('send', 'icon icon-sm')}</span>
           </button>
 
           <div class="mt-2">
@@ -673,6 +820,11 @@
         const data = await api.get('/api/client/dashboard');
         $('#card-name').textContent = data.fullName.split(' ')[0];
         renderStamps(data.stamps);
+        const completedLine = $('#completed-line');
+        if (completedLine) {
+          const n = data.completedCards || 0;
+          completedLine.textContent = `Cartões fechados: ${n}`;
+        }
         const status = $('#card-status');
         if (data.stamps >= 10) {
           status.classList.add('complete');
@@ -707,7 +859,10 @@
         const div = document.createElement('div');
         const isWinner = i === 9 && count >= 10;
         div.className = 'stamp-slot' + (i < count ? (isWinner ? ' winner' : ' filled') : '');
-        if (i < count) { div.style.setProperty('--jit', jitters[i] + 'deg'); div.innerHTML = icon('kernel'); }
+        if (i < count) {
+          div.style.setProperty('--jit', jitters[i] + 'deg');
+          div.innerHTML = '<img src="/stamp.png" alt="" class="stamp-img" />';
+        }
         grid.appendChild(div);
       }
     }
@@ -826,6 +981,76 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
+    const FEIRAS = ['Figueira', 'Xerém', 'Santa Cruz da Serra'];
+
+    router.register('ranking', (container) => {
+      if (!api.token) return router.go('login');
+      const isAdmin = api.user?.role === 'admin';
+      container.innerHTML = `
+        <div class="page">
+          <h2 class="page-title">${icon('trophy')} Ranking de fiéis</h2>
+          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Quem mais fechou cartões de fidelidade na Pamonha Net.</p>
+          <div id="ranking-shot">
+            <div id="ranking-list"></div>
+          </div>
+          ${isAdmin ? `
+            <div class="flex gap-1 mt-2">
+              <button class="btn btn-outline" style="flex:1" onclick="screenshotRanking()">${icon('camera','icon icon-sm')} Salvar print</button>
+              <button class="btn btn-danger" style="flex:1" onclick="resetRanking()">${icon('reset','icon icon-sm')} Reiniciar</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      loadRanking();
+    });
+
+    async function loadRanking() {
+      try {
+        const data = await api.get('/api/client/leaderboard');
+        const list = $('#ranking-list');
+        if (!data.leaderboard.length) {
+          list.innerHTML = `<div class="empty-state">${icon('trophy','icon')}<p>Ninguém fechou um cartão ainda. O primeiro lugar está livre!</p></div>`;
+          return;
+        }
+        const medal = (pos) => pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : null;
+        list.innerHTML = `<div class="rank-list">` + data.leaderboard.map(r => `
+          <div class="rank-row ${r.isSelf ? 'is-self' : ''}">
+            <span class="rank-pos">${medal(r.position) || ('#' + r.position)}</span>
+            <span class="rank-name">${r.displayName}${r.isSelf ? ' <span class="text-xs" style="color:var(--husk-700)">(você)</span>' : ''}</span>
+            <span class="rank-count">${r.completedCards}</span>
+          </div>
+        `).join('') + `</div>`;
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    window.resetRanking = async () => {
+      if (!confirm('Reiniciar o ranking zera os cartões fechados de TODOS os clientes. Continuar?')) return;
+      try {
+        await api.post('/api/admin/leaderboard/reset');
+        toast.show('Ranking reiniciado.');
+        loadRanking();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.screenshotRanking = async () => {
+      try {
+        toast.show('Gerando imagem…');
+        const canvas = await html2canvas($('#ranking-shot'), { backgroundColor: '#FFE14D', scale: 2 });
+        canvas.toBlob(async (blob) => {
+          const file = new File([blob], 'ranking-pamonha-net.png', { type: 'image/png' });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: 'Ranking Pamonha Net' });
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'ranking-pamonha-net.png';
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+          }
+        }, 'image/png');
+      } catch (e) { toast.show('Não foi possível gerar a imagem.', 'error'); }
+    };
+
     router.register('profile', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
@@ -838,21 +1063,37 @@
             <div class="mb-1"><label class="label">Telefone</label>
               <input class="input" id="prof-phone" type="tel" inputmode="tel" />
             </div>
+            <div class="mb-1"><label class="label">E-mail</label>
+              <input class="input" id="prof-email" type="email" />
+            </div>
             <div class="mb-2"><label class="label">Nova senha (deixe em branco para manter)</label>
               <input class="input" id="prof-pass" type="password" placeholder="Mínimo 6 caracteres" />
             </div>
             <button class="btn btn-primary" onclick="saveProfile()">${icon('save', 'icon icon-sm')} Salvar alterações</button>
             <button class="btn btn-outline mt-1" onclick="logout()">${icon('logout', 'icon icon-sm')} Sair da conta</button>
           </div>
-          <div class="surface" id="push-card">
+          <div class="surface mb-2" id="push-card">
             <h3 class="surface-title">${icon('bell', 'icon icon-sm')} Notificações no celular</h3>
             <p class="text-sm muted mb-1" id="push-desc">Verificando disponibilidade…</p>
             <button class="btn btn-secondary" id="push-btn" onclick="togglePush()">Ativar notificações</button>
+          </div>
+          <div class="surface mb-2">
+            <h3 class="surface-title">${icon('search', 'icon icon-sm')} Onde nos encontrar</h3>
+            <p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px">Feiras</p>
+            <p class="text-sm mb-1">${FEIRAS.join(' · ')}</p>
+            <p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px;margin-top:.6rem">Contato</p>
+            <p class="text-sm">Instagram @pamonhanet · WhatsApp (21) 99446-9676</p>
+          </div>
+          <div class="surface" style="border-color:rgba(178,58,34,0.35)">
+            <h3 class="surface-title" style="color:var(--error)">${icon('trash', 'icon icon-sm')} Excluir conta</h3>
+            <p class="text-sm muted mb-1">Isso apaga sua conta, seus selos e seu histórico permanentemente. Não é possível desfazer.</p>
+            <button class="btn btn-danger" onclick="openDeleteAccount()">Excluir minha conta</button>
           </div>
         </div>
       `;
       $('#prof-name').value = api.user?.fullName || '';
       $('#prof-phone').value = api.user?.phone ? formatPhone(api.user.phone) : '';
+      $('#prof-email').value = api.user?.email || '';
       refreshPushUi();
     });
 
@@ -860,9 +1101,11 @@
       const body = {};
       const name = $('#prof-name').value.trim();
       const phone = $('#prof-phone').value.trim();
+      const email = $('#prof-email').value.trim();
       const pass = $('#prof-pass').value;
       if (name) body.fullName = name;
       if (phone) body.phone = phone;
+      if (email) body.email = email;
       if (pass) body.password = pass;
       try {
         const data = await api.put('/api/auth/profile', body);
@@ -871,6 +1114,40 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
     window.logout = () => { api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo!'); };
+
+    // -- Excluir conta: dupla confirmação real (digitar EXCLUIR + senha atual) --
+    window.openDeleteAccount = () => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal-card">
+          <h3 class="surface-title" style="color:var(--error)">${icon('trash','icon icon-sm')} Excluir conta</h3>
+          <p class="text-sm mb-1">Essa ação é <strong>permanente</strong>. Seus selos, histórico e avaliações serão apagados e não podem ser recuperados.</p>
+          <label class="label">Digite EXCLUIR para confirmar</label>
+          <input class="input mb-1" id="del-confirm-word" placeholder="EXCLUIR" />
+          <label class="label">Sua senha</label>
+          <input class="input mb-2" id="del-confirm-pass" type="password" placeholder="Senha atual" />
+          <button class="btn btn-danger mb-1" id="del-confirm-btn">Excluir definitivamente</button>
+          <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      $('#del-confirm-btn').onclick = async () => {
+        const word = $('#del-confirm-word').value.trim().toUpperCase();
+        const password = $('#del-confirm-pass').value;
+        if (word !== 'EXCLUIR') return toast.show('Digite EXCLUIR para confirmar.', 'error');
+        if (!password) return toast.show('Informe sua senha.', 'error');
+        try {
+          await api.req('DELETE', '/api/auth/account', { password });
+          toast.show('Conta excluída. Sentiremos sua falta!');
+          closeModal();
+          api.clearAuth();
+          updateNav();
+          router.go('login');
+        } catch (e) { toast.show(e.message, 'error'); }
+      };
+    };
+    window.closeModal = () => { $$('.modal-overlay').forEach(el => el.remove()); };
 
     router.register('admin', (container) => {
       if (!api.token || api.user?.role !== 'admin') return router.go('card');
@@ -926,11 +1203,28 @@
           </div>
 
           <div class="surface section-gap">
-            <h3 class="surface-title">${icon('broom', 'icon icon-sm')} Limpeza de dados</h3>
-            <div class="flex gap-1">
-              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('all')">Todas</button>
-              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('broadcast')">Gerais</button>
-              <button class="btn btn-danger" style="flex:1" onclick="clearNotifs('individual')">Individuais</button>
+            <h3 class="surface-title">${icon('broom', 'icon icon-sm')} Limpeza de avisos</h3>
+            <p class="text-xs muted mb-1">Isso apaga só os avisos da aba "Avisos" — não mexe nos clientes nem nos selos.</p>
+            <div class="cleanup-row">
+              <div>
+                <strong>Apagar tudo</strong>
+                <span>Todos os avisos, de todo mundo</span>
+              </div>
+              <button class="btn btn-danger" onclick="clearNotifs('all')">Apagar</button>
+            </div>
+            <div class="cleanup-row">
+              <div>
+                <strong>Só os gerais</strong>
+                <span>Os que foram enviados para "Todos"</span>
+              </div>
+              <button class="btn btn-danger" onclick="clearNotifs('broadcast')">Apagar</button>
+            </div>
+            <div class="cleanup-row">
+              <div>
+                <strong>Só os individuais</strong>
+                <span>Os enviados para um cliente específico</span>
+              </div>
+              <button class="btn btn-danger" onclick="clearNotifs('individual')">Apagar</button>
             </div>
           </div>
 
@@ -967,6 +1261,7 @@
             <div>
               <div class="name">${c.fullName}</div>
               <div class="phone">${formatPhone(c.phone)}</div>
+              ${c.isInactive ? `<span class="inactive-badge">${icon('bell','icon icon-sm')} ${c.weeksInactive} semana${c.weeksInactive === 1 ? '' : 's'} sem carimbar</span>` : ''}
             </div>
             <div class="count">${c.stamps}/10</div>
           </div>
@@ -975,10 +1270,54 @@
             <button class="btn btn-danger" onclick="removeStamp('${c._id}')">${icon('minus', 'icon icon-sm')} Selo</button>
             <button class="btn btn-secondary" onclick="resetCard('${c._id}')">${icon('reset', 'icon icon-sm')} Zerar</button>
             <button class="btn btn-outline" onclick="deleteHistory('${c._id}')">${icon('trash', 'icon icon-sm')} Histórico</button>
+            <button class="btn btn-outline" style="border-color:#25D36660;color:#1a8a4a" onclick='shareCardWhatsapp(${JSON.stringify(c)})'>${icon('whatsapp', 'icon icon-sm')} Compartilhar</button>
           </div>
         </div>
       `).join('');
     }
+
+    // -- Compartilhar cartão no WhatsApp (opção B): gera a imagem do cartão do cliente e
+    // abre o menu nativo de compartilhamento do celular; o admin escolhe o contato no WhatsApp.
+    // Para clientes sem carimbo há 2+ semanas, a mensagem muda para um tom de "saudade".
+    window.shareCardWhatsapp = async (client) => {
+      try {
+        toast.show('Gerando cartão…');
+        const temp = document.createElement('div');
+        temp.style.cssText = 'position:fixed;left:-9999px;top:0;width:360px';
+        temp.innerHTML = `
+          <div class="ticket-card" style="margin:10px">
+            <div class="ticket-label">${icon('kernel')} Cartão Pamonha Net</div>
+            <div class="fidelity-grid">${Array.from({length:10}).map((_,i) => `
+              <div class="stamp-slot ${i < client.stamps ? 'filled' : ''}">${i < client.stamps ? '<img src="/stamp.png" style="width:72%;height:72%;object-fit:contain">' : ''}</div>
+            `).join('')}</div>
+            <div class="card-status">${client.stamps} de 10 selos${client.stamps >= 10 ? ' · cartão completo!' : ` · faltam ${10 - client.stamps}`}</div>
+          </div>
+        `;
+        document.body.appendChild(temp);
+        const canvas = await html2canvas(temp.firstElementChild, { backgroundColor: '#FFE14D', scale: 2 });
+        document.body.removeChild(temp);
+
+        const isInactive = client.isInactive;
+        const firstName = client.fullName.trim().split(/\s+/)[0];
+        const message = isInactive
+          ? `Saudades suas por aqui, ${firstName}! Faz um tempinho que você não passa pra carimbar seu cartão da Pamonha Net — ele te espera com ${client.stamps} selo${client.stamps === 1 ? '' : 's'}. Vem nos visitar!`
+          : `Oi, ${firstName}! Aqui está o seu cartão fidelidade da Pamonha Net — você já tem ${client.stamps} de 10 selos. Continue firme rumo ao prêmio!`;
+
+        canvas.toBlob(async (blob) => {
+          const file = new File([blob], 'cartao-pamonha-net.png', { type: 'image/png' });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], text: message, title: 'Pamonha Net' });
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'cartao-pamonha-net.png';
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(url);
+            toast.show('Imagem baixada. Anexe no WhatsApp manualmente.');
+          }
+        }, 'image/png');
+      } catch (e) { toast.show('Não foi possível gerar o cartão para compartilhar.', 'error'); }
+    };
 
     // -- Seletor de destinatário da notificação --
     let notifAudience = 'all';
@@ -1072,20 +1411,50 @@
     };
 
     // -- Scanner de câmera ao vivo — feito para ser rápido no balcão/feira --
+    // Usa a BarcodeDetector nativa do navegador quando disponível (mesmo decodificador
+    // que a câmera do celular usa — reconhece na hora). Se o navegador não tiver isso
+    // (ex: iPhone em versões mais antigas), cai para a biblioteca jsQR em resolução reduzida.
     let scannerStream = null;
     let scannerRAF = null;
+    let scannerTimeout = null;
     let scannerCooldownUntil = 0;
     let scanCanvas = null;
+    let nativeDetector = null;
+    let nativeDetectorChecked = false;
+
+    async function getNativeDetector() {
+      if (nativeDetectorChecked) return nativeDetector;
+      nativeDetectorChecked = true;
+      if ('BarcodeDetector' in window) {
+        try {
+          const formats = await window.BarcodeDetector.getSupportedFormats();
+          if (formats.includes('qr_code')) {
+            nativeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+          }
+        } catch (e) { nativeDetector = null; }
+      }
+      return nativeDetector;
+    }
 
     async function startScanner() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            // Resolução menor = cada frame processa muito mais rápido (a câmera nativa
+            // usa hardware dedicado; no navegador precisamos limitar o tamanho da imagem
+            // pra não travar a leitura).
+            width: { ideal: 720 },
+            height: { ideal: 720 },
+          },
+        });
         scannerStream = stream;
         const video = $('#scan-video');
         video.srcObject = stream;
         await video.play();
         $('#scanner-idle').classList.add('hidden');
         $('#scanner-active').classList.remove('hidden');
+        await getNativeDetector();
         scanLoop();
       } catch (e) {
         toast.show('Não foi possível acessar a câmera. Use o código colado abaixo.', 'error');
@@ -1094,7 +1463,8 @@
 
     function stopScanner() {
       if (scannerRAF) cancelAnimationFrame(scannerRAF);
-      scannerRAF = null;
+      if (scannerTimeout) clearTimeout(scannerTimeout);
+      scannerRAF = null; scannerTimeout = null;
       if (scannerStream) {
         scannerStream.getTracks().forEach(t => t.stop());
         scannerStream = null;
@@ -1105,22 +1475,44 @@
       if (active) active.classList.add('hidden');
     }
 
-    function scanLoop() {
+    async function scanLoop() {
       const video = $('#scan-video');
       if (!video || !scannerStream) return;
-      scanCanvas = scanCanvas || document.createElement('canvas');
+
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        scanCanvas.width = video.videoWidth;
-        scanCanvas.height = video.videoHeight;
-        const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
-        const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-        const code = window.jsQR && window.jsQR(imageData.data, imageData.width, imageData.height);
-        if (code && code.data && Date.now() > scannerCooldownUntil) {
-          handleScanResult(code.data);
-        }
+        try {
+          if (nativeDetector) {
+            // Caminho rápido: decodificador nativo do navegador, direto no frame de vídeo.
+            const codes = await nativeDetector.detect(video);
+            if (codes.length && Date.now() > scannerCooldownUntil) {
+              handleScanResult(codes[0].rawValue);
+            }
+          } else if (window.jsQR) {
+            // Caminho alternativo: reduzimos a imagem antes de decodificar — processar
+            // em tamanho grande é o principal motivo da leitura ficar lenta no navegador.
+            const maxDim = 480;
+            const scale = Math.min(1, maxDim / Math.max(video.videoWidth, video.videoHeight));
+            scanCanvas = scanCanvas || document.createElement('canvas');
+            scanCanvas.width = Math.round(video.videoWidth * scale);
+            scanCanvas.height = Math.round(video.videoHeight * scale);
+            const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
+            const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+            const code = window.jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+            if (code && code.data && Date.now() > scannerCooldownUntil) {
+              handleScanResult(code.data);
+            }
+          }
+        } catch (e) { /* frame ruim, tenta o próximo */ }
       }
-      scannerRAF = requestAnimationFrame(scanLoop);
+
+      // BarcodeDetector é leve o bastante pra rodar a cada frame; jsQR roda ~12x/seg
+      // (rápido pra sentir instantâneo, mas sem sobrecarregar o celular do atendente).
+      if (nativeDetector) {
+        scannerRAF = requestAnimationFrame(scanLoop);
+      } else {
+        scannerTimeout = setTimeout(scanLoop, 80);
+      }
     }
 
     async function handleScanResult(data) {
@@ -1331,6 +1723,11 @@
     async function init() {
       updateNav();
       registerServiceWorker();
+
+      const params = new URLSearchParams(location.search);
+      const resetToken = params.get('reset');
+      const scanToken = params.get('scan');
+
       if (api.token) {
         try {
           const data = await api.get('/api/auth/me');
@@ -1339,12 +1736,100 @@
         } catch (e) {
           api.clearAuth();
           updateNav();
-          router.go('login');
-          return;
         }
       }
+
+      // Link de redefinição de senha (aberto pelo e-mail) tem prioridade sobre tudo.
+      if (resetToken) {
+        router.go('reset', true);
+        return;
+      }
+
+      // QR Code lido por QUALQUER câmera (nativa do celular, WhatsApp, etc.) cai aqui:
+      // se for um admin logado, processa o carimbo na hora, sem precisar abrir o scanner do app.
+      if (scanToken) {
+        history.replaceState(null, '', location.pathname);
+        if (api.token && api.user?.role === 'admin') {
+          await handleScanResult(scanToken);
+          router.go('admin', true);
+        } else if (!api.token) {
+          toast.show('Entre como administrador para confirmar este carimbo.', 'error');
+          router.go('login', true);
+        } else {
+          toast.show('Só administradores podem confirmar carimbos por QR Code.', 'error');
+          router.go('card', true);
+        }
+        return;
+      }
+
+      if (!api.token) {
+        router.go('login', true);
+        return;
+      }
+
+      maybeShowSplash();
       router.render();
     }
+
+    // -- Splash de abertura: o cartão aparece centralizado com os selos atuais, vira mostrando
+    // uma mensagem no verso, volta, e some dando lugar à página já carregada. Só na primeira
+    // sessão do dia (controlado por uma data salva no localStorage).
+    const SPLASH_MESSAGES = [
+      'Cada selo é um pedacinho de carinho.',
+      'Obrigado por voltar sempre!',
+      'Bom te ver por aqui de novo.',
+    ];
+
+    function shouldShowSplash() {
+      const today = new Date().toISOString().slice(0, 10);
+      const last = localStorage.getItem('pnf_splash_date');
+      return last !== today;
+    }
+
+    async function maybeShowSplash() {
+      if (!shouldShowSplash()) { router.render(); return; }
+      localStorage.setItem('pnf_splash_date', new Date().toISOString().slice(0, 10));
+
+      let stamps = 0;
+      try {
+        const data = await api.get('/api/client/dashboard');
+        stamps = data.stamps || 0;
+      } catch (e) { /* segue com 0 mesmo, splash não pode travar o app */ }
+
+      const msg = SPLASH_MESSAGES[Math.floor(Math.random() * SPLASH_MESSAGES.length)];
+      const overlay = document.createElement('div');
+      overlay.className = 'splash-overlay';
+      overlay.innerHTML = `
+        <div class="splash-card-wrap">
+          <div class="splash-card" id="splash-card">
+            <div class="splash-face splash-front">
+              <div class="ticket-label">${icon('kernel')} Cartão Pamonha Net</div>
+              <div class="fidelity-grid">${Array.from({length:10}).map((_,i) => `
+                <div class="stamp-slot ${i < stamps ? 'filled' : ''}">${i < stamps ? '<img src="/stamp.png" style="width:72%;height:72%;object-fit:contain">' : ''}</div>
+              `).join('')}</div>
+            </div>
+            <div class="splash-face splash-back">
+              <img src="/logo.png" alt="" style="width:56px;height:56px;border-radius:50%;margin-bottom:.7rem" />
+              <p>${msg}</p>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      router.render();
+
+      const card = $('#splash-card');
+      await sleep(400);
+      card.classList.add('is-flipped');
+      await sleep(1300);
+      card.classList.remove('is-flipped');
+      await sleep(900);
+      overlay.classList.add('splash-out');
+      await sleep(500);
+      overlay.remove();
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
