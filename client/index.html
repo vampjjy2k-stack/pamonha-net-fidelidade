@@ -598,7 +598,7 @@
     function officialCardHTML(stamps, interactive) {
       const slots = CARD_STAMP_POSITIONS.map(([x, y], i) => `
         <div class="official-stamp ${i < stamps ? 'filled' : ''}" style="left:${x}%;top:${y}%"
-             ${interactive ? `onclick="setHubTarget(${i + 1})"` : ''}>
+             ${interactive ? `onclick="setHubTarget(${i + 1}, ${i === 0})"` : ''}>
           ${i < stamps ? '<img src="/stamp.png" alt="" />' : ''}
         </div>
       `).join('');
@@ -1645,8 +1645,9 @@
       document.body.appendChild(overlay);
     };
 
-    window.setHubTarget = (n) => {
-      hubTarget = n;
+    window.setHubTarget = (n, isFirstSlot = false) => {
+      // Tocando novamente no primeiro selo quando só ele está marcado, zera o cartão.
+      hubTarget = isFirstSlot && hubTarget === 1 ? 0 : n;
       $('#hub-card-slot').innerHTML = officialCardHTML(hubTarget, true);
       $('#hub-target-label').textContent = `${hubTarget} de 10 selos`;
     };
