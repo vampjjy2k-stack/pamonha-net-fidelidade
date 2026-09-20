@@ -208,14 +208,19 @@
     }
     .official-card-frame .card-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
     .official-stamp {
-      position: absolute; width: 8.8%; aspect-ratio: 1; border-radius: 50%;
+      position: absolute; width: 10%; aspect-ratio: 1; border-radius: 50%;
       transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center;
     }
     .official-stamp img {
-      width: 82%; height: 82%; object-fit: contain; opacity: 0; transform: scale(0.5);
+      width: 100%; height: 100%; object-fit: contain; opacity: 0; transform: scale(0.5);
       transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .official-stamp.filled img { opacity: 1; transform: scale(1); }
+    .official-card-frame.is-interactive .official-stamp { cursor: pointer; }
+    .official-card-frame.is-interactive .official-stamp::after {
+      content: ''; position: absolute; inset: -4%; border-radius: 50%; border: 2px dashed transparent;
+    }
+    .official-card-frame.is-interactive .official-stamp:not(.filled):hover::after { border-color: rgba(79,122,46,0.4); }
 
     .card-status { font-weight: 600; color: var(--husk-700); margin-top: 0.9rem; font-size: 0.95rem; text-align: center; }
     .card-status.complete { color: var(--husk-900); }
@@ -590,13 +595,14 @@
       [26.5, 47.7], [37.1, 47.7], [47.9, 47.7], [58.5, 47.7], [69.2, 47.7],
       [26.5, 66.8], [37.1, 66.8], [47.8, 66.8], [58.5, 66.8], [69.2, 66.8],
     ];
-    function officialCardHTML(stamps) {
+    function officialCardHTML(stamps, interactive) {
       const slots = CARD_STAMP_POSITIONS.map(([x, y], i) => `
-        <div class="official-stamp ${i < stamps ? 'filled' : ''}" style="left:${x}%;top:${y}%">
+        <div class="official-stamp ${i < stamps ? 'filled' : ''}" style="left:${x}%;top:${y}%"
+             ${interactive ? `onclick="setHubTarget(${i + 1})"` : ''}>
           ${i < stamps ? '<img src="/stamp.png" alt="" />' : ''}
         </div>
       `).join('');
-      return `<div class="official-card-frame"><img class="card-bg" src="/card.jpg" alt="Cartão Pamonha Net" />${slots}</div>`;
+      return `<div class="official-card-frame ${interactive ? 'is-interactive' : ''}"><img class="card-bg" src="/card.jpg" alt="Cartão Pamonha Net" />${slots}</div>`;
     }
 
     function cardStatusMessage(stamps) {
@@ -717,6 +723,7 @@
           api.setAuth(data.token, data.user);
           toast.show('Bem-vindo de volta, ' + data.user.fullName.split(' ')[0] + '!');
           updateNav();
+          connectLiveEvents();
           router.go('card', true);
         } catch (e) { toast.show(e.message, 'error'); }
       };
@@ -757,6 +764,7 @@
           api.setAuth(data.token, data.user);
           toast.show('Conta criada! Seu cartão já está pronto.');
           updateNav();
+          connectLiveEvents();
           router.go('card', true);
         } catch (e) { toast.show(e.message, 'error'); }
       };
@@ -1168,7 +1176,7 @@
         toast.show('Perfil atualizado.');
       } catch (e) { toast.show(e.message, 'error'); }
     };
-    window.logout = () => { api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo!'); };
+    window.logout = () => { disconnectLiveEvents(); api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo!'); };
 
     // -- Excluir conta: dupla confirmação real (digitar EXCLUIR + senha atual) --
     window.openDeleteAccount = () => {
@@ -1326,8 +1334,9 @@
             <div class="count">${c.stamps}/10</div>
           </div>
           <div class="actions">
-            <button class="btn btn-success" onclick="addStamp('${c._id}')">${icon('plus', 'icon icon-sm')} Selo</button>
-            <button class="btn btn-danger" onclick="removeStamp('${c._id}')">${icon('minus', 'icon icon-sm')} Selo</button>
+            <button class="btn btn-qr-green" onclick='openStampHub(${JSON.stringify(c)})'>${icon('card-simple', 'icon icon-sm')} Carimbar cartão</button>
+          </div>
+          <div class="actions">
             <button class="btn btn-secondary" onclick="resetCard('${c._id}')">${icon('reset', 'icon icon-sm')} Zerar</button>
             <button class="btn btn-outline" onclick="deleteHistory('${c._id}')">${icon('trash', 'icon icon-sm')} Histórico</button>
             <button class="btn btn-outline" style="border-color:#25D36660;color:#1a8a4a" onclick='shareCardWhatsapp(${JSON.stringify(c)})'>${icon('whatsapp', 'icon icon-sm')} Compartilhar</button>
@@ -1590,17 +1599,16 @@
     }
 
     async function handleScanResult(data) {
-      scannerCooldownUntil = Date.now() + 1500;
+      scannerCooldownUntil = Date.now() + 4000;
       const flash = $('#scan-flash');
       const status = $('#scan-status');
       if (navigator.vibrate) navigator.vibrate(60);
       if (flash) { flash.classList.add('hit'); setTimeout(() => flash.classList.remove('hit'), 220); }
-      if (status) status.textContent = 'Processando…';
+      if (status) status.textContent = 'Abrindo cartão…';
       try {
         const res = await api.post('/api/admin/scan-qr', { qrToken: data });
-        toast.show(res.message || 'Selo adicionado!');
-        if (status) status.textContent = 'Selo adicionado! Pronto para o próximo cliente.';
-        loadAdminClients();
+        if (status) status.textContent = 'Procurando QR Code…';
+        openStampHub(res.client);
       } catch (e) {
         toast.show(e.message, 'error');
         if (status) status.textContent = 'Procurando QR Code…';
@@ -1609,6 +1617,55 @@
 
     window.startScanner = startScanner;
     window.stopScanner = stopScanner;
+
+    // -- Hub de carimbo: abre com o cartão do cliente (via QR ou pela lista), toca no selo que
+    // quer deixar marcado — carimba/desfaz tudo até ali de uma vez — e confirma. Substitui o
+    // "+selo"/"-selo" avulso, que exigia um toque por unidade.
+    let hubClient = null;
+    let hubTarget = 0;
+
+    window.openStampHub = (client) => {
+      hubClient = client;
+      hubTarget = client.stamps;
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = 'stamp-hub-overlay';
+      overlay.innerHTML = `
+        <div class="modal-card" style="max-width:380px">
+          <h3 class="surface-title">${icon('card-simple','icon icon-sm')} Cartão de ${client.fullName.split(' ')[0]}</h3>
+          <p class="text-xs muted mb-1">Toque no selo até onde quer deixar marcado, depois confirme.</p>
+          <div id="hub-card-slot">${officialCardHTML(hubTarget, true)}</div>
+          <p class="text-center font-bold mt-1" id="hub-target-label" style="color:var(--husk-900)">${hubTarget} de 10 selos</p>
+          <div class="flex gap-1 mt-2">
+            <button class="btn btn-outline" style="flex:1" onclick="closeStampHub()">Cancelar</button>
+            <button class="btn btn-qr-green" style="flex:1" onclick="confirmStampHub()">${icon('check','icon icon-sm')} Confirmar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    };
+
+    window.setHubTarget = (n) => {
+      hubTarget = n;
+      $('#hub-card-slot').innerHTML = officialCardHTML(hubTarget, true);
+      $('#hub-target-label').textContent = `${hubTarget} de 10 selos`;
+    };
+
+    window.closeStampHub = () => {
+      const el = $('#stamp-hub-overlay');
+      if (el) el.remove();
+      hubClient = null;
+    };
+
+    window.confirmStampHub = async () => {
+      if (!hubClient) return;
+      try {
+        await api.post(`/api/admin/clients/${hubClient._id}/stamps/set`, { target: hubTarget });
+        toast.show(`Cartão de ${hubClient.fullName.split(' ')[0]} atualizado: ${hubTarget}/10.`);
+        closeStampHub();
+        loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
 
     window.sendNotif = async () => {
       const title = $('#notif-title').value.trim();
@@ -1753,6 +1810,29 @@
       } catch (e) { /* badge não pode quebrar o app */ }
     }
 
+    // -- Conexão ao vivo (Server-Sent Events): a tela se atualiza sozinha assim que o admin
+    // carimba, reseta ou manda um aviso — sem esperar os 20s do poll de segurança.
+    let liveSource = null;
+    function connectLiveEvents() {
+      if (!api.token || typeof EventSource === 'undefined') return;
+      if (liveSource) liveSource.close();
+      liveSource = new EventSource('/api/events?token=' + encodeURIComponent(api.token));
+
+      liveSource.addEventListener('stamps-update', () => {
+        if ((location.hash.replace('#', '') || 'card') === 'card') loadCard(true);
+      });
+
+      liveSource.addEventListener('notification', () => {
+        refreshUnreadBadge();
+        if (location.hash.replace('#', '') === 'notifications') loadNotifications();
+      });
+
+      liveSource.onerror = () => { /* EventSource já tenta reconectar sozinho */ };
+    }
+    function disconnectLiveEvents() {
+      if (liveSource) { liveSource.close(); liveSource = null; }
+    }
+
     // -- Notificações push reais (Web Push) --
     let swRegistration = null;
 
@@ -1869,6 +1949,7 @@
           const data = await api.get('/api/auth/me');
           api.setAuth(api.token, data.user);
           updateNav();
+          connectLiveEvents();
         } catch (e) {
           api.clearAuth();
           updateNav();

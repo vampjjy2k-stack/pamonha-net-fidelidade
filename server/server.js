@@ -13,6 +13,8 @@ const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/client');
 const adminRoutes = require('./routes/admin');
 const { ensureConfigured } = require('./utils/webPush');
+const jwt = require('jsonwebtoken');
+const liveEvents = require('./utils/events');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -64,6 +66,39 @@ app.get('/api/push/vapid-public-key', (req, res) => {
     return res.status(503).json({ error: 'Notificações push não configuradas no servidor.' });
   }
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+// GET /api/events — canal ao vivo (Server-Sent Events). O app do cliente mantém isso aberto
+// enquanto está na tela; assim que um carimbo é adicionado, uma notificação é enviada, etc.,
+// o servidor escreve um evento aqui e a tela se atualiza sozinha, sem esperar o próximo "poll".
+// Vai o token como query string (?token=) porque o navegador não permite header customizado em EventSource.
+app.get('/api/events', (req, res) => {
+  let payload;
+  try {
+    payload = jwt.verify(req.query.token, process.env.JWT_SECRET);
+  } catch (err) {
+    return res.status(401).end();
+  }
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no', // evita que proxies (Render/nginx) segurem o buffer
+  });
+  res.write('retry: 3000\n\n');
+
+  liveEvents.addClient(payload.id, res);
+  if (payload.role === 'admin') liveEvents.addClient('admins', res);
+
+  // Ping periódico só para manter a conexão viva atrás de proxies que fecham conexões ociosas.
+  const keepAlive = setInterval(() => res.write(': ping\n\n'), 25000);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    liveEvents.removeClient(payload.id, res);
+    if (payload.role === 'admin') liveEvents.removeClient('admins', res);
+  });
 });
 
 // 404 para rotas /api/* não encontradas

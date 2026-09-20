@@ -12,6 +12,7 @@ const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/admin');
 const { verifyQrToken } = require('./qr');
 const { sendPushToUser } = require('../utils/webPush');
+const liveEvents = require('../utils/events');
 
 const router = express.Router();
 router.use(auth, adminOnly);
@@ -125,8 +126,52 @@ router.post('/clients/:id/stamps', async (req, res) => {
     }
 
     res.json({ client });
+    liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível atualizar o carimbo.' });
+  }
+});
+
+// POST /api/admin/clients/:id/stamps/set { target } — o "hub" de carimbo: define o número final
+// de selos de uma vez (0 a 10), em vez de precisar tocar +1/-1 várias vezes. Se o alvo for maior
+// que o atual, registra os carimbos novos; se for menor, desfaz os mais recentes (mesma lógica
+// silenciosa do endpoint acima — sem gerar aviso de "carimbo removido" pro cliente).
+router.post('/clients/:id/stamps/set', async (req, res) => {
+  try {
+    const target = Number(req.body.target);
+    if (!Number.isInteger(target) || target < 0 || target > 10) {
+      return res.status(400).json({ error: 'Valor inválido. Escolha de 0 a 10 selos.' });
+    }
+
+    const client = await User.findOne({ _id: req.params.id, role: 'client' });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+    const delta = target - client.stamps;
+    if (delta > 0) {
+      const now = Date.now();
+      const entries = Array.from({ length: delta }, (_, i) => ({
+        userId: client._id,
+        action: 'add',
+        adminId: req.user.id,
+        source: 'manual',
+        createdAt: new Date(now + i), // ms distintos, só para manter a ordem estável no histórico
+      }));
+      await StampHistory.insertMany(entries);
+      client.lastStampAt = new Date();
+    } else if (delta < 0) {
+      const toRemove = await StampHistory.find({ userId: client._id, action: 'add' })
+        .sort({ createdAt: -1 })
+        .limit(-delta);
+      await StampHistory.deleteMany({ _id: { $in: toRemove.map((d) => d._id) } });
+    }
+
+    client.stamps = target;
+    await client.save();
+
+    res.json({ client });
+    liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o cartão.' });
   }
 });
 
@@ -146,6 +191,7 @@ router.post('/clients/:id/reset', async (req, res) => {
     await StampHistory.deleteMany({ userId: client._id });
 
     res.json({ client });
+    liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível resetar o cartão.' });
   }
@@ -163,7 +209,9 @@ router.delete('/clients/:id/history', async (req, res) => {
   }
 });
 
-// POST /api/admin/scan-qr { qrToken }
+// POST /api/admin/scan-qr { qrToken } — resolve o QR Code do cliente (sem carimbar ainda).
+// O carimbo em si acontece depois, quando o admin confirma no "hub" do cartão — assim dá pra
+// carimbar várias compras de uma vez, em vez de precisar escanear de novo a cada carimbo.
 router.post('/scan-qr', async (req, res) => {
   try {
     const { qrToken } = req.body;
@@ -178,24 +226,8 @@ router.post('/scan-qr', async (req, res) => {
 
     const client = await User.findOne({ _id: userId, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente do QR Code não foi encontrado.' });
-    if (client.stamps >= 10) {
-      return res.status(400).json({ error: `O cartão de ${client.fullName} já está completo (10/10).` });
-    }
 
-    client.stamps += 1;
-    client.lastStampAt = new Date();
-    await client.save();
-    await StampHistory.create({
-      userId: client._id,
-      action: 'add',
-      adminId: req.user.id,
-      source: 'qr-scan',
-    });
-
-    res.json({
-      message: `Carimbo adicionado para ${client.fullName}!`,
-      client,
-    });
+    res.json({ message: `Cartão de ${client.fullName} encontrado.`, client });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível processar o QR Code.' });
   }
@@ -223,6 +255,12 @@ router.post('/notifications', async (req, res) => {
     });
 
     res.status(201).json({ notification: notif, push: pushResult });
+
+    if (notif.broadcast) {
+      liveEvents.broadcast('notification', { id: notif._id, title: notif.title });
+    } else {
+      liveEvents.sendToUser(notif.userId, 'notification', { id: notif._id, title: notif.title });
+    }
   } catch (err) {
     res.status(500).json({ error: 'Erro ao criar notificação.' });
   }
