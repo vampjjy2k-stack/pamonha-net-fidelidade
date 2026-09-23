@@ -22,11 +22,17 @@ const stampHistorySchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
-    // Origem: manual (admin), qr-scan (leitura de QR) ou redeem-reset (resgate/zeramento).
+    // Origem: manual (admin), qr-scan (leitura de QR), venda (hub de vendas) ou redeem-reset (resgate/zeramento).
     source: {
       type: String,
-      enum: ['manual', 'qr-scan', 'redeem-reset'],
+      enum: ['manual', 'qr-scan', 'venda', 'redeem-reset'],
       default: 'manual',
+    },
+    // Referência opcional à venda que gerou este carimbo (quando source === 'venda').
+    vendaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Venda',
+      default: null,
     },
   },
   {

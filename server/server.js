@@ -41,7 +41,9 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+// Limite maior que o padrão (100kb) porque as imagens de produto do hub de vendas
+// chegam como data URL em base64 dentro do próprio JSON (sem storage externo).
+app.use(express.json({ limit: '8mb' }));
 
 // Avisa no boot se as notificações push reais não estiverem configuradas (não impede o servidor de subir).
 ensureConfigured();

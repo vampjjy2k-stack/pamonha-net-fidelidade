@@ -8,11 +8,15 @@ const StampHistory = require('../models/StampHistory');
 const Notification = require('../models/Notification');
 const NotificationRead = require('../models/NotificationRead');
 const Feedback = require('../models/Feedback');
+const Produto = require('../models/Produto');
+const Local = require('../models/Local');
+const Venda = require('../models/Venda');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/admin');
 const { verifyQrToken } = require('./qr');
 const { sendPushToUser } = require('../utils/webPush');
 const liveEvents = require('../utils/events');
+const { matchLocal } = require('../utils/geo');
 
 const router = express.Router();
 router.use(auth, adminOnly);
@@ -352,6 +356,394 @@ router.delete('/feedbacks/:id', async (req, res) => {
     res.json({ message: 'Avaliação removida.' });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao remover avaliação.' });
+  }
+});
+
+// ============================================================================
+// PRODUTOS — catálogo usado no hub de vendas (aberto ao escanear o QR do cliente)
+// ============================================================================
+
+// GET /api/admin/produtos?includeInactive=1
+router.get('/produtos', async (req, res) => {
+  try {
+    const { includeInactive } = req.query;
+    const query = includeInactive ? {} : { active: true };
+    const produtos = await Produto.find(query).sort({ name: 1 });
+    res.json({ produtos });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os produtos.' });
+  }
+});
+
+// POST /api/admin/produtos { name, price, imageUrl? }
+router.post('/produtos', async (req, res) => {
+  try {
+    const { name, price, imageUrl } = req.body;
+    if (!name || !String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' });
+    const numericPrice = Number(price);
+    if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+      return res.status(400).json({ error: 'Informe um preço válido.' });
+    }
+    const produto = await Produto.create({
+      name: String(name).trim(),
+      price: numericPrice,
+      imageUrl: imageUrl || null,
+      createdBy: req.user.id,
+    });
+    res.status(201).json({ produto });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível cadastrar o produto.' });
+  }
+});
+
+// PUT /api/admin/produtos/:id { name?, price?, imageUrl?, active? }
+router.put('/produtos/:id', async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);
+    if (!produto) return res.status(404).json({ error: 'Produto não encontrado.' });
+
+    const { name, price, imageUrl, active } = req.body;
+    if (name !== undefined) {
+      if (!String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' });
+      produto.name = String(name).trim();
+    }
+    if (price !== undefined) {
+      const numericPrice = Number(price);
+      if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+        return res.status(400).json({ error: 'Informe um preço válido.' });
+      }
+      produto.price = numericPrice;
+    }
+    if (imageUrl !== undefined) produto.imageUrl = imageUrl;
+    if (active !== undefined) produto.active = Boolean(active);
+
+    await produto.save();
+    res.json({ produto });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o produto.' });
+  }
+});
+
+// DELETE /api/admin/produtos/:id
+router.delete('/produtos/:id', async (req, res) => {
+  try {
+    const produto = await Produto.findByIdAndDelete(req.params.id);
+    if (!produto) return res.status(404).json({ error: 'Produto não encontrado.' });
+    res.json({ message: 'Produto removido com sucesso.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível remover o produto.' });
+  }
+});
+
+// ============================================================================
+// LOCAIS — feiras/pontos cadastrados pelo admin, usados para casar o GPS da venda
+// ============================================================================
+
+// GET /api/admin/locais?includeInactive=1
+router.get('/locais', async (req, res) => {
+  try {
+    const { includeInactive } = req.query;
+    const query = includeInactive ? {} : { active: true };
+    const locais = await Local.find(query).sort({ name: 1 });
+    res.json({ locais });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os locais.' });
+  }
+});
+
+// POST /api/admin/locais { name, lat, lng, radiusMeters? }
+router.post('/locais', async (req, res) => {
+  try {
+    const { name, lat, lng, radiusMeters } = req.body;
+    if (!name || !String(name).trim()) return res.status(400).json({ error: 'O nome do local é obrigatório.' });
+    const numericLat = Number(lat);
+    const numericLng = Number(lng);
+    if (!Number.isFinite(numericLat) || !Number.isFinite(numericLng)) {
+      return res.status(400).json({ error: 'Coordenadas inválidas para este local.' });
+    }
+    const local = await Local.create({
+      name: String(name).trim(),
+      lat: numericLat,
+      lng: numericLng,
+      radiusMeters: radiusMeters !== undefined ? Number(radiusMeters) : undefined,
+      createdBy: req.user.id,
+    });
+    res.status(201).json({ local });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível cadastrar o local.' });
+  }
+});
+
+// PUT /api/admin/locais/:id { name?, lat?, lng?, radiusMeters?, active? }
+router.put('/locais/:id', async (req, res) => {
+  try {
+    const local = await Local.findById(req.params.id);
+    if (!local) return res.status(404).json({ error: 'Local não encontrado.' });
+
+    const { name, lat, lng, radiusMeters, active } = req.body;
+    if (name !== undefined) {
+      if (!String(name).trim()) return res.status(400).json({ error: 'O nome do local é obrigatório.' });
+      local.name = String(name).trim();
+    }
+    if (lat !== undefined) local.lat = Number(lat);
+    if (lng !== undefined) local.lng = Number(lng);
+    if (radiusMeters !== undefined) local.radiusMeters = Number(radiusMeters);
+    if (active !== undefined) local.active = Boolean(active);
+
+    await local.save();
+    res.json({ local });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o local.' });
+  }
+});
+
+// DELETE /api/admin/locais/:id
+// Não apaga o histórico de vendas já associado a este local — as vendas antigas mantêm
+// o nome salvo em "localName" (snapshot), então os gráficos passados continuam corretos.
+router.delete('/locais/:id', async (req, res) => {
+  try {
+    const local = await Local.findByIdAndDelete(req.params.id);
+    if (!local) return res.status(404).json({ error: 'Local não encontrado.' });
+    res.json({ message: 'Local removido com sucesso.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível remover o local.' });
+  }
+});
+
+// ============================================================================
+// VENDAS — o "hub de vendas", aberto depois do /scan-qr. Registra a venda,
+// dá 1 selo por unidade de produto, e casa o GPS com um Local cadastrado.
+// ============================================================================
+
+// POST /api/admin/vendas
+// Body: { clientId, items: [{ produtoId, quantity }], lat?, lng?, localId? }
+// - Se "localId" for enviado, usa esse local direto (caso do admin escolher manualmente
+//   depois de um "local não identificado").
+// - Senão, tenta casar por GPS (lat/lng) com o Local mais próximo dentro do raio.
+// - Se não achar nenhum local nem receber localId, a venda é salva com localId null
+//   e a resposta traz "needsLocation: true" + os locais mais próximos, para o front
+//   perguntar ao admin se quer cadastrar um novo local ou escolher um existente.
+router.post('/vendas', async (req, res) => {
+  try {
+    const { clientId, items, lat, lng, localId } = req.body;
+
+    if (!clientId) return res.status(400).json({ error: 'Cliente não informado.' });
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Selecione ao menos 1 produto.' });
+    }
+
+    const client = await User.findOne({ _id: clientId, role: 'client' });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+    // Monta os itens com snapshot de nome/preço e valida quantidades.
+    const produtoIds = items.map((i) => i.produtoId);
+    const produtos = await Produto.find({ _id: { $in: produtoIds } });
+    const produtoMap = new Map(produtos.map((p) => [String(p._id), p]));
+
+    const vendaItems = [];
+    let totalValue = 0;
+    let stampsGiven = 0;
+
+    for (const item of items) {
+      const produto = produtoMap.get(String(item.produtoId));
+      const quantity = Number(item.quantity);
+      if (!produto) return res.status(400).json({ error: 'Um dos produtos selecionados não foi encontrado.' });
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        return res.status(400).json({ error: `Quantidade inválida para "${produto.name}".` });
+      }
+      vendaItems.push({ produtoId: produto._id, name: produto.name, price: produto.price, quantity });
+      totalValue += produto.price * quantity;
+      stampsGiven += quantity;
+    }
+
+    // Resolve o local: escolha manual (localId) tem prioridade sobre o casamento automático por GPS.
+    let resolvedLocal = null;
+    let nearest = [];
+    if (localId) {
+      resolvedLocal = await Local.findById(localId);
+    } else if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+      const locaisAtivos = await Local.find({ active: true });
+      const result = matchLocal(Number(lat), Number(lng), locaisAtivos);
+      resolvedLocal = result.match;
+      nearest = result.nearest.map((n) => ({
+        localId: n.local._id,
+        name: n.local.name,
+        distanceMeters: n.distance,
+      }));
+    }
+
+    // Aplica os selos ao cliente, respeitando o teto de 10 do cartão.
+    const previousStamps = client.stamps;
+    const stampsToApply = Math.min(stampsGiven, Math.max(0, 10 - client.stamps));
+    if (stampsToApply > 0) {
+      client.stamps += stampsToApply;
+      client.lastStampAt = new Date();
+      await client.save();
+    }
+    // Esta venda "fechou o cartão" se o cliente cruzou de <10 para exatamente 10 agora.
+    const completedCardOnThisSale = previousStamps < 10 && client.stamps === 10;
+
+    const venda = await Venda.create({
+      clientId: client._id,
+      adminId: req.user.id,
+      items: vendaItems,
+      totalValue,
+      stampsGiven,
+      gps: {
+        lat: Number.isFinite(Number(lat)) ? Number(lat) : null,
+        lng: Number.isFinite(Number(lng)) ? Number(lng) : null,
+      },
+      localId: resolvedLocal ? resolvedLocal._id : null,
+      localName: resolvedLocal ? resolvedLocal.name : null,
+      completedCardOnThisSale,
+    });
+
+    if (stampsToApply > 0) {
+      const now = Date.now();
+      const entries = Array.from({ length: stampsToApply }, (_, i) => ({
+        userId: client._id,
+        action: 'add',
+        adminId: req.user.id,
+        source: 'venda',
+        vendaId: venda._id,
+        createdAt: new Date(now + i),
+      }));
+      await StampHistory.insertMany(entries);
+    }
+
+    const overflow = stampsGiven - stampsToApply; // selos "perdidos" por já ter batido 10/10
+    res.status(201).json({
+      venda,
+      client,
+      overflowStamps: overflow,
+      needsLocation: !resolvedLocal,
+      nearestLocais: !resolvedLocal ? nearest : [],
+    });
+
+    liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível registrar a venda.' });
+  }
+});
+
+// GET /api/admin/vendas?localId=&from=&to= — listagem simples para auditoria/depuração
+router.get('/vendas', async (req, res) => {
+  try {
+    const { localId, from, to, limit = 50 } = req.query;
+    const query = {};
+    if (localId) query.localId = localId === 'null' ? null : localId;
+    if (from || to) {
+      query.createdAt = {};
+      if (from) query.createdAt.$gte = new Date(from);
+      if (to) query.createdAt.$lte = new Date(to);
+    }
+    const vendas = await Venda.find(query)
+      .sort({ createdAt: -1 })
+      .limit(Math.min(Number(limit) || 50, 200))
+      .populate('clientId', 'fullName phone');
+    res.json({ vendas });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar as vendas.' });
+  }
+});
+
+// ============================================================================
+// GRÁFICOS — dados agregados para o painel do admin
+// ============================================================================
+
+// GET /api/admin/graficos/satisfacao
+// "Satisfeito" = média das 3 notas (experiência/sabor/atendimento) >= 4.
+router.get('/graficos/satisfacao', async (req, res) => {
+  try {
+    const total = await Feedback.countDocuments();
+    const satisfeitos = await Feedback.countDocuments({ average: { $gte: 4 } });
+    const percentualSatisfeitos = total > 0 ? Math.round((satisfeitos / total) * 1000) / 10 : null;
+
+    // Distribuição por nota média arredondada (1 a 5), útil pra gráfico de barras.
+    const distribuicao = await Feedback.aggregate([
+      { $group: { _id: { $round: ['$average', 0] }, count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ]);
+
+    res.json({
+      totalAvaliacoes: total,
+      satisfeitos,
+      percentualSatisfeitos,
+      distribuicaoPorNota: distribuicao.map((d) => ({ nota: d._id, quantidade: d.count })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível calcular a satisfação dos clientes.' });
+  }
+});
+
+// GET /api/admin/graficos/cartoes-por-local?from=&to=
+// Conta, por local, quantas vendas foram a que completou o cartão do cliente (10º selo).
+router.get('/graficos/cartoes-por-local', async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const match = { completedCardOnThisSale: true };
+    if (from || to) {
+      match.createdAt = {};
+      if (from) match.createdAt.$gte = new Date(from);
+      if (to) match.createdAt.$lte = new Date(to);
+    }
+
+    const resultado = await Venda.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $ifNull: ['$localName', 'Local não identificado'] },
+          cartoesFechados: { $sum: 1 },
+        },
+      },
+      { $sort: { cartoesFechados: -1 } },
+    ]);
+
+    res.json({ porLocal: resultado.map((r) => ({ local: r._id, cartoesFechados: r.cartoesFechados })) });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível calcular os cartões fechados por local.' });
+  }
+});
+
+// GET /api/admin/graficos/faturamento-por-local?period=day|month|year&date=YYYY-MM-DD
+router.get('/graficos/faturamento-por-local', async (req, res) => {
+  try {
+    const { period = 'month', date } = req.query;
+    const ref = date ? new Date(date) : new Date();
+
+    let start;
+    let end;
+    if (period === 'day') {
+      start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
+      end = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + 1);
+    } else if (period === 'year') {
+      start = new Date(ref.getFullYear(), 0, 1);
+      end = new Date(ref.getFullYear() + 1, 0, 1);
+    } else {
+      start = new Date(ref.getFullYear(), ref.getMonth(), 1);
+      end = new Date(ref.getFullYear(), ref.getMonth() + 1, 1);
+    }
+
+    const resultado = await Venda.aggregate([
+      { $match: { createdAt: { $gte: start, $lt: end } } },
+      {
+        $group: {
+          _id: { $ifNull: ['$localName', 'Local não identificado'] },
+          faturamento: { $sum: '$totalValue' },
+          vendas: { $sum: 1 },
+        },
+      },
+      { $sort: { faturamento: -1 } },
+    ]);
+
+    res.json({
+      period,
+      start,
+      end,
+      porLocal: resultado.map((r) => ({ local: r._id, faturamento: Math.round(r.faturamento * 100) / 100, vendas: r.vendas })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível calcular o faturamento por local.' });
   }
 });
 
