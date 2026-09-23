@@ -1217,6 +1217,53 @@
       container.innerHTML = `
         <div class="page">
           <h2 class="page-title">${icon('shield')} Painel do administrador</h2>
+          <div class="surface section-gap">
+            <h3 class="surface-title">🌽 Operação da loja</h3>
+            <p class="text-xs muted mb-1">Registre uma venda para dar selos automaticamente e acompanhar o movimento da Pamonha Net.</p>
+            <label class="label">Cliente</label>
+            <select class="input mb-1" id="sale-client"></select>
+            <div id="sale-products"></div>
+            <div class="flex gap-1 mt-1">
+              <select class="input" id="sale-local" style="flex:1"><option value="">Local automático pelo GPS</option></select>
+              <button class="btn btn-outline" style="flex:0 0 auto;width:auto" onclick="useSaleLocation()">Usar GPS</button>
+            </div>
+            <p class="text-xs muted mt-1" id="sale-gps-status">Nenhum local escolhido manualmente.</p>
+            <button class="btn btn-primary mt-1" onclick="registerSale()">Registrar venda e dar selos</button>
+          </div>
+
+          <div class="surface section-gap">
+            <h3 class="surface-title">📦 Produtos</h3>
+            <div class="flex gap-1">
+              <input class="input" id="product-name" placeholder="Nome do produto" />
+              <input class="input" id="product-price" type="number" min="0" step="0.01" placeholder="Preço" style="max-width:110px" />
+            </div>
+            <button class="btn btn-secondary mt-1" onclick="createProduct()">Cadastrar produto</button>
+            <div id="v6-products-list" class="mt-1"></div>
+          </div>
+
+          <div class="surface section-gap">
+            <h3 class="surface-title">📍 Locais de venda</h3>
+            <div class="flex gap-1">
+              <input class="input" id="local-name" placeholder="Nome do local" />
+              <input class="input" id="local-radius" type="number" min="10" step="10" value="150" placeholder="Raio (m)" style="max-width:120px" />
+            </div>
+            <div class="flex gap-1 mt-1">
+              <input class="input" id="local-lat" type="number" step="any" placeholder="Latitude" />
+              <input class="input" id="local-lng" type="number" step="any" placeholder="Longitude" />
+            </div>
+            <button class="btn btn-secondary mt-1" onclick="createLocal()">Cadastrar local</button>
+            <button class="btn btn-outline mt-1" onclick="fillLocalFromGps()">Preencher coordenadas pelo GPS</button>
+            <div id="v6-locals-list" class="mt-1"></div>
+          </div>
+
+          <div class="surface section-gap">
+            <h3 class="surface-title">📊 Relatórios</h3>
+            <div class="flex gap-1">
+              <select class="input" id="report-period"><option value="day">Hoje</option><option value="month" selected>Este mês</option><option value="year">Este ano</option></select>
+              <button class="btn btn-outline" style="flex:0 0 auto;width:auto" onclick="loadV6Reports()">Atualizar</button>
+            </div>
+            <div id="v6-reports" class="mt-1"><p class="text-xs muted">Carregando relatórios…</p></div>
+          </div>
 
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
@@ -1309,9 +1356,133 @@
         </div>
       `;
       loadAdminClients();
+      loadV6Catalog();
+      loadV6Reports();
       loadAdminFeedbacks();
       loadSentNotifications();
     });
+
+    let v6Products = [];
+    let v6Locals = [];
+
+    const moneyBRL = (value) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const escV6 = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    async function loadV6Catalog() {
+      try {
+        const [products, locals] = await Promise.all([
+          api.get('/api/admin/produtos?includeInactive=1'),
+          api.get('/api/admin/locais?includeInactive=1'),
+        ]);
+        v6Products = products.produtos || [];
+        v6Locals = locals.locais || [];
+        renderV6Products();
+        renderV6Locals();
+        renderSaleForm();
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    function renderV6Products() {
+      const list = $('#v6-products-list');
+      if (!list) return;
+      list.innerHTML = v6Products.length ? v6Products.map(p => `
+        <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+          <div><strong>${escV6(p.name)}</strong><div class="text-xs muted">${moneyBRL(p.price)} · ${p.active ? 'ativo' : 'inativo'}</div></div>
+          <button class="btn ${p.active ? 'btn-outline' : 'btn-secondary'}" style="width:auto;padding:.55rem .7rem" onclick="toggleProduct('${p._id}', ${!p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
+        </div>`).join('') : '<p class="text-xs muted">Nenhum produto cadastrado.</p>';
+    }
+
+    function renderV6Locals() {
+      const list = $('#v6-locals-list');
+      if (!list) return;
+      list.innerHTML = v6Locals.length ? v6Locals.map(l => `
+        <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+          <div><strong>${escV6(l.name)}</strong><div class="text-xs muted">${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)} · raio ${l.radiusMeters}m · ${l.active ? 'ativo' : 'inativo'}</div></div>
+          <button class="btn btn-danger" style="width:auto;padding:.55rem .7rem" onclick="deleteLocal('${l._id}')">Excluir</button>
+        </div>`).join('') : '<p class="text-xs muted">Nenhum local cadastrado.</p>';
+      const select = $('#sale-local');
+      if (select) select.innerHTML = '<option value="">Local automático pelo GPS</option>' + v6Locals.filter(l => l.active).map(l => `<option value="${l._id}">${escV6(l.name)}</option>`).join('');
+    }
+
+    function renderSaleForm() {
+      const clients = $('#sale-client');
+      const products = $('#sale-products');
+      if (!clients || !products) return;
+      clients.innerHTML = '<option value="">Selecione o cliente</option>' + adminClientCache.map(c => `<option value="${c._id}">${escV6(c.fullName)} — ${formatPhone(c.phone)} (${c.stamps}/10)</option>`).join('');
+      const active = v6Products.filter(p => p.active);
+      products.innerHTML = active.length ? active.map(p => `
+        <div class="row" style="display:flex;align-items:center;gap:.65rem">
+          <div style="flex:1"><strong>${escV6(p.name)}</strong><div class="text-xs muted">${moneyBRL(p.price)} · 1 selo por unidade</div></div>
+          <input class="input" id="sale-qty-${p._id}" type="number" min="0" step="1" value="0" style="max-width:80px" aria-label="Quantidade de ${escV6(p.name)}" />
+        </div>`).join('') : '<p class="text-xs muted">Cadastre um produto ativo para registrar uma venda.</p>';
+    }
+
+    window.createProduct = async () => {
+      const name = $('#product-name').value.trim();
+      const price = $('#product-price').value;
+      if (!name || price === '') return toast.show('Informe nome e preço do produto.', 'error');
+      try { await api.post('/api/admin/produtos', { name, price }); $('#product-name').value = ''; $('#product-price').value = ''; toast.show('Produto cadastrado.'); await loadV6Catalog(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.toggleProduct = async (id, active) => {
+      try { await api.req('PUT', `/api/admin/produtos/${id}`, { active }); toast.show(active ? 'Produto ativado.' : 'Produto desativado.'); await loadV6Catalog(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.createLocal = async () => {
+      const name = $('#local-name').value.trim();
+      const lat = $('#local-lat').value;
+      const lng = $('#local-lng').value;
+      const radiusMeters = $('#local-radius').value;
+      if (!name || lat === '' || lng === '') return toast.show('Informe nome, latitude e longitude.', 'error');
+      try { await api.post('/api/admin/locais', { name, lat, lng, radiusMeters }); $('#local-name').value = ''; toast.show('Local cadastrado.'); await loadV6Catalog(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.deleteLocal = async (id) => {
+      if (!confirm('Excluir este local? Vendas antigas continuarão com o nome salvo.')) return;
+      try { await api.del(`/api/admin/locais/${id}`); toast.show('Local excluído.'); await loadV6Catalog(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+    function getPosition() {
+      return new Promise((resolve, reject) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 8000 }) : reject(new Error('GPS indisponível neste navegador.')));
+    }
+    window.fillLocalFromGps = async () => {
+      try { const pos = await getPosition(); $('#local-lat').value = pos.coords.latitude.toFixed(7); $('#local-lng').value = pos.coords.longitude.toFixed(7); toast.show('Coordenadas preenchidas.'); }
+      catch (e) { toast.show('Não foi possível obter o GPS.', 'error'); }
+    };
+    window.useSaleLocation = async () => {
+      try { const pos = await getPosition(); $('#sale-gps-status').textContent = `GPS pronto: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`; $('#sale-gps-status').dataset.lat = pos.coords.latitude; $('#sale-gps-status').dataset.lng = pos.coords.longitude; toast.show('GPS será usado nesta venda.'); }
+      catch (e) { toast.show('Não foi possível obter o GPS.', 'error'); }
+    };
+    window.registerSale = async () => {
+      const clientId = $('#sale-client').value;
+      if (!clientId) return toast.show('Selecione o cliente.', 'error');
+      const items = v6Products.filter(p => p.active).map(p => ({ produtoId: p._id, quantity: Number($(`#sale-qty-${p._id}`).value || 0) })).filter(i => i.quantity > 0);
+      if (!items.length) return toast.show('Informe ao menos um produto.', 'error');
+      const status = $('#sale-gps-status');
+      const body = { clientId, items, localId: $('#sale-local').value || undefined, lat: status.dataset.lat, lng: status.dataset.lng };
+      try {
+        const result = await api.post('/api/admin/vendas', body);
+        const locationText = result.venda.localName || (result.needsLocation ? 'local não identificado' : 'local automático');
+        toast.show(`Venda registrada: ${result.stampsGiven} selo(s), ${moneyBRL(result.venda.totalValue)} · ${locationText}.`);
+        if (result.overflowStamps) toast.show(`${result.overflowStamps} selo(s) excedente(s) não couberam no cartão.`, 'error');
+        v6Products.forEach(p => { const el = $(`#sale-qty-${p._id}`); if (el) el.value = 0; });
+        await loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.loadV6Reports = async () => {
+      const box = $('#v6-reports'); if (!box) return;
+      try {
+        const period = $('#report-period').value;
+        const [sales, cards, satisfaction] = await Promise.all([
+          api.get(`/api/admin/graficos/faturamento-por-local?period=${period}`),
+          api.get('/api/admin/graficos/cartoes-por-local'),
+          api.get('/api/admin/graficos/satisfacao'),
+        ]);
+        const rows = sales.porLocal.length ? sales.porLocal.map(r => `<div class="row"><strong>${escV6(r.local)}</strong><div class="text-xs muted">${moneyBRL(r.faturamento)} · ${r.vendas} venda(s)</div></div>`).join('') : '<p class="text-xs muted">Sem vendas no período.</p>';
+        const cardRows = cards.porLocal.length ? cards.porLocal.map(r => `<span class="text-sm">${escV6(r.local)}: <strong>${r.cartoesFechados}</strong></span>`).join(' · ') : 'Nenhum cartão fechado ainda.';
+        box.innerHTML = `<p class="text-sm"><strong>Satisfação:</strong> ${satisfaction.percentualSatisfeitos == null ? 'sem avaliações' : satisfaction.percentualSatisfeitos + '% satisfeitos'} (${satisfaction.totalAvaliacoes || 0} avaliação(ões))</p><p class="text-sm mt-1"><strong>Cartões fechados por local:</strong> ${cardRows}</p><div class="mt-1"><strong class="text-sm">Faturamento por local</strong>${rows}</div>`;
+      } catch (e) { box.innerHTML = `<p class="text-sm" style="color:var(--error)">${escV6(e.message)}</p>`; }
+    };
 
     let adminClientCache = [];
     async function loadAdminClients() {
@@ -1319,6 +1490,7 @@
         const data = await api.get('/api/admin/clients?limit=50');
         adminClientCache = data.clients;
         renderAdminClients(data.clients);
+        renderSaleForm();
       } catch (e) { toast.show(e.message, 'error'); }
     }
 
