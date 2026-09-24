@@ -363,14 +363,23 @@
     }
     .sent-notif-row strong { display: block; font-size: 0.86rem; color: var(--ink); }
 
-    /* -- Stars -- */
-    .fb-question-title { font-weight: 600; font-size: 0.92rem; color: var(--husk-900); text-align: center; margin-bottom: 0.3rem; }
-    .stars { display: flex; gap: 0.5rem; justify-content: center; margin: 0.3rem 0 0.2rem; }
-    .star-btn { background: none; border: none; cursor: pointer; padding: 0.2rem; color: var(--line); transition: transform 0.15s ease, color var(--ease); }
-    .star-btn:active { transform: scale(1.25); }
-    .star-btn .icon { width: 28px; height: 28px; }
-    .star-btn.active { color: var(--gold-600); }
-    .star-btn.active .icon { fill: currentColor; }
+    /* -- Escala de avaliação (pills, sem estrelas) -- */
+    .fb-question-title { font-weight: 600; font-size: 0.92rem; color: var(--husk-900); text-align: center; margin-bottom: 0.4rem; }
+    .rate-scale { display: flex; gap: 0.35rem; justify-content: space-between; margin: 0.3rem 0 0.2rem; }
+    .rate-pill {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+      padding: 0.55rem 0.15rem; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
+      background: var(--cream-card); cursor: pointer; transition: all var(--ease);
+    }
+    .rate-pill .emoji { font-size: 1.25rem; line-height: 1; filter: grayscale(1); opacity: 0.55; transition: all var(--ease); }
+    .rate-pill .lbl { font-size: 0.62rem; font-weight: 700; color: var(--ink-faint); text-align: center; line-height: 1.1; }
+    .rate-pill:active { transform: scale(0.95); }
+    .rate-pill.active { border-color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, var(--cream-card)); }
+    .rate-pill.active .emoji { filter: none; opacity: 1; transform: scale(1.15); }
+    .rate-pill.active .lbl { color: var(--tone); }
+    .rate-mini { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; }
+    .rate-mini .emoji { font-size: 0.95rem; }
+    .rate-mini .lbl { color: var(--tone); }
 
     /* -- Admin -- */
     .client-row { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 0.6rem; }
@@ -484,12 +493,13 @@
     }
     .cart-total-bar strong { font-family: var(--font-display); font-size: 1.15rem; color: var(--husk-900); }
 
-    /* -- Gráficos (barras simples em CSS/SVG, sem libs externas) -- */
+    /* -- Gráficos (SVG de verdade: pizza/donut e barras, sem libs externas) -- */
     .chart-bar-row { margin-bottom: 0.65rem; }
     .chart-bar-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--ink); margin-bottom: 0.25rem; }
     .chart-bar-label strong { color: var(--gold-700); }
     .chart-bar-track { height: 12px; border-radius: 999px; background: var(--husk-300); overflow: hidden; }
     .chart-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--husk-500), var(--husk-900)); }
+    .chart-bar-fill.liquido { background: linear-gradient(90deg, var(--gold-300), var(--gold-600)); }
     .stat-grid { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
     .stat-box {
       flex: 1; background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -503,6 +513,52 @@
       background: #fff; color: var(--ink-soft); font-weight: 600; font-size: 0.78rem; cursor: pointer;
     }
     .period-toggle button.active { background: var(--gold-600); border-color: var(--gold-600); color: var(--husk-900); }
+    .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .chart-head .surface-title { margin-bottom: 0; }
+    .chart-type-toggle { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .chart-type-btn {
+      width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid var(--line); background: #fff;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-faint);
+    }
+    .chart-type-btn .icon { width: 15px; height: 15px; }
+    .chart-type-btn.active { background: var(--husk-900); border-color: var(--husk-900); color: var(--gold-300); }
+    .donut-wrap { display: flex; align-items: center; gap: 1.1rem; margin-bottom: 0.4rem; }
+    .donut-wrap svg { flex-shrink: 0; }
+    .donut-center-label { font-family: var(--font-display); font-weight: 700; }
+    .chart-legend { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-width: 0; }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--ink); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-item strong { margin-left: auto; color: var(--gold-700); flex-shrink: 0; }
+    .money-cards { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .money-card {
+      flex: 1; background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm);
+      padding: 0.7rem 0.5rem; text-align: center;
+    }
+    .money-card .num { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+    .money-card .num.bruto { color: var(--husk-900); }
+    .money-card .num.custo { color: var(--error); }
+    .money-card .num.liquido { color: var(--gold-700); }
+    .money-card .lbl { font-size: 0.65rem; color: var(--ink-soft); }
+    .bar-chart-svg { width: 100%; height: auto; }
+    .chart-legend-row { display: flex; gap: 1rem; justify-content: center; margin-bottom: 0.7rem; font-size: 0.76rem; }
+    .chart-legend-row .legend-item { gap: 0.35rem; }
+
+    /* -- Histórico de vendas (liberdade do admin: revisar e apagar) -- */
+    .venda-row { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.75rem 0.8rem; margin-bottom: 0.55rem; }
+    .venda-row .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+    .venda-row .client { font-weight: 700; font-size: 0.86rem; color: var(--ink); }
+    .venda-row .meta { font-size: 0.72rem; color: var(--ink-soft); margin-top: 1px; }
+    .venda-row .items { font-size: 0.78rem; color: var(--ink-soft); margin: 0.4rem 0; line-height: 1.4; }
+    .venda-row .value { font-family: var(--font-display); font-weight: 700; color: var(--husk-900); font-size: 1rem; flex-shrink: 0; text-align: right; }
+    .venda-row .value .liquido { display: block; font-size: 0.68rem; font-weight: 600; color: var(--gold-700); font-family: var(--font-body); }
+    .venda-badge {
+      display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.68rem; font-weight: 700;
+      padding: 0.15rem 0.5rem; border-radius: 999px; margin-top: 0.35rem;
+    }
+    .venda-badge.ok { background: var(--husk-300); color: var(--husk-900); }
+    .venda-badge.warn { background: rgba(178,58,34,0.12); color: var(--error); }
+    .venda-row .actions { display: flex; gap: 0.4rem; margin-top: 0.55rem; }
+    .venda-row .actions .btn { width: auto; flex: 1; padding: 0.45rem; font-size: 0.72rem; }
 
     ::-webkit-scrollbar { width: 0; background: transparent; }
 
@@ -625,6 +681,14 @@
       <symbol id="i-chart" viewBox="0 0 24 24">
         <path d="M4.5 20V10M12 20V4M19.5 20v-7"/>
         <path d="M3.5 20.5h17"/>
+      </symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24">
+        <path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0 0-3L18 6a2.1 2.1 0 0 0-3 0L4.5 16.5 4 20Z" stroke-linejoin="round"/>
+        <path d="M13.5 7.5l3 3"/>
+      </symbol>
+      <symbol id="i-pie" viewBox="0 0 24 24">
+        <path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5H12V3.5Z" stroke-linejoin="round"/>
+        <path d="M15.5 3.9A8.5 8.5 0 0 1 20.1 8.5H15.5V3.9Z" stroke-linejoin="round"/>
       </symbol>
       <symbol id="i-cart" viewBox="0 0 24 24">
         <path d="M3.5 4.5h2l2.3 11.3a1.6 1.6 0 0 0 1.6 1.3h8a1.6 1.6 0 0 0 1.6-1.3l1.3-7.3H6.4"/>
@@ -760,6 +824,7 @@
       get(endpoint) { return this.req('GET', endpoint); },
       post(endpoint, body) { return this.req('POST', endpoint, body); },
       put(endpoint, body) { return this.req('PUT', endpoint, body); },
+      patch(endpoint, body) { return this.req('PATCH', endpoint, body); },
       del(endpoint) { return this.req('DELETE', endpoint); }
     };
 
@@ -1091,18 +1156,38 @@
       { key: 'serviceRating', q: 'Como foi o atendimento?' },
     ];
 
+    // Escala de avaliação em pills (sem estrelas): emoji + rótulo + cor, do vermelho ao verde-palha.
+    const RATE_LEVELS = [
+      { val: 1, emoji: '😞', lbl: 'Ruim', tone: 'var(--error)' },
+      { val: 2, emoji: '😕', lbl: 'Regular', tone: 'var(--clay-600)' },
+      { val: 3, emoji: '🙂', lbl: 'Bom', tone: 'var(--gold-600)' },
+      { val: 4, emoji: '😄', lbl: 'Muito bom', tone: 'var(--husk-500)' },
+      { val: 5, emoji: '🤩', lbl: 'Excelente', tone: 'var(--husk-900)' },
+    ];
+    function ratePillsHTML(key, selected) {
+      return RATE_LEVELS.map(r => `
+        <button class="rate-pill ${selected === r.val ? 'active' : ''}" style="--tone:${r.tone}" data-val="${r.val}" onclick="setRating('${key}', ${r.val})">
+          <span class="emoji">${r.emoji}</span><span class="lbl">${r.lbl}</span>
+        </button>
+      `).join('');
+    }
+    function rateMiniHTML(val) {
+      const r = RATE_LEVELS.find(x => x.val === Math.round(val)) || RATE_LEVELS[2];
+      return `<span class="rate-mini" style="--tone:${r.tone}"><span class="emoji">${r.emoji}</span><span class="lbl">${r.lbl}</span></span>`;
+    }
+
     router.register('feedback', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
         <div class="page">
           <h2 class="page-title">${icon('star')} Avaliar</h2>
-          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Leva 10 segundos — toque nas estrelas de cada pergunta.</p>
+          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Leva 10 segundos — toque na carinha que representa sua experiência em cada pergunta.</p>
           <div class="surface">
             ${FEEDBACK_QUESTIONS.map((f, idx) => `
               <div class="fb-question ${idx > 0 ? 'mt-2' : ''}">
                 <p class="fb-question-title">${f.q}</p>
-                <div class="stars" id="star-box-${f.key}">
-                  ${[1,2,3,4,5].map(i => `<button class="star-btn" data-val="${i}" onclick="setStar('${f.key}', ${i})">${icon('star', 'icon')}</button>`).join('')}
+                <div class="rate-scale" id="star-box-${f.key}">
+                  ${ratePillsHTML(f.key, null)}
                 </div>
               </div>
             `).join('')}
@@ -1115,9 +1200,10 @@
     });
 
     let selectedRatings = {};
-    window.setStar = (key, n) => {
+    window.setRating = (key, n) => {
       selectedRatings[key] = n;
-      $$(`#star-box-${key} .star-btn`).forEach((s, i) => s.classList.toggle('active', i < n));
+      const box = $(`#star-box-${key}`);
+      if (box) box.innerHTML = ratePillsHTML(key, n);
     };
     window.sendFeedback = async () => {
       const missing = FEEDBACK_QUESTIONS.find(f => !selectedRatings[f.key]);
@@ -1315,6 +1401,7 @@
             <button class="admin-tab-btn" data-tab="painel" onclick="setAdminTab('painel')">${icon('shield')}<span>Painel</span></button>
             <button class="admin-tab-btn" data-tab="produtos" onclick="setAdminTab('produtos')">${icon('box')}<span>Produtos</span></button>
             <button class="admin-tab-btn" data-tab="locais" onclick="setAdminTab('locais')">${icon('map')}<span>Locais</span></button>
+            <button class="admin-tab-btn" data-tab="vendas" onclick="setAdminTab('vendas')">${icon('cart')}<span>Vendas</span></button>
             <button class="admin-tab-btn" data-tab="graficos" onclick="setAdminTab('graficos')">${icon('chart')}<span>Gráficos</span></button>
           </div>
           <div id="admin-tab-body"></div>
@@ -1331,6 +1418,7 @@
       const body = $('#admin-tab-body');
       if (adminActiveTab === 'produtos') return renderAdminProdutos(body);
       if (adminActiveTab === 'locais') return renderAdminLocais(body);
+      if (adminActiveTab === 'vendas') return renderAdminVendas(body);
       if (adminActiveTab === 'graficos') return renderAdminGraficos(body);
       renderAdminPainel(body);
     }
@@ -1452,7 +1540,7 @@
             <div class="count">${c.stamps}/10</div>
           </div>
           <div class="actions">
-            <button class="btn btn-qr-green" onclick='openStampHub(${JSON.stringify(c)})'>${icon('card-simple', 'icon icon-sm')} Carimbar cartão</button>
+            <button class="btn btn-qr-green" onclick='openStampHub(${JSON.stringify(c)})'>${icon('card-simple', 'icon icon-sm')} Ajuste manual</button>
             <button class="btn btn-primary" onclick='openSalesHub(${JSON.stringify(c)})'>${icon('cart', 'icon icon-sm')} Registrar venda</button>
           </div>
           <div class="actions">
@@ -1751,13 +1839,13 @@
       overlay.id = 'stamp-hub-overlay';
       overlay.innerHTML = `
         <div class="modal-card" style="max-width:380px">
-          <h3 class="surface-title">${icon('card-simple','icon icon-sm')} Cartão de ${client.fullName.split(' ')[0]}</h3>
-          <p class="text-xs muted mb-1">Toque no selo até onde quer deixar marcado, depois confirme.</p>
+          <h3 class="surface-title">${icon('card-simple','icon icon-sm')} Ajuste manual — ${client.fullName.split(' ')[0]}</h3>
+          <p class="text-xs muted mb-1">Toque no selo até onde quer deixar marcado, depois confirme. Use só para correções — isso não gera venda nem entra nos gráficos por local. Para vendas normais, use "Registrar venda".</p>
           <div id="hub-card-slot">${officialCardHTML(hubTarget, true)}</div>
           <p class="text-center font-bold mt-1" id="hub-target-label" style="color:var(--husk-900)">${hubTarget} de 10 selos</p>
           <div class="flex gap-1 mt-2">
             <button class="btn btn-outline" style="flex:1" onclick="closeStampHub()">Cancelar</button>
-            <button class="btn btn-qr-green" style="flex:1" onclick="confirmStampHub()">${icon('check','icon icon-sm')} Confirmar</button>
+            <button class="btn btn-qr-green" style="flex:1" onclick="confirmStampHub()">${icon('check','icon icon-sm')} Confirmar ajuste</button>
           </div>
           <button class="btn btn-primary mt-1" onclick='closeStampHub(); openSalesHub(${JSON.stringify(client)})'>${icon('cart','icon icon-sm')} Registrar venda com produtos</button>
         </div>
@@ -1865,7 +1953,6 @@
           box.innerHTML = `<div class="empty-state"><p>Nenhuma avaliação recebida ainda.</p></div>`;
           return;
         }
-        const miniStars = (val) => [1,2,3,4,5].map(i => `<span style="color:${i <= val ? 'var(--gold-600)' : 'var(--line)'}"><svg class="icon" style="width:12px;height:12px;${i <= val ? 'fill:currentColor' : ''}"><use href="#i-star"/></svg></span>`).join('');
         const scoreColor = (avg) => avg >= 4 ? 'var(--husk-700)' : avg >= 3 ? 'var(--gold-700)' : 'var(--error)';
 
         box.innerHTML = data.feedbacks.map(f => `
@@ -1879,9 +1966,9 @@
               <div class="fb-avg" style="color:${scoreColor(f.average || 0)}">${(f.average ?? '-')}</div>
             </div>
             <div class="fb-breakdown">
-              <div class="fb-line"><span>Experiência</span>${miniStars(f.experienceRating)}</div>
-              <div class="fb-line"><span>Sabor</span>${miniStars(f.tasteRating)}</div>
-              <div class="fb-line"><span>Atendimento</span>${miniStars(f.serviceRating)}</div>
+              <div class="fb-line"><span>Experiência</span>${rateMiniHTML(f.experienceRating)}</div>
+              <div class="fb-line"><span>Sabor</span>${rateMiniHTML(f.tasteRating)}</div>
+              <div class="fb-line"><span>Atendimento</span>${rateMiniHTML(f.serviceRating)}</div>
             </div>
             ${f.comment ? `<p class="fb-comment">"${f.comment}"</p>` : ''}
             <button class="link-btn mt-1" style="color:var(--error)" onclick="deleteFeedback('${f._id}')">${icon('trash', 'icon icon-sm')} Excluir avaliação</button>
@@ -2177,8 +2264,17 @@
           <h3 class="surface-title">${icon('box','icon icon-sm')} Novo produto</h3>
           <label class="label">Nome</label>
           <input class="input mb-1" id="prod-name" placeholder="Ex: Pamonha doce" maxlength="60" />
-          <label class="label">Preço (R$)</label>
-          <input class="input mb-1" id="prod-price" type="number" step="0.01" min="0" placeholder="0,00" />
+          <div class="flex gap-1 mb-1">
+            <div style="flex:1">
+              <label class="label">Preço de venda (R$)</label>
+              <input class="input" id="prod-price" type="number" step="0.01" min="0" placeholder="0,00" />
+            </div>
+            <div style="flex:1">
+              <label class="label">Custo de produção (R$)</label>
+              <input class="input" id="prod-cost" type="number" step="0.01" min="0" placeholder="0,00" />
+            </div>
+          </div>
+          <p class="text-xs muted mb-1">O custo é o que gastou pra fazer 1 unidade (ingredientes, embalagem). É a base do faturamento líquido nos gráficos.</p>
           <label class="label">Foto (opcional)</label>
           <input class="input mb-1" id="prod-image" type="file" accept="image/*" onchange="previewProdImage(event)" />
           <img id="prod-image-preview" class="prod-thumb hidden mb-1" style="width:64px;height:64px" alt="" />
@@ -2213,30 +2309,35 @@
       const box = $('#produtos-list');
       if (!box) return;
       if (!produtosCache.length) { box.innerHTML = `<div class="empty-state"><p>Nenhum produto cadastrado ainda.</p></div>`; return; }
-      box.innerHTML = produtosCache.map(p => `
+      box.innerHTML = produtosCache.map(p => {
+        const margem = p.price - (p.costPrice || 0);
+        return `
         <div class="prod-row ${p.active ? '' : 'inactive'}">
           ${p.imageUrl ? `<img class="prod-thumb" src="${p.imageUrl}" alt="" />` : `<div class="prod-icon-fallback">${icon('box','icon icon-sm')}</div>`}
           <div class="info">
             <strong>${p.name}</strong>
-            <span>R$ ${p.price.toFixed(2).replace('.', ',')}${p.active ? '' : ' · inativo'}</span>
+            <span>R$ ${p.price.toFixed(2).replace('.', ',')} · custo R$ ${(p.costPrice || 0).toFixed(2).replace('.', ',')} · lucro R$ ${margem.toFixed(2).replace('.', ',')}${p.active ? '' : ' · inativo'}</span>
           </div>
           <div class="row-actions">
+            <button class="icon-btn" onclick='openEditProduto(${JSON.stringify(p)})' title="Editar">${icon('edit','icon')}</button>
             <button class="icon-btn" onclick='toggleProdutoActive(${JSON.stringify(p)})' title="${p.active ? 'Desativar' : 'Ativar'}">${icon(p.active ? 'minus' : 'plus', 'icon')}</button>
             <button class="icon-btn danger" onclick="deleteProduto('${p._id}')">${icon('trash','icon')}</button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     window.createProduto = async () => {
       const name = $('#prod-name').value.trim();
       const price = Number($('#prod-price').value);
+      const costPrice = Number($('#prod-cost').value) || 0;
       if (!name) return toast.show('Informe o nome do produto.', 'error');
       if (!Number.isFinite(price) || price < 0) return toast.show('Informe um preço válido.', 'error');
       try {
-        await api.post('/api/admin/produtos', { name, price, imageUrl: prodImageData });
+        await api.post('/api/admin/produtos', { name, price, costPrice, imageUrl: prodImageData });
         toast.show('Produto cadastrado.');
-        $('#prod-name').value = ''; $('#prod-price').value = '';
+        $('#prod-name').value = ''; $('#prod-price').value = ''; $('#prod-cost').value = '';
         prodImageData = null;
         const preview = $('#prod-image-preview'); if (preview) { preview.classList.add('hidden'); preview.src = ''; }
         const file = $('#prod-image'); if (file) file.value = '';
@@ -2253,6 +2354,62 @@
       if (!confirm('Remover este produto? Vendas antigas com ele continuam no histórico.')) return;
       try { await api.del(`/api/admin/produtos/${id}`); toast.show('Produto removido.'); loadProdutos(); }
       catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    let editProdImageData = undefined; // undefined = não mexeu na foto; null = removeu; string = nova foto
+    window.openEditProduto = (p) => {
+      editProdImageData = undefined;
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = 'edit-produto-overlay';
+      overlay.innerHTML = `
+        <div class="modal-card">
+          <h3 class="surface-title">${icon('edit','icon icon-sm')} Editar produto</h3>
+          <label class="label">Nome</label>
+          <input class="input mb-1" id="edit-prod-name" value="${p.name}" maxlength="60" />
+          <div class="flex gap-1 mb-1">
+            <div style="flex:1">
+              <label class="label">Preço (R$)</label>
+              <input class="input" id="edit-prod-price" type="number" step="0.01" min="0" value="${p.price}" />
+            </div>
+            <div style="flex:1">
+              <label class="label">Custo (R$)</label>
+              <input class="input" id="edit-prod-cost" type="number" step="0.01" min="0" value="${p.costPrice || 0}" />
+            </div>
+          </div>
+          <label class="label">Foto</label>
+          <input class="input mb-1" id="edit-prod-image" type="file" accept="image/*" onchange="previewEditProdImage(event)" />
+          <div class="flex gap-1 mt-1">
+            <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Cancelar</button>
+            <button class="btn btn-primary" style="flex:1" onclick="saveEditProduto('${p._id}')">${icon('save','icon icon-sm')} Salvar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    };
+
+    window.previewEditProdImage = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => { editProdImageData = reader.result; };
+      reader.readAsDataURL(file);
+    };
+
+    window.saveEditProduto = async (id) => {
+      const name = $('#edit-prod-name').value.trim();
+      const price = Number($('#edit-prod-price').value);
+      const costPrice = Number($('#edit-prod-cost').value) || 0;
+      if (!name) return toast.show('Informe o nome do produto.', 'error');
+      if (!Number.isFinite(price) || price < 0) return toast.show('Informe um preço válido.', 'error');
+      try {
+        const body = { name, price, costPrice };
+        if (editProdImageData !== undefined) body.imageUrl = editProdImageData;
+        await api.put(`/api/admin/produtos/${id}`, body);
+        toast.show('Produto atualizado.');
+        closeModal();
+        loadProdutos();
+      } catch (e) { toast.show(e.message, 'error'); }
     };
 
     // ==========================================================================
@@ -2351,6 +2508,101 @@
       if (!confirm('Remover este local? O histórico de vendas antigas mantém o nome salvo.')) return;
       try { await api.del(`/api/admin/locais/${id}`); toast.show('Local removido.'); loadLocais(); }
       catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    // ==========================================================================
+    // VENDAS — histórico com liberdade de revisar: reatribuir local e apagar
+    // vendas lançadas por engano (os selos dados por ela voltam automaticamente).
+    // ==========================================================================
+    let vendasCache = [];
+
+    async function renderAdminVendas(container) {
+      container.innerHTML = `
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('cart','icon icon-sm')} Vendas recentes</h3>
+          <p class="text-xs muted mb-1">Apagar uma venda devolve os selos que ela deu ao cliente. Vendas sem local podem ser vinculadas a um local existente aqui.</p>
+        </div>
+        <div id="vendas-list"><div class="loader"></div></div>
+      `;
+      loadVendas();
+    }
+
+    async function loadVendas() {
+      try {
+        const data = await api.get('/api/admin/vendas?limit=100');
+        vendasCache = data.vendas;
+        renderVendasList();
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    function renderVendasList() {
+      const box = $('#vendas-list');
+      if (!box) return;
+      if (!vendasCache.length) { box.innerHTML = `<div class="empty-state"><p>Nenhuma venda registrada ainda.</p></div>`; return; }
+      box.innerHTML = vendasCache.map(v => {
+        const itemsLabel = v.items.map(it => `${it.quantity}× ${it.name}`).join(', ');
+        const liquido = v.totalValue - (v.totalCost || 0);
+        const badge = v.localId
+          ? `<span class="venda-badge ok">${icon('pin','icon icon-sm')} ${v.localName}</span>`
+          : `<span class="venda-badge warn">${icon('map','icon icon-sm')} Local não identificado</span>`;
+        return `
+          <div class="venda-row">
+            <div class="top">
+              <div>
+                <div class="client">${v.clientId?.fullName || 'Cliente'}</div>
+                <div class="meta">${formatDate(v.createdAt)} · ${v.stampsGiven} selo(s)${v.completedCardOnThisSale ? ' · fechou cartão 🎉' : ''}</div>
+              </div>
+              <div class="value">R$ ${v.totalValue.toFixed(2).replace('.', ',')}<span class="liquido">líquido R$ ${liquido.toFixed(2).replace('.', ',')}</span></div>
+            </div>
+            <div class="items">${itemsLabel}</div>
+            ${badge}
+            <div class="actions">
+              ${!v.localId ? `<button class="btn btn-outline" onclick="openAssignLocal('${v._id}')">${icon('map','icon icon-sm')} Vincular local</button>` : ''}
+              <button class="btn btn-outline" style="color:var(--error);border-color:rgba(178,58,34,0.35)" onclick="deleteVenda('${v._id}')">${icon('trash','icon icon-sm')} Apagar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.deleteVenda = async (id) => {
+      if (!confirm('Apagar esta venda? Os selos que ela deu voltam para o cliente.')) return;
+      try {
+        await api.del('/api/admin/vendas/' + id);
+        toast.show('Venda removida e selos revertidos.');
+        loadVendas();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.openAssignLocal = async (vendaId) => {
+      if (!locaisCache.length) {
+        try { const data = await api.get('/api/admin/locais'); locaisCache = data.locais; } catch (e) { /* segue com cache vazio */ }
+      }
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = 'assign-local-overlay';
+      overlay.innerHTML = `
+        <div class="modal-card">
+          <h3 class="surface-title">${icon('map','icon icon-sm')} Vincular local a esta venda</h3>
+          ${locaisCache.length ? locaisCache.map(l => `
+            <div class="cleanup-row">
+              <div><strong>${l.name}</strong></div>
+              <button class="btn btn-primary" onclick="confirmAssignLocal('${vendaId}', '${l._id}')">Usar</button>
+            </div>
+          `).join('') : `<p class="text-sm muted">Nenhum local cadastrado ainda.</p>`}
+          <button class="btn btn-outline mt-1" onclick="closeModal()">Fechar</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    };
+
+    window.confirmAssignLocal = async (vendaId, localId) => {
+      try {
+        await api.patch(`/api/admin/vendas/${vendaId}/local`, { localId });
+        toast.show('Local vinculado à venda.');
+        closeModal();
+        loadVendas();
+      } catch (e) { toast.show(e.message, 'error'); }
     };
 
     // ==========================================================================
@@ -2455,26 +2707,29 @@
         toast.show(`Venda registrada: ${data.venda.stampsGiven} selo(s).${overflowMsg}`);
         closeSalesHub();
         loadAdminClients();
-        if (data.needsLocation) openLocationPicker(data.nearestLocais, coords);
+        if (data.needsLocation) openLocationPicker(data.nearestLocais, coords, data.venda._id);
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
-    function openLocationPicker(nearest, coords) {
+    function openLocationPicker(nearest, coords, vendaId) {
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
       overlay.id = 'location-picker-overlay';
       const nearestHTML = nearest && nearest.length
-        ? `<p class="text-xs muted mb-1">Locais cadastrados mais próximos:</p>` + nearest.map(n => `
-            <div class="cleanup-row"><div><strong>${n.name}</strong><span>${Math.round(n.distanceMeters)}m de distância</span></div></div>
+        ? `<p class="text-xs muted mb-1">Locais cadastrados mais próximos — toque para usar um deles:</p>` + nearest.map(n => `
+            <div class="cleanup-row">
+              <div><strong>${n.name}</strong><span>${Math.round(n.distanceMeters)}m de distância</span></div>
+              <button class="btn btn-primary" onclick='confirmAssignLocal("${vendaId}", "${n.localId}"); closeLocationPicker()'>Usar</button>
+            </div>
           `).join('')
         : `<p class="text-xs muted mb-1">Nenhum local cadastrado perto daqui.</p>`;
       overlay.innerHTML = `
         <div class="modal-card">
           <h3 class="surface-title">${icon('map','icon icon-sm')} Local não identificado</h3>
-          <p class="text-sm mb-1">Esta venda ficou sem local vinculado — está fora do raio de todos os locais cadastrados. Ela conta normalmente nos selos e no faturamento total, só não aparece nos gráficos por local.</p>
+          <p class="text-sm mb-1">Esta venda ficou sem local vinculado — está fora do raio de todos os locais cadastrados. Ela conta normalmente nos selos e no faturamento total, só não aparece nos gráficos por local até você vincular um.</p>
           ${nearestHTML}
           <div class="flex gap-1 mt-2">
-            <button class="btn btn-outline" style="flex:1" onclick="closeLocationPicker()">Entendi</button>
+            <button class="btn btn-outline" style="flex:1" onclick="closeLocationPicker()">Deixar sem local</button>
             ${coords ? `<button class="btn btn-primary" style="flex:1" onclick='closeLocationPicker(); goRegisterLocal(${coords.lat}, ${coords.lng})'>${icon('plus','icon icon-sm')} Cadastrar local aqui</button>` : ''}
           </div>
         </div>
@@ -2497,7 +2752,9 @@
     // GRÁFICOS — satisfação, cartões fechados por local e faturamento por local
     // ==========================================================================
     let graficosPeriod = 'month';
+    let satChartMode = 'donut'; // 'donut' | 'barras'
     window.setGraficosPeriod = (p) => { graficosPeriod = p; renderAdminGraficos($('#admin-tab-body')); };
+    window.setSatChartMode = (m) => { satChartMode = m; renderAdminGraficos($('#admin-tab-body')); };
 
     async function renderAdminGraficos(container) {
       container.innerHTML = `<div class="loader"></div>`;
@@ -2513,34 +2770,137 @@
       }
     }
 
+    function escapeXML(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+    function fmtMoney(v) { return (v || 0).toFixed(2).replace('.', ','); }
+
+    // Donut simples (2 fatias: satisfeitos x resto), com rótulo central via overlay HTML.
+    function donutSVG(percent, size, stroke, color) {
+      const radius = (size - stroke) / 2;
+      const circumference = 2 * Math.PI * radius;
+      const safePercent = Math.max(0, Math.min(100, percent));
+      const offset = circumference * (1 - safePercent / 100);
+      const c = size / 2;
+      return `
+        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+          <circle cx="${c}" cy="${c}" r="${radius}" fill="none" stroke="var(--husk-300)" stroke-width="${stroke}" />
+          <circle cx="${c}" cy="${c}" r="${radius}" fill="none" stroke="${color}" stroke-width="${stroke}"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round"
+            transform="rotate(-90 ${c} ${c})" style="transition: stroke-dashoffset 0.6s var(--ease)" />
+        </svg>
+      `;
+    }
+
+    // Gráfico de barras horizontal (1 série) em SVG — com trilho, valor e rótulo do local.
+    function svgHBarChart(data, opts) {
+      const { valueFmt = (v) => String(v), color = 'var(--husk-700)' } = opts || {};
+      const width = 320, rowH = 30, gap = 12, labelW = 100;
+      const barAreaW = width - labelW - 54;
+      const max = Math.max(1, ...data.map((d) => d.value));
+      const height = data.length * (rowH + gap) - gap + 6;
+      const rows = data.map((d, i) => {
+        const y = i * (rowH + gap);
+        const barW = Math.max(3, (d.value / max) * barAreaW);
+        return `
+          <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="10.5" fill="var(--ink)" font-family="var(--font-body)">${escapeXML(d.label)}</text>
+          <rect x="${labelW}" y="${y + 3}" width="${barAreaW}" height="${rowH - 6}" rx="${(rowH - 6) / 2}" fill="var(--husk-300)" />
+          <rect x="${labelW}" y="${y + 3}" width="${barW}" height="${rowH - 6}" rx="${(rowH - 6) / 2}" fill="${color}" />
+          <text x="${labelW + barAreaW + 8}" y="${y + rowH / 2 + 4}" font-size="10.5" font-weight="700" fill="var(--gold-700)" font-family="var(--font-body)">${valueFmt(d.value)}</text>
+        `;
+      }).join('');
+      return `<svg class="bar-chart-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${rows}</svg>`;
+    }
+
+    // Gráfico de barras agrupado (2 séries: bruto x líquido) — faturamento por local.
+    function svgGroupedBarChart(data) {
+      const width = 320, rowH = 46, gap = 14, labelW = 100, subH = 13, subGap = 4;
+      const barAreaW = width - labelW - 62;
+      const max = Math.max(1, ...data.flatMap((d) => [d.bruto, d.liquido]));
+      const height = data.length * (rowH + gap) - gap + 6;
+      const rows = data.map((d, i) => {
+        const y = i * (rowH + gap);
+        const wBruto = Math.max(3, (d.bruto / max) * barAreaW);
+        const wLiquido = Math.max(3, (d.liquido / max) * barAreaW);
+        return `
+          <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="10.5" fill="var(--ink)" font-family="var(--font-body)">${escapeXML(d.label)}</text>
+          <rect x="${labelW}" y="${y + 2}" width="${barAreaW}" height="${subH}" rx="6.5" fill="var(--husk-300)" />
+          <rect x="${labelW}" y="${y + 2}" width="${wBruto}" height="${subH}" rx="6.5" fill="var(--husk-700)" />
+          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH - 2}" font-size="9.5" font-weight="700" fill="var(--husk-900)" font-family="var(--font-body)">R$ ${fmtMoney(d.bruto)}</text>
+          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${barAreaW}" height="${subH}" rx="6.5" fill="var(--gold-100)" />
+          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${wLiquido}" height="${subH}" rx="6.5" fill="var(--gold-600)" />
+          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH + subGap + subH - 2}" font-size="9.5" font-weight="700" fill="var(--gold-700)" font-family="var(--font-body)">R$ ${fmtMoney(d.liquido)}</text>
+        `;
+      }).join('');
+      return `<svg class="bar-chart-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${rows}</svg>`;
+    }
+
     function drawGraficos(container, sat, porLocalData, fatData) {
-      const maxCartoes = Math.max(1, ...porLocalData.porLocal.map(r => r.cartoesFechados));
-      const maxFat = Math.max(1, ...fatData.porLocal.map(r => r.faturamento));
       const periods = [['day', 'Dia'], ['month', 'Mês'], ['year', 'Ano']];
+      const totais = fatData.totais || { faturamentoBruto: 0, custo: 0, faturamentoLiquido: 0, vendas: 0 };
+
+      // -- Satisfação: donut (padrão) ou barras por nível, com botão de trocar tipo --
+      let satBody;
+      if (!sat.totalAvaliacoes) {
+        satBody = `<p class="text-sm muted">Nenhuma avaliação ainda.</p>`;
+      } else if (satChartMode === 'donut') {
+        const pct = sat.percentualSatisfeitos ?? 0;
+        satBody = `
+          <div class="donut-wrap">
+            <div style="position:relative">
+              ${donutSVG(pct, 108, 16, 'var(--husk-900)')}
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <span class="donut-center-label" style="font-size:1.3rem;color:var(--husk-900)">${pct}%</span>
+                <span style="font-size:0.62rem;color:var(--ink-soft)">satisfeitos</span>
+              </div>
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-dot" style="background:var(--husk-900)"></span>Satisfeitos<strong>${sat.satisfeitos}</strong></div>
+              <div class="legend-item"><span class="legend-dot" style="background:var(--husk-300)"></span>Demais avaliações<strong>${sat.totalAvaliacoes - sat.satisfeitos}</strong></div>
+              <div class="legend-item"><span class="legend-dot" style="background:transparent"></span>Total<strong>${sat.totalAvaliacoes}</strong></div>
+            </div>
+          </div>
+        `;
+      } else {
+        const barData = sat.distribuicaoPorNota.map((d) => {
+          const level = RATE_LEVELS.find((r) => r.val === d.nota) || RATE_LEVELS[2];
+          return { label: `${level.emoji} ${level.lbl}`, value: d.quantidade };
+        });
+        satBody = svgHBarChart(barData, { valueFmt: (v) => String(v), color: 'var(--husk-700)' });
+      }
+
+      // -- Cartões fechados por local --
+      const cartoesBody = porLocalData.porLocal.length
+        ? svgHBarChart(porLocalData.porLocal.map((r) => ({ label: r.local, value: r.cartoesFechados })), { valueFmt: (v) => String(v), color: 'var(--husk-700)' })
+        : `<p class="text-sm muted">Nenhum cartão fechado registrado ainda.</p>`;
+
+      // -- Faturamento por local: bruto x líquido, com totais do período --
+      const fatBody = fatData.porLocal.length
+        ? svgGroupedBarChart(fatData.porLocal.map((r) => ({ label: r.local, bruto: r.faturamentoBruto, liquido: r.faturamentoLiquido })))
+        : `<p class="text-sm muted">Nenhuma venda neste período.</p>`;
 
       container.innerHTML = `
         <div class="surface section-gap">
-          <h3 class="surface-title">${icon('star','icon icon-sm')} Satisfação dos clientes</h3>
+          <div class="chart-head">
+            <h3 class="surface-title">${icon('star','icon icon-sm')} Satisfação dos clientes</h3>
+            ${sat.totalAvaliacoes ? `
+              <div class="chart-type-toggle">
+                <button class="chart-type-btn ${satChartMode === 'donut' ? 'active' : ''}" title="Pizza" onclick="setSatChartMode('donut')">${icon('pie','icon')}</button>
+                <button class="chart-type-btn ${satChartMode === 'barras' ? 'active' : ''}" title="Barras" onclick="setSatChartMode('barras')">${icon('chart','icon')}</button>
+              </div>
+            ` : ''}
+          </div>
           <div class="stat-grid">
             <div class="stat-box"><div class="num">${sat.totalAvaliacoes}</div><div class="lbl">Avaliações</div></div>
             <div class="stat-box"><div class="num">${sat.percentualSatisfeitos !== null ? sat.percentualSatisfeitos + '%' : '—'}</div><div class="lbl">Satisfeitos</div></div>
           </div>
-          ${sat.distribuicaoPorNota.length ? sat.distribuicaoPorNota.map(d => `
-            <div class="chart-bar-row">
-              <div class="chart-bar-label"><span>${d.nota} estrela${d.nota == 1 ? '' : 's'}</span><strong>${d.quantidade}</strong></div>
-              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round((d.quantidade / Math.max(1, sat.totalAvaliacoes)) * 100)}%"></div></div>
-            </div>
-          `).join('') : `<p class="text-sm muted">Nenhuma avaliação ainda.</p>`}
+          ${satBody}
         </div>
 
         <div class="surface section-gap">
           <h3 class="surface-title">${icon('trophy','icon icon-sm')} Cartões fechados por local</h3>
-          ${porLocalData.porLocal.length ? porLocalData.porLocal.map(r => `
-            <div class="chart-bar-row">
-              <div class="chart-bar-label"><span>${r.local}</span><strong>${r.cartoesFechados}</strong></div>
-              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round((r.cartoesFechados / maxCartoes) * 100)}%"></div></div>
-            </div>
-          `).join('') : `<p class="text-sm muted">Nenhum cartão fechado registrado ainda.</p>`}
+          <p class="text-xs muted mb-1">Só conta cartão fechado por venda com produto — ajustes manuais não entram aqui.</p>
+          ${cartoesBody}
         </div>
 
         <div class="surface section-gap">
@@ -2548,12 +2908,18 @@
           <div class="period-toggle">
             ${periods.map(([val, label]) => `<button class="${graficosPeriod === val ? 'active' : ''}" onclick="setGraficosPeriod('${val}')">${label}</button>`).join('')}
           </div>
-          ${fatData.porLocal.length ? fatData.porLocal.map(r => `
-            <div class="chart-bar-row">
-              <div class="chart-bar-label"><span>${r.local}</span><strong>R$ ${r.faturamento.toFixed(2).replace('.', ',')}</strong></div>
-              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round((r.faturamento / maxFat) * 100)}%"></div></div>
+          <div class="money-cards">
+            <div class="money-card"><div class="num bruto">R$ ${fmtMoney(totais.faturamentoBruto)}</div><div class="lbl">Bruto</div></div>
+            <div class="money-card"><div class="num custo">R$ ${fmtMoney(totais.custo)}</div><div class="lbl">Custo</div></div>
+            <div class="money-card"><div class="num liquido">R$ ${fmtMoney(totais.faturamentoLiquido)}</div><div class="lbl">Líquido</div></div>
+          </div>
+          ${fatData.porLocal.length ? `
+            <div class="chart-legend-row">
+              <div class="legend-item"><span class="legend-dot" style="background:var(--husk-700)"></span>Bruto</div>
+              <div class="legend-item"><span class="legend-dot" style="background:var(--gold-600)"></span>Líquido</div>
             </div>
-          `).join('') : `<p class="text-sm muted">Nenhuma venda neste período.</p>`}
+          ` : ''}
+          ${fatBody}
         </div>
       `;
     }

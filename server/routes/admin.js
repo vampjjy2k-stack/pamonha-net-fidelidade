@@ -378,15 +378,20 @@ router.get('/produtos', async (req, res) => {
 // POST /api/admin/produtos { name, price, imageUrl? }
 router.post('/produtos', async (req, res) => {
   try {
-    const { name, price, imageUrl } = req.body;
+    const { name, price, costPrice, imageUrl } = req.body;
     if (!name || !String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' });
     const numericPrice = Number(price);
     if (!Number.isFinite(numericPrice) || numericPrice < 0) {
       return res.status(400).json({ error: 'Informe um preço válido.' });
     }
+    const numericCost = costPrice !== undefined ? Number(costPrice) : 0;
+    if (!Number.isFinite(numericCost) || numericCost < 0) {
+      return res.status(400).json({ error: 'Informe um custo de produção válido.' });
+    }
     const produto = await Produto.create({
       name: String(name).trim(),
       price: numericPrice,
+      costPrice: numericCost,
       imageUrl: imageUrl || null,
       createdBy: req.user.id,
     });
@@ -396,13 +401,13 @@ router.post('/produtos', async (req, res) => {
   }
 });
 
-// PUT /api/admin/produtos/:id { name?, price?, imageUrl?, active? }
+// PUT /api/admin/produtos/:id { name?, price?, costPrice?, imageUrl?, active? }
 router.put('/produtos/:id', async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado.' });
 
-    const { name, price, imageUrl, active } = req.body;
+    const { name, price, costPrice, imageUrl, active } = req.body;
     if (name !== undefined) {
       if (!String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' });
       produto.name = String(name).trim();
@@ -413,6 +418,13 @@ router.put('/produtos/:id', async (req, res) => {
         return res.status(400).json({ error: 'Informe um preço válido.' });
       }
       produto.price = numericPrice;
+    }
+    if (costPrice !== undefined) {
+      const numericCost = Number(costPrice);
+      if (!Number.isFinite(numericCost) || numericCost < 0) {
+        return res.status(400).json({ error: 'Informe um custo de produção válido.' });
+      }
+      produto.costPrice = numericCost;
     }
     if (imageUrl !== undefined) produto.imageUrl = imageUrl;
     if (active !== undefined) produto.active = Boolean(active);
@@ -542,6 +554,7 @@ router.post('/vendas', async (req, res) => {
 
     const vendaItems = [];
     let totalValue = 0;
+    let totalCost = 0;
     let stampsGiven = 0;
 
     for (const item of items) {
@@ -551,8 +564,15 @@ router.post('/vendas', async (req, res) => {
       if (!Number.isInteger(quantity) || quantity < 1) {
         return res.status(400).json({ error: `Quantidade inválida para "${produto.name}".` });
       }
-      vendaItems.push({ produtoId: produto._id, name: produto.name, price: produto.price, quantity });
+      vendaItems.push({
+        produtoId: produto._id,
+        name: produto.name,
+        price: produto.price,
+        costPrice: produto.costPrice || 0,
+        quantity,
+      });
       totalValue += produto.price * quantity;
+      totalCost += (produto.costPrice || 0) * quantity;
       stampsGiven += quantity;
     }
 
@@ -588,6 +608,7 @@ router.post('/vendas', async (req, res) => {
       adminId: req.user.id,
       items: vendaItems,
       totalValue,
+      totalCost,
       stampsGiven,
       gps: {
         lat: Number.isFinite(Number(lat)) ? Number(lat) : null,
@@ -644,6 +665,51 @@ router.get('/vendas', async (req, res) => {
     res.json({ vendas });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível carregar as vendas.' });
+  }
+});
+
+// PATCH /api/admin/vendas/:id/local { localId }
+// Usado quando uma venda ficou como "local não identificado": o admin escolhe, depois,
+// um dos locais cadastrados mais próximos para associar a venda a ele.
+router.patch('/vendas/:id/local', async (req, res) => {
+  try {
+    const { localId } = req.body;
+    if (!localId) return res.status(400).json({ error: 'Informe o local.' });
+    const local = await Local.findById(localId);
+    if (!local) return res.status(404).json({ error: 'Local não encontrado.' });
+
+    const venda = await Venda.findById(req.params.id);
+    if (!venda) return res.status(404).json({ error: 'Venda não encontrada.' });
+
+    venda.localId = local._id;
+    venda.localName = local.name;
+    await venda.save();
+
+    res.json({ venda });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível vincular o local a esta venda.' });
+  }
+});
+
+// DELETE /api/admin/vendas/:id
+// Apaga uma venda lançada por engano: reverte os selos que ela deu (sem deixar o cliente
+// com saldo negativo) e remove o rastro dela no histórico de selos.
+router.delete('/vendas/:id', async (req, res) => {
+  try {
+    const venda = await Venda.findById(req.params.id);
+    if (!venda) return res.status(404).json({ error: 'Venda não encontrada.' });
+
+    const client = await User.findById(venda.clientId);
+    if (client) {
+      client.stamps = Math.max(0, client.stamps - venda.stampsGiven);
+      await client.save();
+    }
+    await StampHistory.deleteMany({ vendaId: venda._id });
+    await venda.deleteOne();
+
+    res.json({ message: 'Venda removida e selos revertidos.', client });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível remover a venda.' });
   }
 });
 
@@ -729,18 +795,48 @@ router.get('/graficos/faturamento-por-local', async (req, res) => {
       {
         $group: {
           _id: { $ifNull: ['$localName', 'Local não identificado'] },
-          faturamento: { $sum: '$totalValue' },
+          bruto: { $sum: '$totalValue' },
+          custo: { $sum: '$totalCost' },
           vendas: { $sum: 1 },
         },
       },
-      { $sort: { faturamento: -1 } },
+      { $sort: { bruto: -1 } },
     ]);
+
+    const porLocal = resultado.map((r) => {
+      const bruto = Math.round(r.bruto * 100) / 100;
+      const custo = Math.round((r.custo || 0) * 100) / 100;
+      return {
+        local: r._id,
+        faturamento: bruto, // mantido por compatibilidade com quem já consome "faturamento" = bruto
+        faturamentoBruto: bruto,
+        custo,
+        faturamentoLiquido: Math.round((bruto - custo) * 100) / 100,
+        vendas: r.vendas,
+      };
+    });
+
+    const totais = porLocal.reduce(
+      (acc, r) => ({
+        bruto: acc.bruto + r.faturamentoBruto,
+        custo: acc.custo + r.custo,
+        liquido: acc.liquido + r.faturamentoLiquido,
+        vendas: acc.vendas + r.vendas,
+      }),
+      { bruto: 0, custo: 0, liquido: 0, vendas: 0 }
+    );
 
     res.json({
       period,
       start,
       end,
-      porLocal: resultado.map((r) => ({ local: r._id, faturamento: Math.round(r.faturamento * 100) / 100, vendas: r.vendas })),
+      porLocal,
+      totais: {
+        faturamentoBruto: Math.round(totais.bruto * 100) / 100,
+        custo: Math.round(totais.custo * 100) / 100,
+        faturamentoLiquido: Math.round(totais.liquido * 100) / 100,
+        vendas: totais.vendas,
+      },
     });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível calcular o faturamento por local.' });

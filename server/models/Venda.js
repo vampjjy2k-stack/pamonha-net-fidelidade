@@ -15,6 +15,9 @@ const vendaItemSchema = new mongoose.Schema(
     },
     name: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
+    // Snapshot do custo de produção por unidade no momento da venda — sobrevive
+    // se o produto for editado depois, e é a base do faturamento líquido.
+    costPrice: { type: Number, required: true, min: 0, default: 0 },
     quantity: { type: Number, required: true, min: 1 },
   },
   { _id: false }
@@ -37,10 +40,16 @@ const vendaSchema = new mongoose.Schema(
       required: true,
       validate: [(arr) => arr.length > 0, 'A venda precisa ter pelo menos 1 item.'],
     },
-    // Soma de price*quantity de todos os itens.
+    // Soma de price*quantity de todos os itens (faturamento bruto desta venda).
     totalValue: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    // Soma de costPrice*quantity de todos os itens. faturamento líquido = totalValue - totalCost.
+    totalCost: {
+      type: Number,
+      default: 0,
       min: 0,
     },
     // Soma de quantity de todos os itens = quantos selos essa venda deu.

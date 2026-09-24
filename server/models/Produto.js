@@ -17,6 +17,14 @@ const produtoSchema = new mongoose.Schema(
       required: [true, 'O preço do produto é obrigatório.'],
       min: [0, 'O preço não pode ser negativo.'],
     },
+    // Custo de produção por unidade (ingredientes, embalagem etc). Usado para calcular
+    // faturamento líquido (bruto - custo) nos gráficos do admin. Opcional: quem não
+    // preencher ainda vê o faturamento bruto normalmente, só não tem o líquido calculado.
+    costPrice: {
+      type: Number,
+      default: 0,
+      min: [0, 'O custo não pode ser negativo.'],
+    },
     // Imagem em data URL (base64) — mesmo padrão simples usado no resto do projeto,
     // sem depender de armazenamento externo.
     imageUrl: {
