@@ -427,6 +427,83 @@
     .fb-line > span:first-child { color: var(--ink-soft); }
     .fb-comment { font-size: 0.87rem; color: var(--ink-soft); font-style: italic; margin-top: 0.65rem; line-height: 1.4; }
 
+    /* -- Admin sub-tabs (Painel / Produtos / Locais / Gráficos) -- */
+    .admin-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.1rem; overflow-x: auto; padding-bottom: 2px; }
+    .admin-tab-btn {
+      flex: 1; min-width: 78px; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+      padding: 0.55rem 0.3rem; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
+      background: #fff; color: var(--ink-soft); font-weight: 600; font-size: 0.72rem; cursor: pointer;
+    }
+    .admin-tab-btn .icon { width: 18px; height: 18px; }
+    .admin-tab-btn.active { background: var(--husk-900); border-color: var(--husk-900); color: var(--gold-300); }
+
+    /* -- Produtos / Locais rows -- */
+    .prod-row, .local-row {
+      display: flex; align-items: center; gap: 0.75rem; background: var(--cream-card);
+      border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.7rem; margin-bottom: 0.55rem;
+    }
+    .prod-thumb {
+      width: 44px; height: 44px; border-radius: 10px; object-fit: cover; flex-shrink: 0;
+      background: var(--paper); border: 1px solid var(--line);
+    }
+    .prod-icon-fallback {
+      width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0; background: var(--paper);
+      border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; color: var(--husk-700);
+    }
+    .prod-row .info, .local-row .info { flex: 1; min-width: 0; }
+    .prod-row .info strong, .local-row .info strong { display: block; font-size: 0.9rem; color: var(--ink); }
+    .prod-row .info span, .local-row .info span { font-size: 0.78rem; color: var(--ink-soft); }
+    .prod-row.inactive, .local-row.inactive { opacity: 0.5; }
+    .row-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: 9px; border: 1.5px solid var(--line); background: #fff;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--husk-900); flex-shrink: 0;
+    }
+    .icon-btn.danger { color: var(--error); border-color: rgba(178,58,34,0.35); }
+    .icon-btn .icon { width: 16px; height: 16px; }
+
+    /* -- Cart (hub de vendas) -- */
+    .cart-row {
+      display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0; border-bottom: 1px solid var(--line-soft);
+    }
+    .cart-row:last-child { border-bottom: none; }
+    .cart-row .info { flex: 1; min-width: 0; }
+    .cart-row .info strong { display: block; font-size: 0.86rem; color: var(--ink); }
+    .cart-row .info span { font-size: 0.76rem; color: var(--ink-soft); }
+    .qty-stepper { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .qty-stepper button {
+      width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--husk-700); background: #fff;
+      color: var(--husk-900); cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .qty-stepper button:active { transform: scale(0.92); }
+    .qty-stepper .icon { width: 14px; height: 14px; }
+    .qty-stepper .qty-val { min-width: 1.4rem; text-align: center; font-weight: 700; font-family: var(--font-display); }
+    .cart-total-bar {
+      display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.9rem;
+      padding-top: 0.75rem; border-top: 2px solid var(--line);
+    }
+    .cart-total-bar strong { font-family: var(--font-display); font-size: 1.15rem; color: var(--husk-900); }
+
+    /* -- Gráficos (barras simples em CSS/SVG, sem libs externas) -- */
+    .chart-bar-row { margin-bottom: 0.65rem; }
+    .chart-bar-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--ink); margin-bottom: 0.25rem; }
+    .chart-bar-label strong { color: var(--gold-700); }
+    .chart-bar-track { height: 12px; border-radius: 999px; background: var(--husk-300); overflow: hidden; }
+    .chart-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--husk-500), var(--husk-900)); }
+    .stat-grid { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
+    .stat-box {
+      flex: 1; background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm);
+      padding: 0.8rem; text-align: center;
+    }
+    .stat-box .num { font-family: var(--font-display); font-weight: 700; font-size: 1.4rem; color: var(--husk-900); }
+    .stat-box .lbl { font-size: 0.72rem; color: var(--ink-soft); }
+    .period-toggle { display: flex; gap: 0.4rem; margin-bottom: 0.9rem; }
+    .period-toggle button {
+      flex: 1; padding: 0.5rem; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
+      background: #fff; color: var(--ink-soft); font-weight: 600; font-size: 0.78rem; cursor: pointer;
+    }
+    .period-toggle button.active { background: var(--gold-600); border-color: var(--gold-600); color: var(--husk-900); }
+
     ::-webkit-scrollbar { width: 0; background: transparent; }
 
     .loader { width: 32px; height: 32px; border: 3px solid var(--gold-100); border-top-color: var(--gold-600); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 1.2rem auto; }
@@ -536,6 +613,23 @@
       <symbol id="i-camera" viewBox="0 0 24 24">
         <path d="M4 8.5a1 1 0 0 1 1-1h2.2l1-1.7h7.6l1 1.7H19a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8.5Z"/>
         <circle cx="12" cy="13" r="3.4"/>
+      </symbol>
+      <symbol id="i-box" viewBox="0 0 24 24">
+        <path d="M12 3.6 20 8v8l-8 4.4L4 16V8l8-4.4Z"/>
+        <path d="M4 8l8 4.4L20 8M12 12.4V20.4"/>
+      </symbol>
+      <symbol id="i-map" viewBox="0 0 24 24">
+        <path d="M9 4.5 4 6.3v13.2l5-1.8 6 1.8 5-1.8V4.5l-5 1.8-6-1.8Z" stroke-linejoin="round"/>
+        <path d="M9 4.5v13.2M15 6.3v13.2"/>
+      </symbol>
+      <symbol id="i-chart" viewBox="0 0 24 24">
+        <path d="M4.5 20V10M12 20V4M19.5 20v-7"/>
+        <path d="M3.5 20.5h17"/>
+      </symbol>
+      <symbol id="i-cart" viewBox="0 0 24 24">
+        <path d="M3.5 4.5h2l2.3 11.3a1.6 1.6 0 0 0 1.6 1.3h8a1.6 1.6 0 0 0 1.6-1.3l1.3-7.3H6.4"/>
+        <circle cx="9.8" cy="20" r="1.3"/>
+        <circle cx="17.3" cy="20" r="1.3"/>
       </symbol>
       <symbol id="i-whatsapp" viewBox="0 0 24 24">
         <path d="M6.4 17.6 4.5 19.5l1.9-1.9a7.7 7.7 0 1 1 3 1.5l-3 .5Z"/>
@@ -1217,54 +1311,32 @@
       container.innerHTML = `
         <div class="page">
           <h2 class="page-title">${icon('shield')} Painel do administrador</h2>
-          <div class="surface section-gap">
-            <h3 class="surface-title">🌽 Operação da loja</h3>
-            <p class="text-xs muted mb-1">Registre uma venda para dar selos automaticamente e acompanhar o movimento da Pamonha Net.</p>
-            <label class="label">Cliente</label>
-            <select class="input mb-1" id="sale-client"></select>
-            <div id="sale-products"></div>
-            <div class="flex gap-1 mt-1">
-              <select class="input" id="sale-local" style="flex:1"><option value="">Local automático pelo GPS</option></select>
-              <button class="btn btn-outline" style="flex:0 0 auto;width:auto" onclick="useSaleLocation()">Usar GPS</button>
-            </div>
-            <p class="text-xs muted mt-1" id="sale-gps-status">Nenhum local escolhido manualmente.</p>
-            <button class="btn btn-primary mt-1" onclick="registerSale()">Registrar venda e dar selos</button>
+          <div class="admin-tabs">
+            <button class="admin-tab-btn" data-tab="painel" onclick="setAdminTab('painel')">${icon('shield')}<span>Painel</span></button>
+            <button class="admin-tab-btn" data-tab="produtos" onclick="setAdminTab('produtos')">${icon('box')}<span>Produtos</span></button>
+            <button class="admin-tab-btn" data-tab="locais" onclick="setAdminTab('locais')">${icon('map')}<span>Locais</span></button>
+            <button class="admin-tab-btn" data-tab="graficos" onclick="setAdminTab('graficos')">${icon('chart')}<span>Gráficos</span></button>
           </div>
+          <div id="admin-tab-body"></div>
+        </div>
+      `;
+      renderAdminTabBody();
+    });
 
-          <div class="surface section-gap">
-            <h3 class="surface-title">📦 Produtos</h3>
-            <div class="flex gap-1">
-              <input class="input" id="product-name" placeholder="Nome do produto" />
-              <input class="input" id="product-price" type="number" min="0" step="0.01" placeholder="Preço" style="max-width:110px" />
-            </div>
-            <button class="btn btn-secondary mt-1" onclick="createProduct()">Cadastrar produto</button>
-            <div id="v6-products-list" class="mt-1"></div>
-          </div>
+    let adminActiveTab = 'painel';
+    window.setAdminTab = (tab) => { adminActiveTab = tab; renderAdminTabBody(); };
 
-          <div class="surface section-gap">
-            <h3 class="surface-title">📍 Locais de venda</h3>
-            <div class="flex gap-1">
-              <input class="input" id="local-name" placeholder="Nome do local" />
-              <input class="input" id="local-radius" type="number" min="10" step="10" value="150" placeholder="Raio (m)" style="max-width:120px" />
-            </div>
-            <div class="flex gap-1 mt-1">
-              <input class="input" id="local-lat" type="number" step="any" placeholder="Latitude" />
-              <input class="input" id="local-lng" type="number" step="any" placeholder="Longitude" />
-            </div>
-            <button class="btn btn-secondary mt-1" onclick="createLocal()">Cadastrar local</button>
-            <button class="btn btn-outline mt-1" onclick="fillLocalFromGps()">Preencher coordenadas pelo GPS</button>
-            <div id="v6-locals-list" class="mt-1"></div>
-          </div>
+    function renderAdminTabBody() {
+      $$('.admin-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === adminActiveTab));
+      const body = $('#admin-tab-body');
+      if (adminActiveTab === 'produtos') return renderAdminProdutos(body);
+      if (adminActiveTab === 'locais') return renderAdminLocais(body);
+      if (adminActiveTab === 'graficos') return renderAdminGraficos(body);
+      renderAdminPainel(body);
+    }
 
-          <div class="surface section-gap">
-            <h3 class="surface-title">📊 Relatórios</h3>
-            <div class="flex gap-1">
-              <select class="input" id="report-period"><option value="day">Hoje</option><option value="month" selected>Este mês</option><option value="year">Este ano</option></select>
-              <button class="btn btn-outline" style="flex:0 0 auto;width:auto" onclick="loadV6Reports()">Atualizar</button>
-            </div>
-            <div id="v6-reports" class="mt-1"><p class="text-xs muted">Carregando relatórios…</p></div>
-          </div>
-
+    function renderAdminPainel(container) {
+      container.innerHTML = `
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
             <div id="scanner-idle">
@@ -1353,136 +1425,11 @@
             <h3 class="surface-title">${icon('star', 'icon icon-sm')} Avaliações dos clientes</h3>
             <div id="admin-feedbacks"></div>
           </div>
-        </div>
       `;
       loadAdminClients();
-      loadV6Catalog();
-      loadV6Reports();
       loadAdminFeedbacks();
       loadSentNotifications();
-    });
-
-    let v6Products = [];
-    let v6Locals = [];
-
-    const moneyBRL = (value) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const escV6 = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-    async function loadV6Catalog() {
-      try {
-        const [products, locals] = await Promise.all([
-          api.get('/api/admin/produtos?includeInactive=1'),
-          api.get('/api/admin/locais?includeInactive=1'),
-        ]);
-        v6Products = products.produtos || [];
-        v6Locals = locals.locais || [];
-        renderV6Products();
-        renderV6Locals();
-        renderSaleForm();
-      } catch (e) { toast.show(e.message, 'error'); }
     }
-
-    function renderV6Products() {
-      const list = $('#v6-products-list');
-      if (!list) return;
-      list.innerHTML = v6Products.length ? v6Products.map(p => `
-        <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
-          <div><strong>${escV6(p.name)}</strong><div class="text-xs muted">${moneyBRL(p.price)} · ${p.active ? 'ativo' : 'inativo'}</div></div>
-          <button class="btn ${p.active ? 'btn-outline' : 'btn-secondary'}" style="width:auto;padding:.55rem .7rem" onclick="toggleProduct('${p._id}', ${!p.active})">${p.active ? 'Desativar' : 'Ativar'}</button>
-        </div>`).join('') : '<p class="text-xs muted">Nenhum produto cadastrado.</p>';
-    }
-
-    function renderV6Locals() {
-      const list = $('#v6-locals-list');
-      if (!list) return;
-      list.innerHTML = v6Locals.length ? v6Locals.map(l => `
-        <div class="row" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
-          <div><strong>${escV6(l.name)}</strong><div class="text-xs muted">${Number(l.lat).toFixed(5)}, ${Number(l.lng).toFixed(5)} · raio ${l.radiusMeters}m · ${l.active ? 'ativo' : 'inativo'}</div></div>
-          <button class="btn btn-danger" style="width:auto;padding:.55rem .7rem" onclick="deleteLocal('${l._id}')">Excluir</button>
-        </div>`).join('') : '<p class="text-xs muted">Nenhum local cadastrado.</p>';
-      const select = $('#sale-local');
-      if (select) select.innerHTML = '<option value="">Local automático pelo GPS</option>' + v6Locals.filter(l => l.active).map(l => `<option value="${l._id}">${escV6(l.name)}</option>`).join('');
-    }
-
-    function renderSaleForm() {
-      const clients = $('#sale-client');
-      const products = $('#sale-products');
-      if (!clients || !products) return;
-      clients.innerHTML = '<option value="">Selecione o cliente</option>' + adminClientCache.map(c => `<option value="${c._id}">${escV6(c.fullName)} — ${formatPhone(c.phone)} (${c.stamps}/10)</option>`).join('');
-      const active = v6Products.filter(p => p.active);
-      products.innerHTML = active.length ? active.map(p => `
-        <div class="row" style="display:flex;align-items:center;gap:.65rem">
-          <div style="flex:1"><strong>${escV6(p.name)}</strong><div class="text-xs muted">${moneyBRL(p.price)} · 1 selo por unidade</div></div>
-          <input class="input" id="sale-qty-${p._id}" type="number" min="0" step="1" value="0" style="max-width:80px" aria-label="Quantidade de ${escV6(p.name)}" />
-        </div>`).join('') : '<p class="text-xs muted">Cadastre um produto ativo para registrar uma venda.</p>';
-    }
-
-    window.createProduct = async () => {
-      const name = $('#product-name').value.trim();
-      const price = $('#product-price').value;
-      if (!name || price === '') return toast.show('Informe nome e preço do produto.', 'error');
-      try { await api.post('/api/admin/produtos', { name, price }); $('#product-name').value = ''; $('#product-price').value = ''; toast.show('Produto cadastrado.'); await loadV6Catalog(); }
-      catch (e) { toast.show(e.message, 'error'); }
-    };
-    window.toggleProduct = async (id, active) => {
-      try { await api.req('PUT', `/api/admin/produtos/${id}`, { active }); toast.show(active ? 'Produto ativado.' : 'Produto desativado.'); await loadV6Catalog(); }
-      catch (e) { toast.show(e.message, 'error'); }
-    };
-    window.createLocal = async () => {
-      const name = $('#local-name').value.trim();
-      const lat = $('#local-lat').value;
-      const lng = $('#local-lng').value;
-      const radiusMeters = $('#local-radius').value;
-      if (!name || lat === '' || lng === '') return toast.show('Informe nome, latitude e longitude.', 'error');
-      try { await api.post('/api/admin/locais', { name, lat, lng, radiusMeters }); $('#local-name').value = ''; toast.show('Local cadastrado.'); await loadV6Catalog(); }
-      catch (e) { toast.show(e.message, 'error'); }
-    };
-    window.deleteLocal = async (id) => {
-      if (!confirm('Excluir este local? Vendas antigas continuarão com o nome salvo.')) return;
-      try { await api.del(`/api/admin/locais/${id}`); toast.show('Local excluído.'); await loadV6Catalog(); }
-      catch (e) { toast.show(e.message, 'error'); }
-    };
-    function getPosition() {
-      return new Promise((resolve, reject) => navigator.geolocation ? navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 8000 }) : reject(new Error('GPS indisponível neste navegador.')));
-    }
-    window.fillLocalFromGps = async () => {
-      try { const pos = await getPosition(); $('#local-lat').value = pos.coords.latitude.toFixed(7); $('#local-lng').value = pos.coords.longitude.toFixed(7); toast.show('Coordenadas preenchidas.'); }
-      catch (e) { toast.show('Não foi possível obter o GPS.', 'error'); }
-    };
-    window.useSaleLocation = async () => {
-      try { const pos = await getPosition(); $('#sale-gps-status').textContent = `GPS pronto: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`; $('#sale-gps-status').dataset.lat = pos.coords.latitude; $('#sale-gps-status').dataset.lng = pos.coords.longitude; toast.show('GPS será usado nesta venda.'); }
-      catch (e) { toast.show('Não foi possível obter o GPS.', 'error'); }
-    };
-    window.registerSale = async () => {
-      const clientId = $('#sale-client').value;
-      if (!clientId) return toast.show('Selecione o cliente.', 'error');
-      const items = v6Products.filter(p => p.active).map(p => ({ produtoId: p._id, quantity: Number($(`#sale-qty-${p._id}`).value || 0) })).filter(i => i.quantity > 0);
-      if (!items.length) return toast.show('Informe ao menos um produto.', 'error');
-      const status = $('#sale-gps-status');
-      const body = { clientId, items, localId: $('#sale-local').value || undefined, lat: status.dataset.lat, lng: status.dataset.lng };
-      try {
-        const result = await api.post('/api/admin/vendas', body);
-        const locationText = result.venda.localName || (result.needsLocation ? 'local não identificado' : 'local automático');
-        toast.show(`Venda registrada: ${result.stampsGiven} selo(s), ${moneyBRL(result.venda.totalValue)} · ${locationText}.`);
-        if (result.overflowStamps) toast.show(`${result.overflowStamps} selo(s) excedente(s) não couberam no cartão.`, 'error');
-        v6Products.forEach(p => { const el = $(`#sale-qty-${p._id}`); if (el) el.value = 0; });
-        await loadAdminClients();
-      } catch (e) { toast.show(e.message, 'error'); }
-    };
-    window.loadV6Reports = async () => {
-      const box = $('#v6-reports'); if (!box) return;
-      try {
-        const period = $('#report-period').value;
-        const [sales, cards, satisfaction] = await Promise.all([
-          api.get(`/api/admin/graficos/faturamento-por-local?period=${period}`),
-          api.get('/api/admin/graficos/cartoes-por-local'),
-          api.get('/api/admin/graficos/satisfacao'),
-        ]);
-        const rows = sales.porLocal.length ? sales.porLocal.map(r => `<div class="row"><strong>${escV6(r.local)}</strong><div class="text-xs muted">${moneyBRL(r.faturamento)} · ${r.vendas} venda(s)</div></div>`).join('') : '<p class="text-xs muted">Sem vendas no período.</p>';
-        const cardRows = cards.porLocal.length ? cards.porLocal.map(r => `<span class="text-sm">${escV6(r.local)}: <strong>${r.cartoesFechados}</strong></span>`).join(' · ') : 'Nenhum cartão fechado ainda.';
-        box.innerHTML = `<p class="text-sm"><strong>Satisfação:</strong> ${satisfaction.percentualSatisfeitos == null ? 'sem avaliações' : satisfaction.percentualSatisfeitos + '% satisfeitos'} (${satisfaction.totalAvaliacoes || 0} avaliação(ões))</p><p class="text-sm mt-1"><strong>Cartões fechados por local:</strong> ${cardRows}</p><div class="mt-1"><strong class="text-sm">Faturamento por local</strong>${rows}</div>`;
-      } catch (e) { box.innerHTML = `<p class="text-sm" style="color:var(--error)">${escV6(e.message)}</p>`; }
-    };
 
     let adminClientCache = [];
     async function loadAdminClients() {
@@ -1490,7 +1437,6 @@
         const data = await api.get('/api/admin/clients?limit=50');
         adminClientCache = data.clients;
         renderAdminClients(data.clients);
-        renderSaleForm();
       } catch (e) { toast.show(e.message, 'error'); }
     }
 
@@ -1507,6 +1453,7 @@
           </div>
           <div class="actions">
             <button class="btn btn-qr-green" onclick='openStampHub(${JSON.stringify(c)})'>${icon('card-simple', 'icon icon-sm')} Carimbar cartão</button>
+            <button class="btn btn-primary" onclick='openSalesHub(${JSON.stringify(c)})'>${icon('cart', 'icon icon-sm')} Registrar venda</button>
           </div>
           <div class="actions">
             <button class="btn btn-secondary" onclick="resetCard('${c._id}')">${icon('reset', 'icon icon-sm')} Zerar</button>
@@ -1812,6 +1759,7 @@
             <button class="btn btn-outline" style="flex:1" onclick="closeStampHub()">Cancelar</button>
             <button class="btn btn-qr-green" style="flex:1" onclick="confirmStampHub()">${icon('check','icon icon-sm')} Confirmar</button>
           </div>
+          <button class="btn btn-primary mt-1" onclick='closeStampHub(); openSalesHub(${JSON.stringify(client)})'>${icon('cart','icon icon-sm')} Registrar venda com produtos</button>
         </div>
       `;
       document.body.appendChild(overlay);
@@ -2216,6 +2164,399 @@
     }
 
     function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ==========================================================================
+    // PRODUTOS — catálogo usado no hub de vendas
+    // ==========================================================================
+    let produtosCache = [];
+    let prodImageData = null;
+
+    async function renderAdminProdutos(container) {
+      container.innerHTML = `
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('box','icon icon-sm')} Novo produto</h3>
+          <label class="label">Nome</label>
+          <input class="input mb-1" id="prod-name" placeholder="Ex: Pamonha doce" maxlength="60" />
+          <label class="label">Preço (R$)</label>
+          <input class="input mb-1" id="prod-price" type="number" step="0.01" min="0" placeholder="0,00" />
+          <label class="label">Foto (opcional)</label>
+          <input class="input mb-1" id="prod-image" type="file" accept="image/*" onchange="previewProdImage(event)" />
+          <img id="prod-image-preview" class="prod-thumb hidden mb-1" style="width:64px;height:64px" alt="" />
+          <button class="btn btn-primary" onclick="createProduto()">${icon('save','icon icon-sm')} Cadastrar produto</button>
+        </div>
+        <div id="produtos-list"><div class="loader"></div></div>
+      `;
+      loadProdutos();
+    }
+
+    window.previewProdImage = (e) => {
+      const file = e.target.files[0];
+      if (!file) { prodImageData = null; return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        prodImageData = reader.result;
+        const img = $('#prod-image-preview');
+        if (img) { img.src = prodImageData; img.classList.remove('hidden'); }
+      };
+      reader.readAsDataURL(file);
+    };
+
+    async function loadProdutos() {
+      try {
+        const data = await api.get('/api/admin/produtos?includeInactive=1');
+        produtosCache = data.produtos;
+        renderProdutosList();
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    function renderProdutosList() {
+      const box = $('#produtos-list');
+      if (!box) return;
+      if (!produtosCache.length) { box.innerHTML = `<div class="empty-state"><p>Nenhum produto cadastrado ainda.</p></div>`; return; }
+      box.innerHTML = produtosCache.map(p => `
+        <div class="prod-row ${p.active ? '' : 'inactive'}">
+          ${p.imageUrl ? `<img class="prod-thumb" src="${p.imageUrl}" alt="" />` : `<div class="prod-icon-fallback">${icon('box','icon icon-sm')}</div>`}
+          <div class="info">
+            <strong>${p.name}</strong>
+            <span>R$ ${p.price.toFixed(2).replace('.', ',')}${p.active ? '' : ' · inativo'}</span>
+          </div>
+          <div class="row-actions">
+            <button class="icon-btn" onclick='toggleProdutoActive(${JSON.stringify(p)})' title="${p.active ? 'Desativar' : 'Ativar'}">${icon(p.active ? 'minus' : 'plus', 'icon')}</button>
+            <button class="icon-btn danger" onclick="deleteProduto('${p._id}')">${icon('trash','icon')}</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.createProduto = async () => {
+      const name = $('#prod-name').value.trim();
+      const price = Number($('#prod-price').value);
+      if (!name) return toast.show('Informe o nome do produto.', 'error');
+      if (!Number.isFinite(price) || price < 0) return toast.show('Informe um preço válido.', 'error');
+      try {
+        await api.post('/api/admin/produtos', { name, price, imageUrl: prodImageData });
+        toast.show('Produto cadastrado.');
+        $('#prod-name').value = ''; $('#prod-price').value = '';
+        prodImageData = null;
+        const preview = $('#prod-image-preview'); if (preview) { preview.classList.add('hidden'); preview.src = ''; }
+        const file = $('#prod-image'); if (file) file.value = '';
+        loadProdutos();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.toggleProdutoActive = async (p) => {
+      try { await api.put(`/api/admin/produtos/${p._id}`, { active: !p.active }); loadProdutos(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.deleteProduto = async (id) => {
+      if (!confirm('Remover este produto? Vendas antigas com ele continuam no histórico.')) return;
+      try { await api.del(`/api/admin/produtos/${id}`); toast.show('Produto removido.'); loadProdutos(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    // ==========================================================================
+    // LOCAIS — feiras/pontos usados para casar o GPS da venda
+    // ==========================================================================
+    let locaisCache = [];
+
+    async function renderAdminLocais(container) {
+      container.innerHTML = `
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('map','icon icon-sm')} Novo local</h3>
+          <label class="label">Nome</label>
+          <input class="input mb-1" id="local-name" placeholder="Ex: Feira da Figueira" maxlength="60" />
+          <div class="flex gap-1 mb-1">
+            <div style="flex:1">
+              <label class="label">Latitude</label>
+              <input class="input" id="local-lat" type="number" step="0.000001" placeholder="-22.xxxx" />
+            </div>
+            <div style="flex:1">
+              <label class="label">Longitude</label>
+              <input class="input" id="local-lng" type="number" step="0.000001" placeholder="-43.xxxx" />
+            </div>
+          </div>
+          <label class="label">Raio de detecção (metros)</label>
+          <input class="input mb-1" id="local-radius" type="number" min="10" max="5000" value="150" />
+          <button class="btn btn-outline mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Usar minha localização atual</button>
+          <button class="btn btn-primary" onclick="createLocal()">${icon('save','icon icon-sm')} Cadastrar local</button>
+        </div>
+        <div id="locais-list"><div class="loader"></div></div>
+      `;
+      loadLocais();
+    }
+
+    window.useMyLocationForLocal = () => {
+      if (!navigator.geolocation) return toast.show('Este dispositivo não tem GPS disponível.', 'error');
+      toast.show('Buscando sua localização…');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          $('#local-lat').value = pos.coords.latitude.toFixed(6);
+          $('#local-lng').value = pos.coords.longitude.toFixed(6);
+          toast.show('Localização preenchida.');
+        },
+        () => toast.show('Não foi possível obter sua localização.', 'error'),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    };
+
+    async function loadLocais() {
+      try {
+        const data = await api.get('/api/admin/locais?includeInactive=1');
+        locaisCache = data.locais;
+        renderLocaisList();
+      } catch (e) { toast.show(e.message, 'error'); }
+    }
+
+    function renderLocaisList() {
+      const box = $('#locais-list');
+      if (!box) return;
+      if (!locaisCache.length) { box.innerHTML = `<div class="empty-state"><p>Nenhum local cadastrado ainda.</p></div>`; return; }
+      box.innerHTML = locaisCache.map(l => `
+        <div class="local-row ${l.active ? '' : 'inactive'}">
+          <div class="prod-icon-fallback">${icon('pin','icon icon-sm')}</div>
+          <div class="info">
+            <strong>${l.name}</strong>
+            <span>Raio de ${l.radiusMeters}m${l.active ? '' : ' · inativo'}</span>
+          </div>
+          <div class="row-actions">
+            <button class="icon-btn" onclick='toggleLocalActive(${JSON.stringify(l)})' title="${l.active ? 'Desativar' : 'Ativar'}">${icon(l.active ? 'minus' : 'plus', 'icon')}</button>
+            <button class="icon-btn danger" onclick="deleteLocal('${l._id}')">${icon('trash','icon')}</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.createLocal = async () => {
+      const name = $('#local-name').value.trim();
+      const lat = Number($('#local-lat').value);
+      const lng = Number($('#local-lng').value);
+      const radiusMeters = Number($('#local-radius').value) || 150;
+      if (!name) return toast.show('Informe o nome do local.', 'error');
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return toast.show('Informe latitude e longitude válidas.', 'error');
+      try {
+        await api.post('/api/admin/locais', { name, lat, lng, radiusMeters });
+        toast.show('Local cadastrado.');
+        $('#local-name').value = ''; $('#local-lat').value = ''; $('#local-lng').value = ''; $('#local-radius').value = 150;
+        loadLocais();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.toggleLocalActive = async (l) => {
+      try { await api.put(`/api/admin/locais/${l._id}`, { active: !l.active }); loadLocais(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    window.deleteLocal = async (id) => {
+      if (!confirm('Remover este local? O histórico de vendas antigas mantém o nome salvo.')) return;
+      try { await api.del(`/api/admin/locais/${id}`); toast.show('Local removido.'); loadLocais(); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    // ==========================================================================
+    // HUB DE VENDAS — aberto pela lista de clientes ou a partir do hub de carimbo.
+    // Escolhe produtos + quantidade; cada unidade dá 1 selo, e o valor total entra
+    // no gráfico de faturamento (casado por GPS com um Local cadastrado).
+    // ==========================================================================
+    let salesCartClient = null;
+    let salesCart = {};
+
+    window.openSalesHub = async (client) => {
+      salesCartClient = client;
+      salesCart = {};
+      if (!produtosCache.length) {
+        try { const data = await api.get('/api/admin/produtos'); produtosCache = data.produtos; }
+        catch (e) { toast.show(e.message, 'error'); return; }
+      }
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = 'sales-hub-overlay';
+      overlay.innerHTML = `
+        <div class="modal-card" style="max-width:400px">
+          <h3 class="surface-title">${icon('cart','icon icon-sm')} Venda para ${client.fullName.split(' ')[0]}</h3>
+          <p class="text-xs muted mb-1">Escolha os produtos e a quantidade. Cada unidade dá 1 selo no cartão.</p>
+          <div id="sales-cart-list">${salesCartListHTML()}</div>
+          <div class="cart-total-bar">
+            <span class="text-sm muted">Total</span>
+            <strong id="sales-cart-total">R$ 0,00</strong>
+          </div>
+          <p class="text-xs muted text-center mt-1" id="sales-cart-stamps">0 selo(s) nesta venda</p>
+          <div class="flex gap-1 mt-2">
+            <button class="btn btn-outline" style="flex:1" onclick="closeSalesHub()">Cancelar</button>
+            <button class="btn btn-qr-green" style="flex:1" onclick="confirmSalesHub()">${icon('check','icon icon-sm')} Confirmar venda</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    };
+
+    function salesCartListHTML() {
+      const activeProdutos = produtosCache.filter(p => p.active);
+      if (!activeProdutos.length) return `<p class="text-sm muted text-center">Nenhum produto ativo cadastrado. Cadastre na aba "Produtos".</p>`;
+      return activeProdutos.map(p => `
+        <div class="cart-row">
+          <div class="info"><strong>${p.name}</strong><span>R$ ${p.price.toFixed(2).replace('.', ',')}</span></div>
+          <div class="qty-stepper">
+            <button onclick="changeCartQty('${p._id}', -1)">${icon('minus','icon')}</button>
+            <span class="qty-val" id="cart-qty-${p._id}">${salesCart[p._id] || 0}</span>
+            <button onclick="changeCartQty('${p._id}', 1)">${icon('plus','icon')}</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.changeCartQty = (produtoId, delta) => {
+      const current = salesCart[produtoId] || 0;
+      const next = Math.max(0, current + delta);
+      if (next === 0) delete salesCart[produtoId]; else salesCart[produtoId] = next;
+      const el = $('#cart-qty-' + produtoId);
+      if (el) el.textContent = next;
+      updateSalesCartTotals();
+    };
+
+    function updateSalesCartTotals() {
+      let total = 0, stamps = 0;
+      for (const [id, qty] of Object.entries(salesCart)) {
+        const p = produtosCache.find(pp => pp._id === id);
+        if (!p) continue;
+        total += p.price * qty;
+        stamps += qty;
+      }
+      const totalEl = $('#sales-cart-total'); if (totalEl) totalEl.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+      const stampsEl = $('#sales-cart-stamps'); if (stampsEl) stampsEl.textContent = `${stamps} selo${stamps === 1 ? '' : 's'} nesta venda`;
+    }
+
+    window.closeSalesHub = () => {
+      const el = $('#sales-hub-overlay'); if (el) el.remove();
+      salesCartClient = null; salesCart = {};
+    };
+
+    window.confirmSalesHub = async () => {
+      if (!salesCartClient) return;
+      const items = Object.entries(salesCart).map(([produtoId, quantity]) => ({ produtoId, quantity }));
+      if (!items.length) return toast.show('Escolha ao menos 1 produto.', 'error');
+
+      let coords = null;
+      if (navigator.geolocation) {
+        coords = await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 6000 }
+          );
+        });
+      }
+
+      try {
+        const body = { clientId: salesCartClient._id, items };
+        if (coords) { body.lat = coords.lat; body.lng = coords.lng; }
+        const data = await api.post('/api/admin/vendas', body);
+        const overflowMsg = data.overflowStamps > 0 ? ` (${data.overflowStamps} selo(s) não contaram — cartão já estava cheio)` : '';
+        toast.show(`Venda registrada: ${data.venda.stampsGiven} selo(s).${overflowMsg}`);
+        closeSalesHub();
+        loadAdminClients();
+        if (data.needsLocation) openLocationPicker(data.nearestLocais, coords);
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    function openLocationPicker(nearest, coords) {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = 'location-picker-overlay';
+      const nearestHTML = nearest && nearest.length
+        ? `<p class="text-xs muted mb-1">Locais cadastrados mais próximos:</p>` + nearest.map(n => `
+            <div class="cleanup-row"><div><strong>${n.name}</strong><span>${Math.round(n.distanceMeters)}m de distância</span></div></div>
+          `).join('')
+        : `<p class="text-xs muted mb-1">Nenhum local cadastrado perto daqui.</p>`;
+      overlay.innerHTML = `
+        <div class="modal-card">
+          <h3 class="surface-title">${icon('map','icon icon-sm')} Local não identificado</h3>
+          <p class="text-sm mb-1">Esta venda ficou sem local vinculado — está fora do raio de todos os locais cadastrados. Ela conta normalmente nos selos e no faturamento total, só não aparece nos gráficos por local.</p>
+          ${nearestHTML}
+          <div class="flex gap-1 mt-2">
+            <button class="btn btn-outline" style="flex:1" onclick="closeLocationPicker()">Entendi</button>
+            ${coords ? `<button class="btn btn-primary" style="flex:1" onclick='closeLocationPicker(); goRegisterLocal(${coords.lat}, ${coords.lng})'>${icon('plus','icon icon-sm')} Cadastrar local aqui</button>` : ''}
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+    }
+    window.closeLocationPicker = () => { const el = $('#location-picker-overlay'); if (el) el.remove(); };
+    window.goRegisterLocal = (lat, lng) => {
+      router.go('admin', true);
+      adminActiveTab = 'locais';
+      renderAdminTabBody();
+      setTimeout(() => {
+        const latEl = $('#local-lat'), lngEl = $('#local-lng');
+        if (latEl) latEl.value = lat.toFixed(6);
+        if (lngEl) lngEl.value = lng.toFixed(6);
+      }, 50);
+    };
+
+    // ==========================================================================
+    // GRÁFICOS — satisfação, cartões fechados por local e faturamento por local
+    // ==========================================================================
+    let graficosPeriod = 'month';
+    window.setGraficosPeriod = (p) => { graficosPeriod = p; renderAdminGraficos($('#admin-tab-body')); };
+
+    async function renderAdminGraficos(container) {
+      container.innerHTML = `<div class="loader"></div>`;
+      try {
+        const [sat, porLocalData, fatData] = await Promise.all([
+          api.get('/api/admin/graficos/satisfacao'),
+          api.get('/api/admin/graficos/cartoes-por-local'),
+          api.get(`/api/admin/graficos/faturamento-por-local?period=${graficosPeriod}`)
+        ]);
+        drawGraficos(container, sat, porLocalData, fatData);
+      } catch (e) {
+        container.innerHTML = `<div class="empty-state"><p>${e.message}</p></div>`;
+      }
+    }
+
+    function drawGraficos(container, sat, porLocalData, fatData) {
+      const maxCartoes = Math.max(1, ...porLocalData.porLocal.map(r => r.cartoesFechados));
+      const maxFat = Math.max(1, ...fatData.porLocal.map(r => r.faturamento));
+      const periods = [['day', 'Dia'], ['month', 'Mês'], ['year', 'Ano']];
+
+      container.innerHTML = `
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('star','icon icon-sm')} Satisfação dos clientes</h3>
+          <div class="stat-grid">
+            <div class="stat-box"><div class="num">${sat.totalAvaliacoes}</div><div class="lbl">Avaliações</div></div>
+            <div class="stat-box"><div class="num">${sat.percentualSatisfeitos !== null ? sat.percentualSatisfeitos + '%' : '—'}</div><div class="lbl">Satisfeitos</div></div>
+          </div>
+          ${sat.distribuicaoPorNota.length ? sat.distribuicaoPorNota.map(d => `
+            <div class="chart-bar-row">
+              <div class="chart-bar-label"><span>${d.nota} estrela${d.nota == 1 ? '' : 's'}</span><strong>${d.quantidade}</strong></div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round((d.quantidade / Math.max(1, sat.totalAvaliacoes)) * 100)}%"></div></div>
+            </div>
+          `).join('') : `<p class="text-sm muted">Nenhuma avaliação ainda.</p>`}
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('trophy','icon icon-sm')} Cartões fechados por local</h3>
+          ${porLocalData.porLocal.length ? porLocalData.porLocal.map(r => `
+            <div class="chart-bar-row">
+              <div class="chart-bar-label"><span>${r.local}</span><strong>${r.cartoesFechados}</strong></div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round((r.cartoesFechados / maxCartoes) * 100)}%"></div></div>
+            </div>
+          `).join('') : `<p class="text-sm muted">Nenhum cartão fechado registrado ainda.</p>`}
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('chart','icon icon-sm')} Faturamento por local</h3>
+          <div class="period-toggle">
+            ${periods.map(([val, label]) => `<button class="${graficosPeriod === val ? 'active' : ''}" onclick="setGraficosPeriod('${val}')">${label}</button>`).join('')}
+          </div>
+          ${fatData.porLocal.length ? fatData.porLocal.map(r => `
+            <div class="chart-bar-row">
+              <div class="chart-bar-label"><span>${r.local}</span><strong>R$ ${r.faturamento.toFixed(2).replace('.', ',')}</strong></div>
+              <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round((r.faturamento / maxFat) * 100)}%"></div></div>
+            </div>
+          `).join('') : `<p class="text-sm muted">Nenhuma venda neste período.</p>`}
+        </div>
+      `;
+    }
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
