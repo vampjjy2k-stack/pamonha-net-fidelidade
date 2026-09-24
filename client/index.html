@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#2E3A22" />
+  <meta name="theme-color" content="#1B5E20" />
   <meta name="description" content="Cartão fidelidade digital da Pamonha Net. Junte selos a cada compra e troque por prêmios." />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -11,35 +11,42 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
   <style>
     :root {
       /* -- Paleta: milho vivo, palha e terra (ajustada para amarelo e verde mais claros) -- */
-      --paper: #FFE14D;
-      --paper-deep: #FFD400;
-      --cream-card: #FFFDF5;
-      --husk-900: #4F7A2E;
-      --husk-700: #6B9A3E;
-      --husk-500: #8FB863;
-      --husk-300: #E2F0C7;
-      --gold-700: #A9720B;
-      --gold-600: #E0A215;
-      --gold-300: #FFE38A;
-      --gold-100: #FFF3CF;
+      --paper: #FFFDF5;
+      --paper-deep: #FFF8E1;
+      --cream-card: #FFFFFF;
+      --husk-900: #1B5E20;
+      --husk-700: #2E7D32;
+      --husk-500: #4C9A3A;
+      --husk-300: #E8F5E9;
+      --gold-700: #E65100;
+      --gold-600: #F9A825;
+      --gold-300: #FFD54F;
+      --gold-100: #FFF8E1;
       --clay-600: #A2653A;
       --clay-100: #F1E0CE;
-      --ink: #2A2118;
-      --ink-soft: #6D6151;
-      --ink-faint: #8C7F68;
-      --line: rgba(79, 122, 46, 0.2);
-      --line-soft: rgba(79, 122, 46, 0.1);
-      --success: #4C7A34;
-      --error: #B23A22;
-      --radius-lg: 22px;
-      --radius-md: 16px;
-      --radius-sm: 12px;
+      --ink: #263238;
+      --ink-soft: #607D8B;
+      --ink-faint: #90A4AE;
+      --line: rgba(27, 94, 32, 0.16);
+      --line-soft: rgba(27, 94, 32, 0.08);
+      --success: #2E7D32;
+      --error: #C62828;
+      --radius-lg: 14px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
       --ease: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       --font-display: 'Fraunces', Georgia, serif;
       --font-body: 'Work Sans', system-ui, -apple-system, sans-serif;
+      /* -- Aliases do design system v8 (mesmos valores, nomes do contrato) -- */
+      --green: var(--husk-900); --green-dark: #1B5E20; --green-soft: var(--husk-300);
+      --amber: var(--gold-600); --amber-dark: var(--gold-700); --amber-soft: var(--gold-100);
+      --bg: var(--paper); --surface: var(--cream-card); --text: var(--ink); --text-soft: var(--ink-soft);
+      --danger: var(--error); --radius: var(--radius-md);
+      --shadow: 0 2px 10px rgba(27,94,32,.10);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -152,6 +159,7 @@
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
       padding: 1.15rem;
+      box-shadow: var(--shadow);
     }
     .surface-title {
       font-family: var(--font-display); font-weight: 600; font-size: 1.02rem;
@@ -363,23 +371,29 @@
     }
     .sent-notif-row strong { display: block; font-size: 0.86rem; color: var(--ink); }
 
-    /* -- Escala de avaliação (pills, sem estrelas) -- */
-    .fb-question-title { font-weight: 600; font-size: 0.92rem; color: var(--husk-900); text-align: center; margin-bottom: 0.4rem; }
-    .rate-scale { display: flex; gap: 0.35rem; justify-content: space-between; margin: 0.3rem 0 0.2rem; }
-    .rate-pill {
-      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
-      padding: 0.55rem 0.15rem; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
-      background: var(--cream-card); cursor: pointer; transition: all var(--ease);
+    /* -- Avaliar: 5 estrelas interativas -- */
+    .fb-question-card { text-align: center; }
+    .fb-question-title { font-weight: 600; font-size: 0.96rem; color: var(--husk-900); text-align: center; margin-bottom: 0.7rem; }
+    .star-row { display: flex; gap: 0.3rem; justify-content: center; }
+    .star-btn {
+      background: none; border: none; padding: 0.2rem; cursor: pointer; color: var(--line);
+      transition: transform var(--ease), color var(--ease);
     }
-    .rate-pill .emoji { font-size: 1.25rem; line-height: 1; filter: grayscale(1); opacity: 0.55; transition: all var(--ease); }
-    .rate-pill .lbl { font-size: 0.62rem; font-weight: 700; color: var(--ink-faint); text-align: center; line-height: 1.1; }
-    .rate-pill:active { transform: scale(0.95); }
-    .rate-pill.active { border-color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, var(--cream-card)); }
-    .rate-pill.active .emoji { filter: none; opacity: 1; transform: scale(1.15); }
-    .rate-pill.active .lbl { color: var(--tone); }
+    .star-btn .icon { width: 34px; height: 34px; fill: currentColor; stroke: currentColor; }
+    .star-btn:active { transform: scale(0.88); }
+    .star-btn.filled { color: var(--amber); }
+    .star-caption { font-size: 0.8rem; font-weight: 700; margin-top: 0.4rem; }
+    .thanks-check {
+      width: 64px; height: 64px; border-radius: 50%; background: var(--husk-300); color: var(--husk-900);
+      display: flex; align-items: center; justify-content: center; margin: 0 auto;
+      animation: stampIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .thanks-check .icon { width: 32px; height: 32px; stroke-width: 2.2; }
     .rate-mini { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; }
-    .rate-mini .emoji { font-size: 0.95rem; }
-    .rate-mini .lbl { color: var(--tone); }
+    .mini-stars { display: inline-flex; gap: 1px; }
+    .mini-star { color: var(--line); }
+    .mini-star .icon { width: 13px; height: 13px; fill: currentColor; stroke: currentColor; }
+    .mini-star.on { color: var(--amber); }
 
     /* -- Admin -- */
     .client-row { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 0.6rem; }
@@ -436,15 +450,57 @@
     .fb-line > span:first-child { color: var(--ink-soft); }
     .fb-comment { font-size: 0.87rem; color: var(--ink-soft); font-style: italic; margin-top: 0.65rem; line-height: 1.4; }
 
-    /* -- Admin sub-tabs (Painel / Produtos / Locais / Gráficos) -- */
-    .admin-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.1rem; overflow-x: auto; padding-bottom: 2px; }
-    .admin-tab-btn {
-      flex: 1; min-width: 78px; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
-      padding: 0.55rem 0.3rem; border-radius: var(--radius-sm); border: 1.5px solid var(--line);
-      background: #fff; color: var(--ink-soft); font-weight: 600; font-size: 0.72rem; cursor: pointer;
+    /* -- Gerenciar: hub de cards + botão voltar + menu "⋮ Mais opções" -- */
+    .hub-card {
+      display: flex; align-items: center; gap: 0.8rem; width: 100%; text-align: left;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 0.9rem 1rem; margin-bottom: 0.7rem; cursor: pointer;
     }
-    .admin-tab-btn .icon { width: 18px; height: 18px; }
-    .admin-tab-btn.active { background: var(--husk-900); border-color: var(--husk-900); color: var(--gold-300); }
+    .hub-card:active { transform: scale(0.98); }
+    .hub-card-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hub-card-icon .icon { width: 21px; height: 21px; }
+    .hub-card-body { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
+    .hub-card-body strong { font-size: 0.96rem; color: var(--text); }
+    .hub-card-body span { font-size: 0.78rem; color: var(--text-soft); }
+    .hub-card-arrow { color: var(--text-soft); flex-shrink: 0; }
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 0.4rem; background: none; border: none;
+      color: var(--green); font-weight: 700; font-size: 0.88rem; cursor: pointer; padding: 0.3rem 0; margin-bottom: 0.7rem;
+    }
+    .btn-back .icon { width: 17px; height: 17px; transform: scaleX(-1); }
+    .bottom-sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface);
+      border-radius: 20px 20px 0 0; padding: 0.8rem 1.1rem calc(1.2rem + env(safe-area-inset-bottom));
+      z-index: 101; max-width: 480px; margin: 0 auto; box-shadow: 0 -8px 30px rgba(0,0,0,0.18);
+      animation: sheetUp 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .bottom-sheet-handle { width: 40px; height: 4px; background: var(--line); border-radius: 999px; margin: 0 auto 0.8rem; }
+    .sheet-item {
+      display: flex; align-items: center; gap: 0.75rem; width: 100%; background: none; border: none;
+      padding: 0.75rem 0.2rem; border-bottom: 1px solid var(--line-soft); font-size: 0.92rem; font-weight: 600;
+      color: var(--text); cursor: pointer; text-align: left;
+    }
+    .sheet-item:last-child { border-bottom: none; }
+    .sheet-item .icon:first-child { color: var(--green); }
+    .sheet-item-arrow { margin-left: auto; color: var(--text-soft); width: 15px !important; height: 15px !important; }
+    /* -- Toggle switch (venda avulsa) -- */
+    .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-track {
+      position: absolute; inset: 0; background: var(--line); border-radius: 999px; cursor: pointer; transition: background var(--ease);
+    }
+    .switch-track::before {
+      content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff;
+      border-radius: 50%; transition: transform var(--ease); box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .switch input:checked + .switch-track { background: var(--amber); }
+    .switch input:checked + .switch-track::before { transform: translateX(18px); }
+    .switch input:disabled + .switch-track { opacity: 0.4; cursor: not-allowed; }
+
+    /* -- Mini mapa Leaflet (cadastro de local) -- */
+    .local-map { width: 100%; height: 220px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); z-index: 1; }
+    .range-input { width: 100%; accent-color: var(--green); height: 22px; }
 
     /* -- Produtos / Locais rows -- */
     .prod-row, .local-row {
@@ -542,6 +598,19 @@
     .bar-chart-svg { width: 100%; height: auto; }
     .chart-legend-row { display: flex; gap: 1rem; justify-content: center; margin-bottom: 0.7rem; font-size: 0.76rem; }
     .chart-legend-row .legend-item { gap: 0.35rem; }
+    /* -- Gráficos v8: cascata (waterfall), pizza, breadcrumb, limpeza -- */
+    .waterfall-wrap { position: relative; height: 220px; width: 100%; }
+    .breadcrumb { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 700; color: var(--green-dark); }
+    .breadcrumb-back { background: var(--green-soft); border: none; border-radius: 8px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--green-dark); }
+    .breadcrumb-back .icon { width: 14px; height: 14px; transform: scaleX(-1); }
+    .pizza-wrap { display: flex; align-items: center; gap: 1.1rem; margin-bottom: 0.4rem; }
+    .pizza-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+    .pizza-center strong { font-family: var(--font-display); font-size: 1.15rem; color: var(--text); }
+    .pizza-center span { font-size: 0.6rem; color: var(--text-soft); }
+    .limpeza-list { max-height: 220px; overflow-y: auto; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); padding: 0.3rem 0.6rem; margin-bottom: 0.7rem; }
+    .limpeza-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0; font-size: 0.82rem; border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+    .limpeza-item:last-child { border-bottom: none; }
+    .limpeza-item input { accent-color: var(--danger); width: 16px; height: 16px; flex-shrink: 0; }
 
     /* -- Histórico de vendas (liberdade do admin: revisar e apagar) -- */
     .venda-row { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.75rem 0.8rem; margin-bottom: 0.55rem; }
@@ -704,6 +773,9 @@
         <circle cx="24" cy="24" r="15.5" stroke-dasharray="2.6 3.4"/>
         <path d="M24 15.4c2.7 0 4.9 2.9 4.9 7.7v6.7c0 3.7-2.2 7.7-4.9 7.7s-4.9-4-4.9-7.7v-6.7c0-4.8 2.2-7.7 4.9-7.7Z" fill="none"/>
       </symbol>
+      <symbol id="i-more" viewBox="0 0 24 24">
+        <circle cx="5" cy="12" r="1.7" style="fill:currentColor;stroke:none"/><circle cx="12" cy="12" r="1.7" style="fill:currentColor;stroke:none"/><circle cx="19" cy="12" r="1.7" style="fill:currentColor;stroke:none"/>
+      </symbol>
     </defs>
   </svg>
 
@@ -741,6 +813,8 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
   <script>
     const API_URL = '';
     const $ = (sel) => document.querySelector(sel);
@@ -1156,43 +1230,55 @@
       { key: 'serviceRating', q: 'Como foi o atendimento?' },
     ];
 
-    // Escala de avaliação em pills (sem estrelas): emoji + rótulo + cor, do vermelho ao verde-palha.
+    // Escala de 1 a 5 estrelas (substitui as antigas carinhas/emoji).
     const RATE_LEVELS = [
-      { val: 1, emoji: '😞', lbl: 'Ruim', tone: 'var(--error)' },
-      { val: 2, emoji: '😕', lbl: 'Regular', tone: 'var(--clay-600)' },
-      { val: 3, emoji: '🙂', lbl: 'Bom', tone: 'var(--gold-600)' },
-      { val: 4, emoji: '😄', lbl: 'Muito bom', tone: 'var(--husk-500)' },
-      { val: 5, emoji: '🤩', lbl: 'Excelente', tone: 'var(--husk-900)' },
+      { val: 1, lbl: 'Ruim', tone: 'var(--error)' },
+      { val: 2, lbl: 'Regular', tone: '#E65100' },
+      { val: 3, lbl: 'Bom', tone: 'var(--gold-600)' },
+      { val: 4, lbl: 'Muito bom', tone: 'var(--husk-500)' },
+      { val: 5, lbl: 'Excelente', tone: 'var(--husk-900)' },
     ];
-    function ratePillsHTML(key, selected) {
-      return RATE_LEVELS.map(r => `
-        <button class="rate-pill ${selected === r.val ? 'active' : ''}" style="--tone:${r.tone}" data-val="${r.val}" onclick="setRating('${key}', ${r.val})">
-          <span class="emoji">${r.emoji}</span><span class="lbl">${r.lbl}</span>
-        </button>
-      `).join('');
+    function starsHTML(key, selected) {
+      let stars = '';
+      for (let i = 1; i <= 5; i++) {
+        stars += `<button type="button" class="star-btn ${selected && i <= selected ? 'filled' : ''}" data-val="${i}" onclick="setRating('${key}', ${i})" aria-label="${i} estrela${i>1?'s':''}">${icon('star','icon')}</button>`;
+      }
+      const lbl = selected ? RATE_LEVELS.find(r => r.val === selected)?.lbl : 'Toque para avaliar';
+      const tone = selected ? RATE_LEVELS.find(r => r.val === selected)?.tone : 'var(--text-soft)';
+      return `<div class="star-row">${stars}</div><div class="star-caption" style="color:${tone}">${lbl}</div>`;
     }
     function rateMiniHTML(val) {
       const r = RATE_LEVELS.find(x => x.val === Math.round(val)) || RATE_LEVELS[2];
-      return `<span class="rate-mini" style="--tone:${r.tone}"><span class="emoji">${r.emoji}</span><span class="lbl">${r.lbl}</span></span>`;
+      let stars = '';
+      for (let i = 1; i <= 5; i++) stars += `<span class="mini-star ${i <= Math.round(val) ? 'on' : ''}">${icon('star','icon icon-sm')}</span>`;
+      return `<span class="rate-mini" style="--tone:${r.tone}"><span class="mini-stars">${stars}</span></span>`;
     }
 
     router.register('feedback', (container) => {
       if (!api.token) return router.go('login');
       container.innerHTML = `
-        <div class="page">
+        <div class="page" id="feedback-page">
           <h2 class="page-title">${icon('star')} Avaliar</h2>
-          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Leva 10 segundos — toque na carinha que representa sua experiência em cada pergunta.</p>
-          <div class="surface">
-            ${FEEDBACK_QUESTIONS.map((f, idx) => `
-              <div class="fb-question ${idx > 0 ? 'mt-2' : ''}">
+          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Toque nas estrelas que representam sua experiência em cada pergunta — pode retocar quantas vezes quiser.</p>
+          <div id="feedback-form">
+            ${FEEDBACK_QUESTIONS.map((f) => `
+              <div class="surface section-gap fb-question-card">
                 <p class="fb-question-title">${f.q}</p>
-                <div class="rate-scale" id="star-box-${f.key}">
-                  ${ratePillsHTML(f.key, null)}
-                </div>
+                <div id="star-box-${f.key}">${starsHTML(f.key, null)}</div>
               </div>
             `).join('')}
-            <textarea class="input mt-1" id="fb-comment" rows="2" placeholder="Quer contar mais alguma coisa? (opcional)" style="resize:none"></textarea>
-            <button class="btn btn-primary mt-2" onclick="sendFeedback()">Enviar avaliação</button>
+            <div class="surface section-gap">
+              <label class="label">Comentário (opcional)</label>
+              <textarea class="input" id="fb-comment" rows="3" maxlength="500" placeholder="Quer contar mais alguma coisa?" style="resize:none" oninput="$('#fb-comment-count').textContent = $('#fb-comment').value.length"></textarea>
+              <div class="text-xs muted mt-1" style="text-align:right"><span id="fb-comment-count">0</span>/500</div>
+            </div>
+            <button class="btn btn-primary" id="fb-submit-btn" disabled onclick="sendFeedback()">Enviar avaliação</button>
+          </div>
+          <div id="feedback-thanks" class="hidden text-center mt-2">
+            <div class="thanks-check">${icon('check','icon icon-lg')}</div>
+            <h3 style="font-family:var(--font-display);font-weight:600;font-size:1.3rem;color:var(--husk-900);margin-top:0.8rem">Obrigado pela avaliação!</h3>
+            <p class="text-sm muted mt-1">Sua opinião ajuda a Pamonha Net a ficar cada vez melhor.</p>
+            <button class="btn btn-outline mt-2" onclick="router.go('card')">Voltar ao cartão</button>
           </div>
         </div>
       `;
@@ -1200,10 +1286,16 @@
     });
 
     let selectedRatings = {};
+    function updateFeedbackSubmitState() {
+      const btn = $('#fb-submit-btn');
+      if (!btn) return;
+      btn.disabled = FEEDBACK_QUESTIONS.some(f => !selectedRatings[f.key]);
+    }
     window.setRating = (key, n) => {
       selectedRatings[key] = n;
       const box = $(`#star-box-${key}`);
-      if (box) box.innerHTML = ratePillsHTML(key, n);
+      if (box) box.innerHTML = starsHTML(key, n);
+      updateFeedbackSubmitState();
     };
     window.sendFeedback = async () => {
       const missing = FEEDBACK_QUESTIONS.find(f => !selectedRatings[f.key]);
@@ -1215,8 +1307,10 @@
           serviceRating: selectedRatings.serviceRating,
           comment: $('#fb-comment').value,
         });
-        toast.show('Obrigado pela avaliação!');
-        router.go('card');
+        $('#feedback-form').classList.add('hidden');
+        const thanks = $('#feedback-thanks');
+        thanks.classList.remove('hidden');
+        thanks.style.animation = 'fadeIn 0.5s ease both';
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
@@ -1319,16 +1413,13 @@
           </div>
           <div class="surface mb-2">
             <h3 class="surface-title">${icon('search', 'icon icon-sm')} Onde nos encontrar</h3>
-            <p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px">Feira</p>
-            <a class="find-link" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(FEIRA_ENDERECO)}" target="_blank" rel="noopener">
-              ${icon('pin', 'icon icon-sm')} ${FEIRA_NOME}
-            </a>
+            <div id="profile-locais"><p class="text-sm muted">Carregando locais…</p></div>
             <p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px;margin-top:.9rem">Contato</p>
             <a class="find-link" href="https://instagram.com/pamonhanet" target="_blank" rel="noopener">${icon('camera','icon icon-sm')} @pamonhanet</a>
             <a class="find-link" href="https://wa.me/5521994469676" target="_blank" rel="noopener">${icon('whatsapp','icon icon-sm')} (21) 99446-9676</a>
           </div>
-          <div class="surface" style="border-color:rgba(178,58,34,0.35)">
-            <h3 class="surface-title" style="color:var(--error)">${icon('trash', 'icon icon-sm')} Excluir conta</h3>
+          <div class="surface" style="border-color:rgba(198,40,40,0.35)">
+            <h3 class="surface-title" style="color:var(--danger)">${icon('trash', 'icon icon-sm')} Excluir conta</h3>
             <p class="text-sm muted mb-1">Isso apaga sua conta, seus selos e seu histórico permanentemente. Não é possível desfazer.</p>
             <button class="btn btn-danger" onclick="openDeleteAccount()">Excluir minha conta</button>
           </div>
@@ -1338,7 +1429,23 @@
       $('#prof-phone').value = api.user?.phone ? formatPhone(api.user.phone) : '';
       $('#prof-email').value = api.user?.email || '';
       refreshPushUi();
+      loadProfileLocais();
     });
+
+    async function loadProfileLocais() {
+      const box = $('#profile-locais');
+      if (!box) return;
+      try {
+        const data = await api.get('/api/client/locais');
+        const locais = data.locais || [];
+        if (!locais.length) { box.innerHTML = `<p class="text-sm muted">Nenhum local cadastrado ainda.</p>`; return; }
+        box.innerHTML = locais.map(l => `
+          <a class="find-link" href="${l.mapsUrl || ('https://www.google.com/maps/search/?api=1&query=' + l.lat + ',' + l.lng)}" target="_blank" rel="noopener">
+            ${icon('pin', 'icon icon-sm')} ${l.name}
+          </a>
+        `).join('');
+      } catch (e) { box.innerHTML = `<p class="text-sm muted">Não foi possível carregar os locais.</p>`; }
+    }
 
     window.saveProfile = async () => {
       const body = {};
@@ -1396,34 +1503,87 @@
       if (!api.token || api.user?.role !== 'admin') return router.go('card');
       container.innerHTML = `
         <div class="page">
-          <h2 class="page-title">${icon('shield')} Painel do administrador</h2>
-          <div class="admin-tabs">
-            <button class="admin-tab-btn" data-tab="painel" onclick="setAdminTab('painel')">${icon('shield')}<span>Painel</span></button>
-            <button class="admin-tab-btn" data-tab="produtos" onclick="setAdminTab('produtos')">${icon('box')}<span>Produtos</span></button>
-            <button class="admin-tab-btn" data-tab="locais" onclick="setAdminTab('locais')">${icon('map')}<span>Locais</span></button>
-            <button class="admin-tab-btn" data-tab="vendas" onclick="setAdminTab('vendas')">${icon('cart')}<span>Vendas</span></button>
-            <button class="admin-tab-btn" data-tab="graficos" onclick="setAdminTab('graficos')">${icon('chart')}<span>Gráficos</span></button>
-          </div>
+          <h2 class="page-title">${icon('shield')} Gerenciar</h2>
           <div id="admin-tab-body"></div>
         </div>
+        <div id="admin-more-sheet"></div>
       `;
+      adminActiveTab = 'hub';
       renderAdminTabBody();
     });
 
-    let adminActiveTab = 'painel';
+    let adminActiveTab = 'hub';
     window.setAdminTab = (tab) => { adminActiveTab = tab; renderAdminTabBody(); };
 
-    function renderAdminTabBody() {
-      $$('.admin-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === adminActiveTab));
-      const body = $('#admin-tab-body');
-      if (adminActiveTab === 'produtos') return renderAdminProdutos(body);
-      if (adminActiveTab === 'locais') return renderAdminLocais(body);
-      if (adminActiveTab === 'vendas') return renderAdminVendas(body);
-      if (adminActiveTab === 'graficos') return renderAdminGraficos(body);
-      renderAdminPainel(body);
+    // Itens do menu "⋮ Mais opções" — cada um abre uma sub-página com botão "← Voltar".
+    const ADMIN_MORE_ITEMS = [
+      { tab: 'produtos', icon: 'box', label: 'Produtos' },
+      { tab: 'locais', icon: 'map', label: 'Locais' },
+      { tab: 'avaliacoes', icon: 'star', label: 'Avaliações recebidas' },
+      { tab: 'notificacoes', icon: 'bell', label: 'Notificações enviadas' },
+      { tab: 'limpeza', icon: 'broom', label: 'Limpar dados' },
+      { tab: 'ranking-admin', icon: 'trophy', label: 'Ranking de clientes' },
+    ];
+
+    window.openAdminMoreSheet = () => {
+      const sheet = $('#admin-more-sheet');
+      if (!sheet) return;
+      sheet.innerHTML = `
+        <div class="modal-overlay" onclick="if(event.target===this) closeAdminMoreSheet()">
+          <div class="bottom-sheet">
+            <div class="bottom-sheet-handle"></div>
+            <h3 class="surface-title">${icon('shield','icon icon-sm')} Mais opções</h3>
+            ${ADMIN_MORE_ITEMS.map(it => `
+              <button class="sheet-item" onclick="closeAdminMoreSheet(); ${it.tab === 'ranking-admin' ? "router.go('ranking')" : `setAdminTab('${it.tab}')`}">
+                ${icon(it.icon, 'icon')}<span>${it.label}</span>${icon('send','icon icon-sm sheet-item-arrow')}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    };
+    window.closeAdminMoreSheet = () => { const sheet = $('#admin-more-sheet'); if (sheet) sheet.innerHTML = ''; };
+
+    function backToHubBtn() {
+      return `<button class="btn-back" onclick="setAdminTab('hub')">${icon('logout','icon icon-sm')} <span>Voltar</span></button>`;
     }
 
-    function renderAdminPainel(container) {
+    function renderAdminTabBody() {
+      const body = $('#admin-tab-body');
+      if (!body) return;
+      if (adminActiveTab === 'operacao') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminOperacao($('#admin-sub')); }
+      if (adminActiveTab === 'graficos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminGraficos($('#admin-sub')); }
+      if (adminActiveTab === 'vendas') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminVendas($('#admin-sub')); }
+      if (adminActiveTab === 'produtos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminProdutos($('#admin-sub')); }
+      if (adminActiveTab === 'locais') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminLocais($('#admin-sub')); }
+      if (adminActiveTab === 'avaliacoes') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminAvaliacoes($('#admin-sub')); }
+      if (adminActiveTab === 'notificacoes') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminNotificacoes($('#admin-sub')); }
+      if (adminActiveTab === 'limpeza') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderLimpeza($('#admin-sub')); }
+      renderAdminHub(body);
+    }
+
+    async function renderAdminHub(container) {
+      container.innerHTML = `
+        <button class="hub-card" onclick="setAdminTab('operacao')">
+          <span class="hub-card-icon" style="background:var(--husk-300);color:var(--husk-900)">${icon('cart','icon')}</span>
+          <span class="hub-card-body"><strong>Operação da loja</strong><span>Escanear QR, registrar venda e ajustar selos</span></span>
+          ${icon('send','icon icon-sm hub-card-arrow')}
+        </button>
+        <button class="hub-card" onclick="setAdminTab('graficos')">
+          <span class="hub-card-icon" style="background:var(--amber-soft);color:var(--amber-dark)">${icon('chart','icon')}</span>
+          <span class="hub-card-body"><strong>Gráficos & Relatórios</strong><span>Faturamento, satisfação e cartões fechados</span></span>
+          ${icon('send','icon icon-sm hub-card-arrow')}
+        </button>
+        <button class="hub-card" onclick="setAdminTab('vendas')">
+          <span class="hub-card-icon" style="background:var(--husk-300);color:var(--husk-900)">${icon('box','icon')}</span>
+          <span class="hub-card-body"><strong>Vendas recentes</strong><span>Ver, vincular local e apagar vendas</span></span>
+          ${icon('send','icon icon-sm hub-card-arrow')}
+        </button>
+        <button class="btn btn-outline mt-1" onclick="openAdminMoreSheet()">${icon('more','icon icon-sm')} ⋮ Mais opções</button>
+      `;
+    }
+
+    function renderAdminOperacao(container) {
       container.innerHTML = `
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
@@ -1447,6 +1607,26 @@
             </details>
           </div>
 
+          <div class="surface section-gap">
+            <h3 class="surface-title">${icon('cart', 'icon icon-sm')} Registrar venda</h3>
+            <button class="btn btn-primary" onclick="openSalesHub(null)">${icon('cart','icon icon-sm')} Nova venda</button>
+          </div>
+
+          <div class="mb-1">
+            <input class="input" id="search-clients" placeholder="Buscar cliente por nome ou telefone" oninput="searchClients()" />
+          </div>
+          <div id="admin-clients"></div>
+      `;
+      loadAdminClients();
+    }
+
+    function renderAdminAvaliacoes(container) {
+      container.innerHTML = `<div class="mt-1"><div id="admin-feedbacks"><div class="loader"></div></div></div>`;
+      loadAdminFeedbacks();
+    }
+
+    function renderAdminNotificacoes(container) {
+      container.innerHTML = `
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('mail', 'icon icon-sm')} Enviar notificação</h3>
             <p class="text-xs muted mb-1">Aparece na aba Avisos e, se o cliente tiver ativado, chega como notificação no celular dele.</p>
@@ -1477,45 +1657,7 @@
             <p class="text-xs muted mb-1">Toque em um aviso para ver quem já visualizou — o cliente não precisa marcar nada, só abrir a aba dele.</p>
             <div id="sent-notif-list"></div>
           </div>
-
-          <div class="surface section-gap">
-            <h3 class="surface-title">${icon('broom', 'icon icon-sm')} Limpeza de avisos</h3>
-            <p class="text-xs muted mb-1">Isso apaga só os avisos da aba "Avisos" — não mexe nos clientes nem nos selos.</p>
-            <div class="cleanup-row">
-              <div>
-                <strong>Apagar tudo</strong>
-                <span>Todos os avisos, de todo mundo</span>
-              </div>
-              <button class="btn btn-danger" onclick="clearNotifs('all')">Apagar</button>
-            </div>
-            <div class="cleanup-row">
-              <div>
-                <strong>Só os gerais</strong>
-                <span>Os que foram enviados para "Todos"</span>
-              </div>
-              <button class="btn btn-danger" onclick="clearNotifs('broadcast')">Apagar</button>
-            </div>
-            <div class="cleanup-row">
-              <div>
-                <strong>Só os individuais</strong>
-                <span>Os enviados para um cliente específico</span>
-              </div>
-              <button class="btn btn-danger" onclick="clearNotifs('individual')">Apagar</button>
-            </div>
-          </div>
-
-          <div class="mb-1">
-            <input class="input" id="search-clients" placeholder="Buscar cliente por nome ou telefone" oninput="searchClients()" />
-          </div>
-          <div id="admin-clients"></div>
-
-          <div class="mt-2">
-            <h3 class="surface-title">${icon('star', 'icon icon-sm')} Avaliações dos clientes</h3>
-            <div id="admin-feedbacks"></div>
-          </div>
       `;
-      loadAdminClients();
-      loadAdminFeedbacks();
       loadSentNotifications();
     }
 
@@ -1945,9 +2087,11 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
+    let adminFeedbacksCache = [];
     async function loadAdminFeedbacks() {
       try {
         const data = await api.get('/api/admin/feedbacks');
+        adminFeedbacksCache = data.feedbacks;
         const box = $('#admin-feedbacks');
         if (!data.feedbacks.length) {
           box.innerHTML = `<div class="empty-state"><p>Nenhuma avaliação recebida ainda.</p></div>`;
@@ -1982,7 +2126,8 @@
       try {
         await api.del('/api/admin/feedbacks/' + id);
         toast.show('Avaliação removida.');
-        loadAdminFeedbacks();
+        if (adminActiveTab === 'avaliacoes') loadAdminFeedbacks();
+        else if (adminActiveTab === 'graficos') renderAdminGraficos($('#admin-sub'));
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
@@ -2417,39 +2562,74 @@
     // ==========================================================================
     let locaisCache = [];
 
+    let localMapInstance = null, localMapMarker = null, localMapCircle = null;
     async function renderAdminLocais(container) {
       container.innerHTML = `
         <div class="surface section-gap">
           <h3 class="surface-title">${icon('map','icon icon-sm')} Novo local</h3>
           <label class="label">Nome</label>
           <input class="input mb-1" id="local-name" placeholder="Ex: Feira da Figueira" maxlength="60" />
-          <div class="flex gap-1 mb-1">
-            <div style="flex:1">
-              <label class="label">Latitude</label>
-              <input class="input" id="local-lat" type="number" step="0.000001" placeholder="-22.xxxx" />
-            </div>
-            <div style="flex:1">
-              <label class="label">Longitude</label>
-              <input class="input" id="local-lng" type="number" step="0.000001" placeholder="-43.xxxx" />
-            </div>
+          <button class="btn btn-outline mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Usar minha localização</button>
+          <p class="text-xs muted mb-1">Ou arraste o marcador no mapa para o ponto exato.</p>
+          <div id="local-map" class="local-map"></div>
+          <div class="flex gap-1 mt-1 mb-1">
+            <div style="flex:1"><label class="label">Latitude</label><input class="input" id="local-lat" readonly placeholder="—" /></div>
+            <div style="flex:1"><label class="label">Longitude</label><input class="input" id="local-lng" readonly placeholder="—" /></div>
           </div>
-          <label class="label">Raio de detecção (metros)</label>
-          <input class="input mb-1" id="local-radius" type="number" min="10" max="5000" value="150" />
-          <button class="btn btn-outline mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Usar minha localização atual</button>
+          <label class="label">Raio: <span id="local-radius-val">150</span> m</label>
+          <input type="range" class="range-input mb-1" id="local-radius" min="10" max="500" value="150" oninput="onLocalRadiusChange(this.value)" />
           <button class="btn btn-primary" onclick="createLocal()">${icon('save','icon icon-sm')} Cadastrar local</button>
         </div>
         <div id="locais-list"><div class="loader"></div></div>
       `;
+      initLocalMap(-22.83, -43.28);
       loadLocais();
     }
+
+    function initLocalMap(lat, lng) {
+      const el = $('#local-map');
+      if (!el || typeof L === 'undefined') return;
+      if (localMapInstance) { localMapInstance.remove(); localMapInstance = null; }
+      localMapInstance = L.map(el, { attributionControl: false }).setView([lat, lng], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(localMapInstance);
+      localMapMarker = L.marker([lat, lng], { draggable: true }).addTo(localMapInstance);
+      localMapCircle = L.circle([lat, lng], { radius: 150, color: '#2E7D32', fillColor: '#2E7D32', fillOpacity: 0.15 }).addTo(localMapInstance);
+      localMapMarker.on('drag', (e) => {
+        const p = e.target.getLatLng();
+        localMapCircle.setLatLng(p);
+        setLocalLatLng(p.lat, p.lng);
+      });
+      localMapInstance.on('click', (e) => {
+        localMapMarker.setLatLng(e.latlng);
+        localMapCircle.setLatLng(e.latlng);
+        setLocalLatLng(e.latlng.lat, e.latlng.lng);
+      });
+      setLocalLatLng(lat, lng);
+    }
+
+    function setLocalLatLng(lat, lng) {
+      const latEl = $('#local-lat'), lngEl = $('#local-lng');
+      if (latEl) latEl.value = lat.toFixed(6);
+      if (lngEl) lngEl.value = lng.toFixed(6);
+    }
+
+    window.onLocalRadiusChange = (val) => {
+      $('#local-radius-val').textContent = val;
+      if (localMapCircle) localMapCircle.setRadius(Number(val));
+    };
 
     window.useMyLocationForLocal = () => {
       if (!navigator.geolocation) return toast.show('Este dispositivo não tem GPS disponível.', 'error');
       toast.show('Buscando sua localização…');
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          $('#local-lat').value = pos.coords.latitude.toFixed(6);
-          $('#local-lng').value = pos.coords.longitude.toFixed(6);
+          const { latitude, longitude } = pos.coords;
+          setLocalLatLng(latitude, longitude);
+          if (localMapInstance && localMapMarker) {
+            localMapInstance.setView([latitude, longitude], 16);
+            localMapMarker.setLatLng([latitude, longitude]);
+            localMapCircle.setLatLng([latitude, longitude]);
+          }
           toast.show('Localização preenchida.');
         },
         () => toast.show('Não foi possível obter sua localização.', 'error'),
@@ -2475,6 +2655,7 @@
           <div class="info">
             <strong>${l.name}</strong>
             <span>Raio de ${l.radiusMeters}m${l.active ? '' : ' · inativo'}</span>
+            <a class="find-link" style="border:none;padding:0.2rem 0;font-size:0.78rem" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}" target="_blank" rel="noopener">${icon('map','icon icon-sm')} Abrir no Google Maps</a>
           </div>
           <div class="row-actions">
             <button class="icon-btn" onclick='toggleLocalActive(${JSON.stringify(l)})' title="${l.active ? 'Desativar' : 'Ativar'}">${icon(l.active ? 'minus' : 'plus', 'icon')}</button>
@@ -2490,11 +2671,11 @@
       const lng = Number($('#local-lng').value);
       const radiusMeters = Number($('#local-radius').value) || 150;
       if (!name) return toast.show('Informe o nome do local.', 'error');
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return toast.show('Informe latitude e longitude válidas.', 'error');
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return toast.show('Toque no mapa ou use sua localização para definir o ponto.', 'error');
       try {
         await api.post('/api/admin/locais', { name, lat, lng, radiusMeters });
         toast.show('Local cadastrado.');
-        $('#local-name').value = ''; $('#local-lat').value = ''; $('#local-lng').value = ''; $('#local-radius').value = 150;
+        $('#local-name').value = '';
         loadLocais();
       } catch (e) { toast.show(e.message, 'error'); }
     };
@@ -2520,7 +2701,7 @@
       container.innerHTML = `
         <div class="surface section-gap">
           <h3 class="surface-title">${icon('cart','icon icon-sm')} Vendas recentes</h3>
-          <p class="text-xs muted mb-1">Apagar uma venda devolve os selos que ela deu ao cliente. Vendas sem local podem ser vinculadas a um local existente aqui.</p>
+          <p class="text-xs muted mb-1">Apagar uma venda com cliente desfaz os selos que ela deu. Vendas avulsas são apenas apagadas.</p>
         </div>
         <div id="vendas-list"><div class="loader"></div></div>
       `;
@@ -2542,6 +2723,7 @@
       box.innerHTML = vendasCache.map(v => {
         const itemsLabel = v.items.map(it => `${it.quantity}× ${it.name}`).join(', ');
         const liquido = v.totalValue - (v.totalCost || 0);
+        const isAvulsa = !v.clientId;
         const badge = v.localId
           ? `<span class="venda-badge ok">${icon('pin','icon icon-sm')} ${v.localName}</span>`
           : `<span class="venda-badge warn">${icon('map','icon icon-sm')} Local não identificado</span>`;
@@ -2549,8 +2731,8 @@
           <div class="venda-row">
             <div class="top">
               <div>
-                <div class="client">${v.clientId?.fullName || 'Cliente'}</div>
-                <div class="meta">${formatDate(v.createdAt)} · ${v.stampsGiven} selo(s)${v.completedCardOnThisSale ? ' · fechou cartão 🎉' : ''}</div>
+                <div class="client">${isAvulsa ? '🧾 Venda avulsa' : (v.clientId?.fullName || 'Cliente')}</div>
+                <div class="meta">${formatDate(v.createdAt)}${isAvulsa ? '' : ` · ${v.stampsGiven} selo(s)${v.completedCardOnThisSale ? ' · fechou cartão 🎉' : ''}`}</div>
               </div>
               <div class="value">R$ ${v.totalValue.toFixed(2).replace('.', ',')}<span class="liquido">líquido R$ ${liquido.toFixed(2).replace('.', ',')}</span></div>
             </div>
@@ -2558,7 +2740,7 @@
             ${badge}
             <div class="actions">
               ${!v.localId ? `<button class="btn btn-outline" onclick="openAssignLocal('${v._id}')">${icon('map','icon icon-sm')} Vincular local</button>` : ''}
-              <button class="btn btn-outline" style="color:var(--error);border-color:rgba(178,58,34,0.35)" onclick="deleteVenda('${v._id}')">${icon('trash','icon icon-sm')} Apagar</button>
+              <button class="btn btn-outline" style="color:var(--danger);border-color:rgba(198,40,40,0.35)" onclick="deleteVenda('${v._id}')">${icon('trash','icon icon-sm')} Apagar</button>
             </div>
           </div>
         `;
@@ -2606,27 +2788,44 @@
     };
 
     // ==========================================================================
-    // HUB DE VENDAS — aberto pela lista de clientes ou a partir do hub de carimbo.
-    // Escolhe produtos + quantidade; cada unidade dá 1 selo, e o valor total entra
-    // no gráfico de faturamento (casado por GPS com um Local cadastrado).
+    // HUB DE VENDAS — aberto pela lista de clientes, do hub de carimbo, ou como
+    // "Nova venda" avulsa (sem cliente) a partir de Operação da loja.
+    // Escolhe produtos + quantidade; cada unidade dá 1 selo (quando há cliente), e o
+    // valor total entra nos gráficos (casado por GPS ou local escolhido manualmente).
     // ==========================================================================
     let salesCartClient = null;
     let salesCart = {};
+    let salesAvulsa = false;
+    let salesAvulsaLocalId = '';
+    let salesAvulsaCoords = null;
 
     window.openSalesHub = async (client) => {
       salesCartClient = client;
       salesCart = {};
+      salesAvulsa = !client;
+      salesAvulsaLocalId = '';
+      salesAvulsaCoords = null;
       if (!produtosCache.length) {
         try { const data = await api.get('/api/admin/produtos'); produtosCache = data.produtos; }
         catch (e) { toast.show(e.message, 'error'); return; }
+      }
+      if (!locaisCache.length) {
+        try { const data = await api.get('/api/admin/locais'); locaisCache = data.locais; } catch (e) { /* segue sem locais */ }
       }
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
       overlay.id = 'sales-hub-overlay';
       overlay.innerHTML = `
         <div class="modal-card" style="max-width:400px">
-          <h3 class="surface-title">${icon('cart','icon icon-sm')} Venda para ${client.fullName.split(' ')[0]}</h3>
-          <p class="text-xs muted mb-1">Escolha os produtos e a quantidade. Cada unidade dá 1 selo no cartão.</p>
+          <h3 class="surface-title" id="sales-hub-title"></h3>
+          <div class="cleanup-row" style="padding-top:0">
+            <div>
+              <strong>Venda avulsa (sem cliente)</strong>
+              <span>Venda sem cartão fidelidade — não dá selos, entra só nos gráficos.</span>
+            </div>
+            <label class="switch"><input type="checkbox" id="sales-avulsa-toggle" ${salesAvulsa ? 'checked' : ''} ${client ? '' : 'disabled'} onchange="toggleSalesAvulsa(this.checked)" /><span class="switch-track"></span></label>
+          </div>
+          <div id="sales-avulsa-local" class="hidden mb-1"></div>
           <div id="sales-cart-list">${salesCartListHTML()}</div>
           <div class="cart-total-bar">
             <span class="text-sm muted">Total</span>
@@ -2635,16 +2834,53 @@
           <p class="text-xs muted text-center mt-1" id="sales-cart-stamps">0 selo(s) nesta venda</p>
           <div class="flex gap-1 mt-2">
             <button class="btn btn-outline" style="flex:1" onclick="closeSalesHub()">Cancelar</button>
-            <button class="btn btn-qr-green" style="flex:1" onclick="confirmSalesHub()">${icon('check','icon icon-sm')} Confirmar venda</button>
+            <button class="btn btn-qr-green" style="flex:1" id="sales-hub-confirm-btn" onclick="confirmSalesHub()">${icon('check','icon icon-sm')} Confirmar venda</button>
           </div>
         </div>
       `;
       document.body.appendChild(overlay);
+      renderSalesHubHead();
+    };
+
+    function renderSalesHubHead() {
+      const title = $('#sales-hub-title');
+      if (title) title.innerHTML = salesAvulsa
+        ? `${icon('cart','icon icon-sm')} Venda avulsa`
+        : `${icon('cart','icon icon-sm')} Venda para ${salesCartClient.fullName.split(' ')[0]}`;
+      const btn = $('#sales-hub-confirm-btn');
+      if (btn) btn.innerHTML = `${icon('check','icon icon-sm')} ${salesAvulsa ? 'Registrar venda avulsa' : 'Confirmar venda'}`;
+      const localBox = $('#sales-avulsa-local');
+      if (localBox) {
+        localBox.classList.toggle('hidden', !salesAvulsa);
+        if (salesAvulsa) {
+          localBox.innerHTML = `
+            <label class="label">Local da venda</label>
+            <select class="input mb-1" id="sales-avulsa-local-select" onchange="salesAvulsaLocalId = this.value">
+              <option value="">Selecione um local cadastrado…</option>
+              ${locaisCache.filter(l => l.active).map(l => `<option value="${l._id}" ${salesAvulsaLocalId === l._id ? 'selected' : ''}>${l.name}</option>`).join('')}
+            </select>
+            <button class="btn btn-outline" onclick="useMyLocationForSalesAvulsa()">${icon('pin','icon icon-sm')} Usar GPS</button>
+            ${salesAvulsaCoords ? `<p class="text-xs muted mt-1">${icon('check','icon icon-sm')} Localização GPS capturada.</p>` : ''}
+          `;
+        }
+      }
+    }
+
+    window.toggleSalesAvulsa = (checked) => { salesAvulsa = checked; renderSalesHubHead(); };
+
+    window.useMyLocationForSalesAvulsa = () => {
+      if (!navigator.geolocation) return toast.show('Este dispositivo não tem GPS disponível.', 'error');
+      toast.show('Buscando sua localização…');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { salesAvulsaCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude }; toast.show('Localização capturada.'); renderSalesHubHead(); },
+        () => toast.show('Não foi possível obter sua localização.', 'error'),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
     };
 
     function salesCartListHTML() {
       const activeProdutos = produtosCache.filter(p => p.active);
-      if (!activeProdutos.length) return `<p class="text-sm muted text-center">Nenhum produto ativo cadastrado. Cadastre na aba "Produtos".</p>`;
+      if (!activeProdutos.length) return `<p class="text-sm muted text-center">Nenhum produto ativo cadastrado. Cadastre em Produtos.</p>`;
       return activeProdutos.map(p => `
         <div class="cart-row">
           <div class="info"><strong>${p.name}</strong><span>R$ ${p.price.toFixed(2).replace('.', ',')}</span></div>
@@ -2675,21 +2911,24 @@
         stamps += qty;
       }
       const totalEl = $('#sales-cart-total'); if (totalEl) totalEl.textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
-      const stampsEl = $('#sales-cart-stamps'); if (stampsEl) stampsEl.textContent = `${stamps} selo${stamps === 1 ? '' : 's'} nesta venda`;
+      const stampsEl = $('#sales-cart-stamps');
+      if (stampsEl) stampsEl.textContent = salesAvulsa ? 'Venda avulsa — não dá selos' : `${stamps} selo${stamps === 1 ? '' : 's'} nesta venda`;
     }
 
     window.closeSalesHub = () => {
       const el = $('#sales-hub-overlay'); if (el) el.remove();
-      salesCartClient = null; salesCart = {};
+      salesCartClient = null; salesCart = {}; salesAvulsa = false; salesAvulsaLocalId = ''; salesAvulsaCoords = null;
     };
 
     window.confirmSalesHub = async () => {
-      if (!salesCartClient) return;
       const items = Object.entries(salesCart).map(([produtoId, quantity]) => ({ produtoId, quantity }));
       if (!items.length) return toast.show('Escolha ao menos 1 produto.', 'error');
+      if (salesAvulsa && !salesAvulsaLocalId && !salesAvulsaCoords) {
+        return toast.show('Venda avulsa precisa de um local cadastrado ou do GPS.', 'error');
+      }
 
-      let coords = null;
-      if (navigator.geolocation) {
+      let coords = salesAvulsa ? salesAvulsaCoords : null;
+      if (!salesAvulsa && navigator.geolocation) {
         coords = await new Promise((resolve) => {
           navigator.geolocation.getCurrentPosition(
             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
@@ -2700,11 +2939,19 @@
       }
 
       try {
-        const body = { clientId: salesCartClient._id, items };
-        if (coords) { body.lat = coords.lat; body.lng = coords.lng; }
+        const body = { items };
+        if (salesAvulsa) {
+          body.clientId = null;
+          if (salesAvulsaLocalId) body.localId = salesAvulsaLocalId;
+          else if (coords) { body.lat = coords.lat; body.lng = coords.lng; }
+        } else {
+          body.clientId = salesCartClient._id;
+          if (coords) { body.lat = coords.lat; body.lng = coords.lng; }
+        }
         const data = await api.post('/api/admin/vendas', body);
         const overflowMsg = data.overflowStamps > 0 ? ` (${data.overflowStamps} selo(s) não contaram — cartão já estava cheio)` : '';
-        toast.show(`Venda registrada: ${data.venda.stampsGiven} selo(s).${overflowMsg}`);
+        const msg = salesAvulsa ? 'Venda avulsa registrada.' : `Venda registrada: ${data.venda?.stampsGiven ?? 0} selo(s).${overflowMsg}`;
+        toast.show(msg);
         closeSalesHub();
         loadAdminClients();
         if (data.needsLocation) openLocationPicker(data.nearestLocais, coords, data.venda._id);
@@ -2742,29 +2989,55 @@
       adminActiveTab = 'locais';
       renderAdminTabBody();
       setTimeout(() => {
-        const latEl = $('#local-lat'), lngEl = $('#local-lng');
-        if (latEl) latEl.value = lat.toFixed(6);
-        if (lngEl) lngEl.value = lng.toFixed(6);
-      }, 50);
+        setLocalLatLng(lat, lng);
+        if (localMapInstance && localMapMarker) {
+          localMapInstance.setView([lat, lng], 16);
+          localMapMarker.setLatLng([lat, lng]);
+          localMapCircle.setLatLng([lat, lng]);
+        }
+      }, 80);
     };
 
     // ==========================================================================
-    // GRÁFICOS — satisfação, cartões fechados por local e faturamento por local
+    // GRÁFICOS & RELATÓRIOS — cascata (waterfall) ano→mês→semana, pizza de
+    // satisfação, cartões fechados por local, faturamento por local e limpeza.
     // ==========================================================================
-    let graficosPeriod = 'month';
-    let satChartMode = 'donut'; // 'donut' | 'barras'
-    window.setGraficosPeriod = (p) => { graficosPeriod = p; renderAdminGraficos($('#admin-tab-body')); };
-    window.setSatChartMode = (m) => { satChartMode = m; renderAdminGraficos($('#admin-tab-body')); };
+    let graficosAno = null;
+    let graficosMes = null; // null = nível ano; 1-12 = nível mês (mostra semanas)
+    let waterfallChart = null;
+    let pizzaChart = null;
+
+    window.setGraficosAno = (ano) => { graficosAno = Number(ano); graficosMes = null; renderAdminGraficos($('#admin-sub') || $('#admin-tab-body')); };
+    window.drillGraficosMes = (mesIndex) => { graficosMes = mesIndex; renderAdminGraficos($('#admin-sub') || $('#admin-tab-body')); };
+    window.voltarGraficosAno = () => { graficosMes = null; renderAdminGraficos($('#admin-sub') || $('#admin-tab-body')); };
+
+    const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const MESES_PT_LONG = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
     async function renderAdminGraficos(container) {
+      if (!container) return;
       container.innerHTML = `<div class="loader"></div>`;
       try {
-        const [sat, porLocalData, fatData] = await Promise.all([
+        const anosData = await api.get('/api/admin/graficos/anos');
+        const anos = anosData.anos || [];
+        if (!anos.length) {
+          container.innerHTML = `<div class="empty-state">${icon('chart','icon')}<p>Nenhuma venda ainda.</p></div>
+            <div class="surface section-gap mt-2">
+              <h3 class="surface-title" style="color:var(--danger)">${icon('broom','icon icon-sm')} Limpar dados</h3>
+              <button class="btn btn-outline" onclick="setAdminTab('limpeza')">${icon('broom','icon icon-sm')} Abrir limpeza de dados</button>
+            </div>`;
+          return;
+        }
+        if (graficosAno === null || !anos.includes(graficosAno)) graficosAno = anos[0];
+
+        const fatQuery = `ano=${graficosAno}` + (graficosMes ? `&mes=${graficosMes}` : '');
+        const [fatData, sat, cartoesData, fatLocalData] = await Promise.all([
+          api.get(`/api/admin/graficos/faturamento?${fatQuery}`),
           api.get('/api/admin/graficos/satisfacao'),
-          api.get('/api/admin/graficos/cartoes-por-local'),
-          api.get(`/api/admin/graficos/faturamento-por-local?period=${graficosPeriod}`)
+          api.get(`/api/admin/graficos/cartoes-por-local?${fatQuery}`),
+          api.get(`/api/admin/graficos/faturamento-por-local?${fatQuery}`),
         ]);
-        drawGraficos(container, sat, porLocalData, fatData);
+        drawGraficos(container, anos, fatData, sat, cartoesData, fatLocalData);
       } catch (e) {
         container.innerHTML = `<div class="empty-state"><p>${e.message}</p></div>`;
       }
@@ -2774,25 +3047,8 @@
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
     function fmtMoney(v) { return (v || 0).toFixed(2).replace('.', ','); }
+    function fmtMoneyFull(v) { return 'R$ ' + fmtMoney(v); }
 
-    // Donut simples (2 fatias: satisfeitos x resto), com rótulo central via overlay HTML.
-    function donutSVG(percent, size, stroke, color) {
-      const radius = (size - stroke) / 2;
-      const circumference = 2 * Math.PI * radius;
-      const safePercent = Math.max(0, Math.min(100, percent));
-      const offset = circumference * (1 - safePercent / 100);
-      const c = size / 2;
-      return `
-        <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-          <circle cx="${c}" cy="${c}" r="${radius}" fill="none" stroke="var(--husk-300)" stroke-width="${stroke}" />
-          <circle cx="${c}" cy="${c}" r="${radius}" fill="none" stroke="${color}" stroke-width="${stroke}"
-            stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round"
-            transform="rotate(-90 ${c} ${c})" style="transition: stroke-dashoffset 0.6s var(--ease)" />
-        </svg>
-      `;
-    }
-
-    // Gráfico de barras horizontal (1 série) em SVG — com trilho, valor e rótulo do local.
     function svgHBarChart(data, opts) {
       const { valueFmt = (v) => String(v), color = 'var(--husk-700)' } = opts || {};
       const width = 320, rowH = 30, gap = 12, labelW = 100;
@@ -2806,13 +3062,12 @@
           <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="10.5" fill="var(--ink)" font-family="var(--font-body)">${escapeXML(d.label)}</text>
           <rect x="${labelW}" y="${y + 3}" width="${barAreaW}" height="${rowH - 6}" rx="${(rowH - 6) / 2}" fill="var(--husk-300)" />
           <rect x="${labelW}" y="${y + 3}" width="${barW}" height="${rowH - 6}" rx="${(rowH - 6) / 2}" fill="${color}" />
-          <text x="${labelW + barAreaW + 8}" y="${y + rowH / 2 + 4}" font-size="10.5" font-weight="700" fill="var(--gold-700)" font-family="var(--font-body)">${valueFmt(d.value)}</text>
+          <text x="${labelW + barAreaW + 8}" y="${y + rowH / 2 + 4}" font-size="10.5" font-weight="700" fill="var(--amber-dark)" font-family="var(--font-body)">${valueFmt(d.value)}</text>
         `;
       }).join('');
       return `<svg class="bar-chart-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${rows}</svg>`;
     }
 
-    // Gráfico de barras agrupado (2 séries: bruto x líquido) — faturamento por local.
     function svgGroupedBarChart(data) {
       const width = 320, rowH = 46, gap = 14, labelW = 100, subH = 13, subGap = 4;
       const barAreaW = width - labelW - 62;
@@ -2825,104 +3080,267 @@
         return `
           <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="10.5" fill="var(--ink)" font-family="var(--font-body)">${escapeXML(d.label)}</text>
           <rect x="${labelW}" y="${y + 2}" width="${barAreaW}" height="${subH}" rx="6.5" fill="var(--husk-300)" />
-          <rect x="${labelW}" y="${y + 2}" width="${wBruto}" height="${subH}" rx="6.5" fill="var(--husk-700)" />
-          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH - 2}" font-size="9.5" font-weight="700" fill="var(--husk-900)" font-family="var(--font-body)">R$ ${fmtMoney(d.bruto)}</text>
-          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${barAreaW}" height="${subH}" rx="6.5" fill="var(--gold-100)" />
-          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${wLiquido}" height="${subH}" rx="6.5" fill="var(--gold-600)" />
-          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH + subGap + subH - 2}" font-size="9.5" font-weight="700" fill="var(--gold-700)" font-family="var(--font-body)">R$ ${fmtMoney(d.liquido)}</text>
+          <rect x="${labelW}" y="${y + 2}" width="${wBruto}" height="${subH}" rx="6.5" fill="var(--green)" />
+          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH - 2}" font-size="9.5" font-weight="700" fill="var(--green-dark)" font-family="var(--font-body)">R$ ${fmtMoney(d.bruto)}</text>
+          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${barAreaW}" height="${subH}" rx="6.5" fill="var(--amber-soft)" />
+          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${wLiquido}" height="${subH}" rx="6.5" fill="var(--amber)" />
+          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH + subGap + subH - 2}" font-size="9.5" font-weight="700" fill="var(--amber-dark)" font-family="var(--font-body)">R$ ${fmtMoney(d.liquido)}</text>
         `;
       }).join('');
       return `<svg class="bar-chart-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${rows}</svg>`;
     }
 
-    function drawGraficos(container, sat, porLocalData, fatData) {
-      const periods = [['day', 'Dia'], ['month', 'Mês'], ['year', 'Ano']];
-      const totais = fatData.totais || { faturamentoBruto: 0, custo: 0, faturamentoLiquido: 0, vendas: 0 };
+    function drawGraficos(container, anos, fatData, sat, cartoesData, fatLocalData) {
+      const totais = fatData.totais || { bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 };
+      const medias = fatData.medias || {};
+      const posicoes = fatData.posicoes || fatData.data || [];
+      const isMesView = !!graficosMes;
 
-      // -- Satisfação: donut (padrão) ou barras por nível, com botão de trocar tipo --
-      let satBody;
-      if (!sat.totalAvaliacoes) {
-        satBody = `<p class="text-sm muted">Nenhuma avaliação ainda.</p>`;
-      } else if (satChartMode === 'donut') {
-        const pct = sat.percentualSatisfeitos ?? 0;
-        satBody = `
-          <div class="donut-wrap">
-            <div style="position:relative">
-              ${donutSVG(pct, 108, 16, 'var(--husk-900)')}
-              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-                <span class="donut-center-label" style="font-size:1.3rem;color:var(--husk-900)">${pct}%</span>
-                <span style="font-size:0.62rem;color:var(--ink-soft)">satisfeitos</span>
-              </div>
-            </div>
-            <div class="chart-legend">
-              <div class="legend-item"><span class="legend-dot" style="background:var(--husk-900)"></span>Satisfeitos<strong>${sat.satisfeitos}</strong></div>
-              <div class="legend-item"><span class="legend-dot" style="background:var(--husk-300)"></span>Demais avaliações<strong>${sat.totalAvaliacoes - sat.satisfeitos}</strong></div>
-              <div class="legend-item"><span class="legend-dot" style="background:transparent"></span>Total<strong>${sat.totalAvaliacoes}</strong></div>
-            </div>
-          </div>
-        `;
-      } else {
-        const barData = sat.distribuicaoPorNota.map((d) => {
-          const level = RATE_LEVELS.find((r) => r.val === d.nota) || RATE_LEVELS[2];
-          return { label: `${level.emoji} ${level.lbl}`, value: d.quantidade };
-        });
-        satBody = svgHBarChart(barData, { valueFmt: (v) => String(v), color: 'var(--husk-700)' });
-      }
+      const breadcrumb = isMesView
+        ? `<button class="breadcrumb-back" onclick="voltarGraficosAno()">${icon('logout','icon icon-sm')}</button><span>${graficosAno} ▸ ${MESES_PT_LONG[graficosMes - 1]}</span>`
+        : `<span>${graficosAno}</span>`;
 
-      // -- Cartões fechados por local --
-      const cartoesBody = porLocalData.porLocal.length
-        ? svgHBarChart(porLocalData.porLocal.map((r) => ({ label: r.local, value: r.cartoesFechados })), { valueFmt: (v) => String(v), color: 'var(--husk-700)' })
-        : `<p class="text-sm muted">Nenhum cartão fechado registrado ainda.</p>`;
+      const cartoesBody = (cartoesData.porLocal || []).length
+        ? svgHBarChart(cartoesData.porLocal.map((r) => ({ label: r.local, value: r.cartoesFechados })), { valueFmt: (v) => String(v), color: 'var(--green)' })
+        : `<p class="text-sm muted">Nenhum cartão fechado neste período.</p>`;
 
-      // -- Faturamento por local: bruto x líquido, com totais do período --
-      const fatBody = fatData.porLocal.length
-        ? svgGroupedBarChart(fatData.porLocal.map((r) => ({ label: r.local, bruto: r.faturamentoBruto, liquido: r.faturamentoLiquido })))
+      const fatLocalBody = (fatLocalData.porLocal || []).length
+        ? svgGroupedBarChart(fatLocalData.porLocal.map((r) => ({ label: r.local, bruto: r.faturamentoBruto ?? r.bruto, liquido: r.faturamentoLiquido ?? r.liquido })))
         : `<p class="text-sm muted">Nenhuma venda neste período.</p>`;
 
       container.innerHTML = `
         <div class="surface section-gap">
           <div class="chart-head">
-            <h3 class="surface-title">${icon('star','icon icon-sm')} Satisfação dos clientes</h3>
-            ${sat.totalAvaliacoes ? `
-              <div class="chart-type-toggle">
-                <button class="chart-type-btn ${satChartMode === 'donut' ? 'active' : ''}" title="Pizza" onclick="setSatChartMode('donut')">${icon('pie','icon')}</button>
-                <button class="chart-type-btn ${satChartMode === 'barras' ? 'active' : ''}" title="Barras" onclick="setSatChartMode('barras')">${icon('chart','icon')}</button>
-              </div>
-            ` : ''}
+            <select class="input" id="graficos-ano-select" style="width:auto" onchange="setGraficosAno(this.value)">
+              ${anos.map(a => `<option value="${a}" ${a === graficosAno ? 'selected' : ''}>${a}</option>`).join('')}
+            </select>
+          </div>
+          <div class="stat-grid mt-1">
+            <div class="stat-box"><div class="num">R$ ${fmtMoney(totais.bruto)}</div><div class="lbl">Bruto</div></div>
+            <div class="stat-box"><div class="num" style="color:var(--danger)">R$ ${fmtMoney(totais.custo)}</div><div class="lbl">Custo</div></div>
+            <div class="stat-box"><div class="num" style="color:var(--amber-dark)">R$ ${fmtMoney(totais.liquido)}</div><div class="lbl">Líquido</div></div>
           </div>
           <div class="stat-grid">
-            <div class="stat-box"><div class="num">${sat.totalAvaliacoes}</div><div class="lbl">Avaliações</div></div>
-            <div class="stat-box"><div class="num">${sat.percentualSatisfeitos !== null ? sat.percentualSatisfeitos + '%' : '—'}</div><div class="lbl">Satisfeitos</div></div>
+            <div class="stat-box"><div class="num">${totais.vendas || 0}</div><div class="lbl">Vendas</div></div>
+            <div class="stat-box"><div class="num">${totais.cartoesFechados || 0}</div><div class="lbl">Cartões fechados</div></div>
+            <div class="stat-box"><div class="num">R$ ${fmtMoney(isMesView ? (medias.porSemana ?? medias.media) : (medias.porMes ?? medias.media))}</div><div class="lbl">${isMesView ? 'Média/semana' : 'Média/mês'}</div></div>
           </div>
-          ${satBody}
+
+          <div class="chart-head">
+            <h3 class="surface-title">${icon('chart','icon icon-sm')} Faturamento</h3>
+            <div class="breadcrumb">${breadcrumb}</div>
+          </div>
+          <div class="waterfall-wrap"><canvas id="waterfall-canvas" height="220"></canvas></div>
+          <p class="text-xs muted text-center mt-1">${isMesView ? 'Semanas do mês — toque em uma barra para ver detalhes no tooltip.' : 'Toque em um mês para abrir as semanas.'}</p>
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('star','icon icon-sm')} Avaliações</h3>
+          ${!sat.totalAvaliacoes ? `<p class="text-sm muted">Nenhuma avaliação ainda.</p>` : `
+            <div class="pizza-wrap">
+              <div style="position:relative;flex-shrink:0"><canvas id="pizza-canvas" width="140" height="140"></canvas>
+                <div class="pizza-center"><strong>${sat.percentualSatisfeitos ?? 0}%</strong><span>satisfeitos</span></div>
+              </div>
+              <div class="chart-legend" id="pizza-legend"></div>
+            </div>
+            <div class="mt-2" id="avaliacoes-recentes">
+              ${(sat.avaliacoesRecentes || []).slice(0, 8).map(a => `
+                <div class="fb-card">
+                  <div class="fb-card-head">
+                    <div class="fb-avatar">${(a.nome || a.userId?.fullName || '?').trim().charAt(0).toUpperCase()}</div>
+                    <div style="flex:1"><div class="name">${a.nome || a.userId?.fullName || 'Cliente'}</div><div class="text-xs muted">${formatDate(a.createdAt)}</div></div>
+                    ${rateMiniHTML(a.nota ?? a.average ?? 0)}
+                  </div>
+                  ${a.comment ? `<p class="fb-comment">"${a.comment}"</p>` : ''}
+                  <button class="link-btn mt-1" style="color:var(--danger)" onclick="deleteFeedback('${a._id}')">${icon('trash', 'icon icon-sm')} Excluir avaliação</button>
+                </div>
+              `).join('')}
+            </div>
+          `}
         </div>
 
         <div class="surface section-gap">
           <h3 class="surface-title">${icon('trophy','icon icon-sm')} Cartões fechados por local</h3>
-          <p class="text-xs muted mb-1">Só conta cartão fechado por venda com produto — ajustes manuais não entram aqui.</p>
           ${cartoesBody}
         </div>
 
         <div class="surface section-gap">
           <h3 class="surface-title">${icon('chart','icon icon-sm')} Faturamento por local</h3>
-          <div class="period-toggle">
-            ${periods.map(([val, label]) => `<button class="${graficosPeriod === val ? 'active' : ''}" onclick="setGraficosPeriod('${val}')">${label}</button>`).join('')}
-          </div>
-          <div class="money-cards">
-            <div class="money-card"><div class="num bruto">R$ ${fmtMoney(totais.faturamentoBruto)}</div><div class="lbl">Bruto</div></div>
-            <div class="money-card"><div class="num custo">R$ ${fmtMoney(totais.custo)}</div><div class="lbl">Custo</div></div>
-            <div class="money-card"><div class="num liquido">R$ ${fmtMoney(totais.faturamentoLiquido)}</div><div class="lbl">Líquido</div></div>
-          </div>
-          ${fatData.porLocal.length ? `
+          ${(fatLocalData.porLocal || []).length ? `
             <div class="chart-legend-row">
-              <div class="legend-item"><span class="legend-dot" style="background:var(--husk-700)"></span>Bruto</div>
-              <div class="legend-item"><span class="legend-dot" style="background:var(--gold-600)"></span>Líquido</div>
+              <div class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Bruto</div>
+              <div class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Líquido</div>
             </div>
           ` : ''}
-          ${fatBody}
+          ${fatLocalBody}
+        </div>
+
+        <div class="surface section-gap" style="border-color:rgba(198,40,40,0.35)">
+          <h3 class="surface-title" style="color:var(--danger)">${icon('broom','icon icon-sm')} Limpar dados</h3>
+          <p class="text-xs muted mb-1">Apagar vendas, avaliações ou zerar cartões — com confirmação.</p>
+          <button class="btn btn-danger" onclick="setAdminTab('limpeza')">${icon('broom','icon icon-sm')} Abrir limpeza de dados</button>
+        </div>
+      `;
+
+      drawWaterfallChart(posicoes);
+      if (sat.totalAvaliacoes) drawPizzaChart(sat);
+    }
+
+    // -- Gráfico cascata (waterfall): 3 barras flutuantes por posição — Bruto, Custo, Líquido --
+    function drawWaterfallChart(posicoes) {
+      const canvas = $('#waterfall-canvas');
+      if (!canvas || typeof Chart === 'undefined') return;
+      if (waterfallChart) { waterfallChart.destroy(); waterfallChart = null; }
+      const labels = posicoes.map(p => p.label);
+      const brutoData = posicoes.map(p => [0, p.bruto]);
+      const custoData = posicoes.map(p => [Math.max(0, p.bruto - p.custo), p.bruto]);
+      const liquidoData = posicoes.map(p => [0, p.liquido]);
+      waterfallChart = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Bruto', data: brutoData, backgroundColor: 'rgba(46,125,50,0.28)', borderRadius: 4, barPercentage: 0.9, categoryPercentage: 0.85 },
+            { label: 'Custo', data: custoData, backgroundColor: '#C62828', borderRadius: 4, barPercentage: 0.5, categoryPercentage: 0.85 },
+            { label: 'Líquido', data: liquidoData, backgroundColor: '#F9A825', borderRadius: 4, barPercentage: 0.32, categoryPercentage: 0.85 },
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          onClick: (evt, elements) => {
+            if (graficosMes) return;
+            if (elements.length) {
+              const idx = elements[0].index;
+              const p = posicoes[idx];
+              if (p && p.vendas) drillGraficosMes(idx + 1);
+            }
+          },
+          plugins: {
+            legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+            tooltip: {
+              callbacks: {
+                title: (items) => posicoes[items[0].dataIndex]?.label || '',
+                label: (item) => {
+                  const p = posicoes[item.dataIndex];
+                  if (!p) return '';
+                  if (item.datasetIndex === 0) return `Bruto: ${fmtMoneyFull(p.bruto)}`;
+                  if (item.datasetIndex === 1) return `Custo: ${fmtMoneyFull(p.custo)}`;
+                  return `Líquido: ${fmtMoneyFull(p.liquido)} · ${p.vendas || 0} vendas${p.cartoesFechados ? ' · ' + p.cartoesFechados + ' cartões' : ''}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true, ticks: { callback: (v) => 'R$' + v } }
+          }
+        }
+      });
+    }
+
+    // -- Pizza de satisfação: sempre 5 fatias (notas 1 a 5), degradê âmbar→verde --
+    function drawPizzaChart(sat) {
+      const canvas = $('#pizza-canvas');
+      if (!canvas || typeof Chart === 'undefined') return;
+      if (pizzaChart) { pizzaChart.destroy(); pizzaChart = null; }
+      const dist = [1,2,3,4,5].map(n => {
+        const found = (sat.distribuicaoPorNota || []).find(d => d.nota === n);
+        return found ? found.quantidade : 0;
+      });
+      const colors = ['#E65100', '#F9A825', '#FDD835', '#7CB342', '#2E7D32'];
+      pizzaChart = new Chart(canvas, {
+        type: 'pie',
+        data: { labels: ['1 estrela','2 estrelas','3 estrelas','4 estrelas','5 estrelas'], datasets: [{ data: dist, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+        options: { responsive: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (item) => `${item.label}: ${item.raw}` } } } }
+      });
+      const legend = $('#pizza-legend');
+      if (legend) {
+        legend.innerHTML = ['1','2','3','4','5'].map((n, i) => `
+          <div class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${n} estrela${n==='1'?'':'s'}<strong>${dist[i]}</strong></div>
+        `).join('');
+      }
+    }
+
+    // ==========================================================================
+    // LIMPAR DADOS — apagar vendas/avaliações selecionadas, zerar cartões, ou
+    // apagar tudo (zona vermelha, exige digitar "APAGAR TUDO").
+    // ==========================================================================
+    async function renderLimpeza(container) {
+      container.innerHTML = `<div class="loader"></div>`;
+      try {
+        if (!vendasCache.length) { const v = await api.get('/api/admin/vendas?limit=100'); vendasCache = v.vendas; }
+        if (!adminFeedbacksCache.length) { const f = await api.get('/api/admin/feedbacks'); adminFeedbacksCache = f.feedbacks; }
+      } catch (e) { /* segue com o que tiver em cache */ }
+
+      container.innerHTML = `
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('box','icon icon-sm')} Apagar vendas selecionadas</h3>
+          <div class="limpeza-list">
+            ${vendasCache.slice(0, 30).map(v => `
+              <label class="limpeza-item"><input type="checkbox" class="limpeza-venda-chk" value="${v._id}" />
+                <span>${v.clientId?.fullName || 'Venda avulsa'} · R$ ${v.totalValue.toFixed(2).replace('.', ',')} · ${formatDateShort(v.createdAt)}</span>
+              </label>
+            `).join('') || '<p class="text-sm muted">Nenhuma venda.</p>'}
+          </div>
+          <button class="btn btn-danger mt-1" onclick="limparEscopo('vendas')">${icon('trash','icon icon-sm')} Apagar selecionadas</button>
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('star','icon icon-sm')} Apagar avaliações selecionadas</h3>
+          <div class="limpeza-list">
+            ${adminFeedbacksCache.slice(0, 30).map(f => `
+              <label class="limpeza-item"><input type="checkbox" class="limpeza-avaliacao-chk" value="${f._id}" />
+                <span>${f.userId?.fullName || 'Cliente'} · média ${f.average ?? '-'} · ${formatDateShort(f.createdAt)}</span>
+              </label>
+            `).join('') || '<p class="text-sm muted">Nenhuma avaliação.</p>'}
+          </div>
+          <button class="btn btn-danger mt-1" onclick="limparEscopo('avaliacoes')">${icon('trash','icon icon-sm')} Apagar selecionadas</button>
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('broom','icon icon-sm')} Período visualizado</h3>
+          <p class="text-xs muted mb-1">Apaga vendas e avaliações de ${graficosMes ? MESES_PT_LONG[graficosMes-1] + '/' : ''}${graficosAno || 'todo o período'}.</p>
+          <button class="btn btn-danger" onclick="limparEscopo('periodo')">Apagar dados do período visualizado</button>
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('reset','icon icon-sm')} Cartões</h3>
+          <button class="btn btn-danger" onclick="limparEscopo('cartoes')">Zerar contagem de cartões</button>
+        </div>
+
+        <div class="surface" style="border-color:rgba(198,40,40,0.5);background:rgba(198,40,40,0.05)">
+          <h3 class="surface-title" style="color:var(--danger)">${icon('trash','icon icon-sm')} Zona vermelha</h3>
+          <p class="text-sm mb-1">Apaga <strong>todos</strong> os dados: vendas, avaliações, produtos, locais e contagem de cartões. Não pode ser desfeito.</p>
+          <label class="label">Digite APAGAR TUDO para confirmar</label>
+          <input class="input mb-1" id="limpeza-confirm-word" placeholder="APAGAR TUDO" />
+          <button class="btn btn-danger" onclick="limparEscopo('tudo')">Apagar TUDO</button>
         </div>
       `;
     }
+
+    window.limparEscopo = async (escopo) => {
+      const body = { escopo };
+      if (escopo === 'vendas') {
+        body.vendaIds = $$('.limpeza-venda-chk:checked').map(el => el.value);
+        if (!body.vendaIds.length) return toast.show('Selecione ao menos uma venda.', 'error');
+      } else if (escopo === 'avaliacoes') {
+        body.avaliacaoIds = $$('.limpeza-avaliacao-chk:checked').map(el => el.value);
+        if (!body.avaliacaoIds.length) return toast.show('Selecione ao menos uma avaliação.', 'error');
+      } else if (escopo === 'periodo') {
+        body.ano = graficosAno; if (graficosMes) body.mes = graficosMes;
+      } else if (escopo === 'tudo') {
+        const word = $('#limpeza-confirm-word').value.trim();
+        if (word !== 'APAGAR TUDO') return toast.show('Digite APAGAR TUDO para confirmar.', 'error');
+        body.confirmCode = word;
+      }
+      if (!confirm('Tem certeza? Esta ação não pode ser desfeita.')) return;
+      try {
+        const data = await api.post('/api/admin/limpeza', body);
+        toast.show(`Removido(s): ${data.removidos ?? 'concluído'}.`);
+        vendasCache = []; adminFeedbacksCache = [];
+        renderLimpeza($('#admin-sub') || $('#admin-tab-body'));
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
