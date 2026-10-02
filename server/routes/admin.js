@@ -746,9 +746,17 @@ router.get('/graficos/satisfacao', async (req, res) => {
 // Conta, por local, quantas vendas foram a que completou o cartão do cliente (10º selo).
 router.get('/graficos/cartoes-por-local', async (req, res) => {
   try {
-    const { from, to } = req.query;
+    const { from, to, ano, mes } = req.query;
     const match = { completedCardOnThisSale: true };
-    if (from || to) {
+    if (ano) {
+      const year = Number(ano);
+      const month = mes ? Number(mes) : null;
+      if (Number.isInteger(year)) {
+        const start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
+        const end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
+        match.createdAt = { $gte: start, $lt: end };
+      }
+    } else if (from || to) {
       match.createdAt = {};
       if (from) match.createdAt.$gte = new Date(from);
       if (to) match.createdAt.$lte = new Date(to);
@@ -774,12 +782,17 @@ router.get('/graficos/cartoes-por-local', async (req, res) => {
 // GET /api/admin/graficos/faturamento-por-local?period=day|month|year&date=YYYY-MM-DD
 router.get('/graficos/faturamento-por-local', async (req, res) => {
   try {
-    const { period = 'month', date } = req.query;
+    const { period = 'month', date, ano, mes } = req.query;
     const ref = date ? new Date(date) : new Date();
 
     let start;
     let end;
-    if (period === 'day') {
+    if (ano) {
+      const year = Number(ano);
+      const month = mes ? Number(mes) : null;
+      start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
+      end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
+    } else if (period === 'day') {
       start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
       end = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + 1);
     } else if (period === 'year') {
@@ -840,6 +853,99 @@ router.get('/graficos/faturamento-por-local', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível calcular o faturamento por local.' });
+  }
+});
+
+
+// V8 — anos disponíveis para o relatório anual/mensal.
+router.get('/graficos/anos', async (req, res) => {
+  try {
+    const rows = await Venda.aggregate([
+      { $group: { _id: { $year: '$createdAt' } } },
+      { $sort: { _id: -1 } },
+    ]);
+    res.json({ anos: rows.map((r) => r._id).filter(Boolean) });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os anos dos relatórios.' });
+  }
+});
+
+// V8 — faturamento agrupado por mês ou por semana dentro de um mês.
+router.get('/graficos/faturamento', async (req, res) => {
+  try {
+    const year = Number(req.query.ano);
+    const month = req.query.mes ? Number(req.query.mes) : null;
+    if (!Number.isInteger(year)) return res.status(400).json({ error: 'Ano inválido.' });
+    const start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
+    const end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
+    const vendas = await Venda.find({ createdAt: { $gte: start, $lt: end } }).lean();
+    const buckets = [];
+    if (month) {
+      const days = new Date(year, month, 0).getDate();
+      const count = Math.ceil(days / 7);
+      for (let i = 0; i < count; i++) buckets.push({ label: `Semana ${i + 1}`, bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
+      vendas.forEach((v) => {
+        const day = new Date(v.createdAt).getDate();
+        const b = buckets[Math.min(count - 1, Math.floor((day - 1) / 7))];
+        b.bruto += Number(v.totalValue || 0); b.custo += Number(v.totalCost || 0); b.vendas += 1;
+        if (v.completedCardOnThisSale) b.cartoesFechados += 1;
+      });
+    } else {
+      for (let i = 0; i < 12; i++) buckets.push({ label: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][i], bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
+      vendas.forEach((v) => {
+        const b = buckets[new Date(v.createdAt).getMonth()];
+        b.bruto += Number(v.totalValue || 0); b.custo += Number(v.totalCost || 0); b.vendas += 1;
+        if (v.completedCardOnThisSale) b.cartoesFechados += 1;
+      });
+    }
+    buckets.forEach((b) => { b.bruto = Math.round(b.bruto * 100) / 100; b.custo = Math.round(b.custo * 100) / 100; b.liquido = Math.round((b.bruto - b.custo) * 100) / 100; });
+    const totals = buckets.reduce((a, b) => ({ bruto: a.bruto + b.bruto, custo: a.custo + b.custo, liquido: a.liquido + b.liquido, vendas: a.vendas + b.vendas, cartoesFechados: a.cartoesFechados + b.cartoesFechados }), { bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
+    const divisor = month ? Math.max(1, buckets.length) : 12;
+    res.json({ ano: year, mes: month, posicoes: buckets, totais, medias: { media: totals.bruto / divisor, porMes: totals.bruto / 12, porSemana: totals.bruto / Math.max(1, buckets.length) } });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível calcular o faturamento.' });
+  }
+});
+
+// V8 — limpeza administrativa, com confirmação feita pela interface.
+router.post('/limpeza', async (req, res) => {
+  try {
+    const { escopo, vendaIds = [], avaliacaoIds = [], ano, mes, confirmCode } = req.body || {};
+    let removidos = 0;
+    const removeVendas = async (query) => {
+      const vendas = await Venda.find(query).select('_id clientId stampsGiven');
+      for (const venda of vendas) {
+        const client = await User.findById(venda.clientId);
+        if (client) { client.stamps = Math.max(0, client.stamps - Number(venda.stampsGiven || 0)); await client.save(); }
+        await StampHistory.deleteMany({ vendaId: venda._id });
+      }
+      const result = await Venda.deleteMany(query);
+      removidos += result.deletedCount || 0;
+    };
+    if (escopo === 'vendas') {
+      if (!vendaIds.length) return res.status(400).json({ error: 'Nenhuma venda selecionada.' });
+      await removeVendas({ _id: { $in: vendaIds } });
+    } else if (escopo === 'avaliacoes') {
+      const result = await Feedback.deleteMany({ _id: { $in: avaliacaoIds } }); removidos = result.deletedCount || 0;
+    } else if (escopo === 'periodo') {
+      const year = Number(ano); const month = mes ? Number(mes) : null;
+      if (!Number.isInteger(year)) return res.status(400).json({ error: 'Período inválido.' });
+      const start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
+      const end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
+      await removeVendas({ createdAt: { $gte: start, $lt: end } });
+      const result = await Feedback.deleteMany({ createdAt: { $gte: start, $lt: end } }); removidos += result.deletedCount || 0;
+    } else if (escopo === 'cartoes') {
+      await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } });
+      res.json({ message: 'Contagem de cartões zerada.', removidos: 0 }); return;
+    } else if (escopo === 'tudo') {
+      if (confirmCode !== 'APAGAR TUDO') return res.status(400).json({ error: 'Confirmação inválida.' });
+      await Venda.deleteMany({}); await Feedback.deleteMany({}); await Produto.deleteMany({}); await Local.deleteMany({}); await StampHistory.deleteMany({});
+      await User.updateMany({ role: 'client' }, { $set: { stamps: 0, completedCards: 0 } });
+      removidos = -1;
+    } else return res.status(400).json({ error: 'Tipo de limpeza inválido.' });
+    res.json({ message: 'Limpeza concluída.', removidos });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível limpar os dados.' });
   }
 });
 
