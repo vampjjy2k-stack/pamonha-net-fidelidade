@@ -44,7 +44,15 @@ app.use(express.json({ limit: '8mb' }));
 ensureConfigured();
 
 const clientDir = path.join(__dirname, '..', 'client');
-app.use(express.static(clientDir));
+app.use(express.static(clientDir, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // --- Rotas da API ---
 app.use('/api/auth', authRoutes);
