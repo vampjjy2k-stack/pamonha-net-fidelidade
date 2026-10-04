@@ -1,6 +1,6 @@
-// routes/auth.js — v10.4.6
-// Novidade: no /register, checa ParticipanteRaspadinha antes de dar a raspadinha.
-// Se o telefone OU o e-mail já participaram alguma vez, o novo usuário NÃO ganha.
+// routes/auth.js — v10.4
+// Novidade: no /register, o usuário nasce com "raspadinhaDisponivel: true".
+// toPublicUser agora devolve esse campo pro frontend.
 
 const express = require('express');
 const crypto = require('crypto');
@@ -12,7 +12,6 @@ const StampHistory = require('../models/StampHistory');
 const Feedback = require('../models/Feedback');
 const Notification = require('../models/Notification');
 const PushSubscription = require('../models/PushSubscription');
-const ParticipanteRaspadinha = require('../models/ParticipanteRaspadinha');
 const auth = require('../middleware/auth');
 const { sendPasswordResetEmail } = require('../utils/email');
 
@@ -27,13 +26,12 @@ const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHead
 const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { error: 'Muitos cadastros deste aparelho. Tente novamente mais tarde.' } });
 const forgotLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, standardHeaders: true, legacyHeaders: false, message: { error: 'Muitos pedidos de redefinição. Aguarde uma hora e tente de novo.' } });
 
-function isValidBrazilianPhone(phone) { const digitsOnly = phone.replace(/\D/g, ''); return /^[1-9]{2}9?[0-9]{8}$/.test(digitsOnly); }
+function isValidBrazilianPhone(phone) {
+  const digitsOnly = phone.replace(/\D/g, '');
+  return /^[1-9]{2}9?[0-9]{8}$/.test(digitsOnly);
+}
 function isValidEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 function normalizePhone(phone) { return phone.replace(/\D/g, ''); }
-
-function sha256(value) {
-  return crypto.createHash('sha256').update(String(value)).digest('hex');
-}
 
 function signToken(user) {
   return jwt.sign({ id: user._id.toString(), role: user.role }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -71,14 +69,6 @@ router.post('/register', registerLimiter, async (req, res) => {
     const existingEmail = await User.findOne({ email: normalizedEmail });
     if (existingEmail) return res.status(409).json({ error: 'Este e-mail já está cadastrado. Faça login.' });
 
-    // v10.4.6 — checa se o telefone OU o e-mail já participaram da raspadinha antes.
-    const phoneHash = sha256(normalizedPhone);
-    const emailHash = sha256(normalizedEmail);
-    const jaParticipou = await ParticipanteRaspadinha.findOne({
-      $or: [{ phoneHash }, { emailHash }],
-    });
-    const ganhaRaspadinha = !jaParticipou;
-
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
     const user = await User.create({
@@ -87,22 +77,8 @@ router.post('/register', registerLimiter, async (req, res) => {
       email: normalizedEmail,
       password: passwordHash,
       role: 'client',
-      raspadinhaDisponivel: ganhaRaspadinha,
+      raspadinhaDisponivel: true, // v10.4: toda conta nova ganha raspadinha
     });
-
-    // Se ganhou, registra para travar futuras contas com o mesmo telefone/e-mail.
-    if (ganhaRaspadinha) {
-      try {
-        await ParticipanteRaspadinha.create({ phoneHash, emailHash });
-      } catch (e) {
-        // Corrida rara (dois cadastros simultâneos com mesmo telefone) — se colidir,
-        // retira a raspadinha do usuário recém-criado por segurança.
-        if (e.code === 11000) {
-          user.raspadinhaDisponivel = false;
-          await user.save();
-        }
-      }
-    }
 
     const token = signToken(user);
     res.status(201).json({ token, user: toPublicUser(user) });
@@ -195,7 +171,6 @@ router.delete('/account', auth, async (req, res) => {
     if (!passwordMatches) return res.status(401).json({ error: 'Senha incorreta.' });
 
     const userId = user._id;
-    // IMPORTANTE: ParticipanteRaspadinha NÃO é apagado aqui — é a trava.
     await Promise.all([
       StampHistory.deleteMany({ userId }),
       Feedback.deleteMany({ userId }),

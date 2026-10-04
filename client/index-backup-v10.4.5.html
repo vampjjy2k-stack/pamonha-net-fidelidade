@@ -271,17 +271,17 @@
 
     /* -- Rows -- */
     .row {
-      background: var(--cream-card); border-radius: var(--radius-sm); padding: 0.7rem 0.85rem; margin-bottom: 0.5rem;
+      background: var(--cream-card); border-radius: var(--radius-sm); padding: 0.95rem 1rem; margin-bottom: 0.6rem;
       border: 1px solid var(--line); border-left: 3px solid var(--gold-600);
     }
     .row.is-read { border-left-color: var(--line); opacity: 0.72; }
-    .row h4 { font-size: 0.88rem; font-weight: 600; margin-bottom: 0.15rem; color: var(--ink); }
+    .row h4 { font-size: 0.93rem; font-weight: 600; margin-bottom: 0.2rem; color: var(--ink); }
     .new-tag {
       display: inline-block; background: var(--error); color: #fff; font-size: 0.6rem; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.3px; padding: 0.1rem 0.4rem; border-radius: 999px;
       vertical-align: middle; margin-left: 0.3rem;
     }
-    .row p { font-size: 0.8rem; color: var(--ink-soft); line-height: 1.35; }
+    .row p { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.4; }
     .row-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 0.55rem; }
     .row-foot .text-xs { color: var(--ink-faint); }
     .link-btn {
@@ -655,29 +655,29 @@
     .scratch-title {
       font-family: var(--font-display);
       font-weight: 700;
-      font-size: 1.15rem;
+      font-size: 1.3rem;
       color: var(--husk-900);
       text-align: center;
       line-height: 1.25;
       margin: 0;
     }
     .scratch-subtitle {
-      font-size: 0.82rem;
+      font-size: 0.9rem;
       color: var(--ink-soft);
       text-align: center;
-      margin: -0.4rem 0 0;
-      max-width: 260px;
+      margin: -0.5rem 0 0;
+      max-width: 280px;
     }
 
     /* ---- CARTÃO COM FLIP 3D ---- */
     .scratch-card-wrap {
       position: relative;
       width: 100%;
-      max-width: 260px;
-      height: 145px;
+      max-width: 320px;
+      height: 178px;
       perspective: 1200px;
       -webkit-perspective: 1200px;
-      margin: 0.3rem auto;
+      margin: 0.4rem 0;
     }
     .scratch-card {
       position: absolute;
@@ -770,8 +770,8 @@
 
     /* Barra de progresso */
     .scratch-progress-wrap {
-      width: 100%; max-width: 260px;
-      display: flex; align-items: center; gap: 0.5rem;
+      width: 100%; max-width: 320px;
+      display: flex; align-items: center; gap: 0.6rem;
     }
     .scratch-progress-bar {
       flex: 1; height: 8px; border-radius: 999px;
@@ -792,14 +792,14 @@
 
     /* Botão de raspar automático */
     .scratch-manual-btn {
-      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
       background: var(--husk-900); color: var(--gold-300);
-      border: none; border-radius: 12px;
-      padding: 0.7rem 1rem;
+      border: none; border-radius: 14px;
+      padding: 0.85rem 1.4rem;
       font-family: var(--font-display);
-      font-size: 0.9rem; font-weight: 700;
+      font-size: 1rem; font-weight: 700;
       cursor: pointer;
-      width: 100%; max-width: 260px;
+      width: 100%; max-width: 320px;
       box-shadow: 0 6px 16px rgba(27,94,32,0.35);
     }
     .scratch-manual-btn:active { transform: scale(0.97); }
@@ -813,13 +813,13 @@
       gap: 0.3rem;
       width: 100%; max-width: 340px;
     }
-    .scratch-reveal .big { font-size: 2.4rem; line-height: 1; }
+    .scratch-reveal .big { font-size: 3rem; line-height: 1; }
     .scratch-reveal h2 {
-      font-family: var(--font-display); font-size: 1.35rem;
+      font-family: var(--font-display); font-size: 1.6rem;
       font-weight: 700; color: var(--husk-900); margin: 0;
     }
     .scratch-reveal .discount {
-      font-family: var(--font-display); font-size: 3.2rem;
+      font-family: var(--font-display); font-size: 4rem;
       font-weight: 900; color: var(--gold-700);
       line-height: 1; margin: 0.2rem 0;
     }
@@ -1790,7 +1790,7 @@ async function loadNotifications() {
           ? '<span class="new-tag" style="background:#F9A825;color:#1B5E20">🎁 prêmio</span>'
           : (!n.read ? '<span class="new-tag">novo</span>' : '');
         const codeHTML = (isRasp && n.code)
-          ? `<div style="display:inline-block;background:#fff;border:2px dashed #F9A825;border-radius:8px;padding:0.35rem 0.7rem;margin-top:0.4rem;font-family:monospace;font-weight:700;font-size:0.9rem;letter-spacing:0.05em;color:#1B5E20">${esc(n.code)}</div>`
+          ? `<div style="display:inline-block;background:#fff;border:2px dashed #F9A825;border-radius:10px;padding:0.5rem 0.9rem;margin-top:0.5rem;font-family:monospace;font-weight:700;font-size:1.05rem;letter-spacing:0.06em;color:#1B5E20">${esc(n.code)}</div>`
           : '';
         return `
           <div class="row ${n.read ? 'is-read' : ''}" style="${rowStyle}">
