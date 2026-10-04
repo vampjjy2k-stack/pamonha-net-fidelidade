@@ -1159,16 +1159,14 @@ router.register('card', (container) => {
 
       <div class="mt-2" id="carro-slot"></div>
 
-      <button class="rate-cta mt-2" style="background:linear-gradient(135deg, #FFE38A, #FFF3CF); border-color:var(--gold-700)" onclick="router.go('premios')">
-        <span class="rate-cta-icon" style="color:var(--gold-700)">${icon('trophy', 'icon')}</span>
+      <button class="rate-cta mt-2" style="background:linear-gradient(135deg, #CFE8A6, #F2F9E6); border-color:var(--husk-500)" onclick="router.go('feedback')">
+        <span class="rate-cta-icon" style="color:var(--husk-700)">${icon('star', 'icon')}</span>
         <span class="rate-cta-text">
-          <strong style="color:var(--husk-900)">Ver os prêmios</strong>
-          <span style="color:var(--husk-700)">O que você pode ganhar com seus selos</span>
+          <strong style="color:var(--husk-900)">Como foi sua experiência?</strong>
+          <span style="color:var(--husk-700)">Avalie em 10 segundos</span>
         </span>
-        <span class="rate-cta-arrow" style="color:var(--gold-700)">${icon('send', 'icon icon-sm')}</span>
+        <span class="rate-cta-arrow" style="color:var(--husk-700)">${icon('send', 'icon icon-sm')}</span>
       </button>
-
-      <button class="rate-cta mt-1" style="background:linear-gradient(135deg, #CFE8A6, #F2F9E6); border-color:var(--husk-500)" onclick="router.go('feedback')">
 
       <button class="rate-cta mt-1" style="background:linear-gradient(135deg, var(--husk-500), var(--husk-300)); border-color:var(--husk-700)" onclick="router.go('ranking')">
         <span class="rate-cta-icon" style="color:var(--husk-900)">${icon('trophy', 'icon')}</span>
@@ -1409,55 +1407,7 @@ window.sendFeedback = async () => {
 };
 
 // ---------- RANKING ----------
-    router.register('premios', (container) => {
-      if (!api.token) return router.go('login');
-      container.innerHTML = `
-        <div class="page">
-          <button class="btn-back" onclick="router.go('card')">${icon('logout', 'icon icon-sm')} <span>Voltar</span></button>
-          <h2 class="page-title">${icon('trophy')} Prêmios da Pamonha Net</h2>
-          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Complete seu cartão e escolha seu prêmio. Fale com a equipe no balcão para resgatar.</p>
-          <div id="premios-cliente-list"><div class="loader"></div></div>
-        </div>
-      `;
-      loadPremiosCliente();
-    });
-
-    async function loadPremiosCliente() {
-      const box = $('#premios-cliente-list');
-      if (!box) return;
-      try {
-        const data = await api.get('/api/client/premios');
-        const premios = data.premios || [];
-        if (!premios.length) {
-          box.innerHTML = `<div class="empty-state">${icon('trophy','icon')}<p>Em breve a Pamonha Net vai divulgar os prêmios. Continue juntando selos!</p></div>`;
-          return;
-        }
-        // Pega o total de selos do cliente para mostrar "você já tem X/Y"
-        let stamps = 0;
-        try { const d = await api.get('/api/client/dashboard'); stamps = d.stamps || 0; } catch (e) {}
-        box.innerHTML = premios.map(p => {
-          const alcancou = stamps >= p.stampsRequired;
-          return `
-            <div class="surface mb-1" style="border-left:4px solid ${alcancou ? 'var(--husk-700)' : 'var(--gold-600)'}">
-              <div style="display:flex;gap:0.7rem;align-items:flex-start">
-                ${p.imageUrl ? `<img src="${p.imageUrl}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px;flex-shrink:0;border:1px solid var(--line)" />` : `<div style="width:64px;height:64px;border-radius:10px;background:var(--gold-100);display:flex;align-items:center;justify-content:center;color:var(--gold-700);flex-shrink:0">${icon('trophy','icon icon-lg')}</div>`}
-                <div style="flex:1;min-width:0">
-                  <strong style="display:block;font-size:1rem;color:var(--husk-900)">${esc(p.name)}</strong>
-                  ${p.description ? `<p class="text-xs muted" style="margin-top:0.15rem">${esc(p.description)}</p>` : ''}
-                  <p class="text-xs" style="margin-top:0.35rem;color:${alcancou ? 'var(--husk-700)' : 'var(--ink-soft)'};font-weight:600">
-                    ${alcancou ? '✓ Você já tem selos suficientes!' : `Precisa de ${p.stampsRequired} selos · você tem ${stamps}`}
-                  </p>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('') + `<p class="text-xs muted text-center mt-2">Resgate combinado no balcão com a equipe.</p>`;
-      } catch (e) {
-        box.innerHTML = `<div class="empty-state"><p>${esc(e.message)}</p></div>`;
-      }
-    }
-
-    router.register('ranking', (container) => {
+router.register('ranking', (container) => {
   if (!api.token) return router.go('login');
   const isAdmin = api.user?.role === 'admin';
   container.innerHTML = `
@@ -2193,7 +2143,6 @@ function renderTxPill() {
 
     const ADMIN_MORE_ITEMS = [
       { tab: 'produtos', icon: 'box', label: 'Produtos' },
-      { tab: 'premios', icon: 'trophy', label: 'Prêmios' },
       { tab: 'locais', icon: 'map', label: 'Locais' },
       { tab: 'avaliacoes', icon: 'star', label: 'Avaliações recebidas' },
       { tab: 'notificacoes', icon: 'bell', label: 'Notificações enviadas' },
@@ -2232,7 +2181,6 @@ function renderTxPill() {
       if (adminActiveTab === 'graficos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminGraficos($('#admin-sub')); }
       if (adminActiveTab === 'vendas') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminVendas($('#admin-sub')); }
       if (adminActiveTab === 'produtos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminProdutos($('#admin-sub')); }
-      if (adminActiveTab === 'premios') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminPremios($('#admin-sub')); }
       if (adminActiveTab === 'locais') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminLocais($('#admin-sub')); }
       if (adminActiveTab === 'avaliacoes') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminAvaliacoes($('#admin-sub')); }
       if (adminActiveTab === 'notificacoes') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminNotificacoes($('#admin-sub')); }
@@ -3328,163 +3276,6 @@ function renderTxPill() {
     };
 
     // ==========================================================================
-    let premiosCache = [];
-    let premioImageData = null;
-
-    async function renderAdminPremios(container) {
-      container.innerHTML = `
-        <div class="surface section-gap">
-          <h3 class="surface-title">${icon('trophy','icon icon-sm')} Novo prêmio</h3>
-          <label class="label">Nome</label>
-          <input class="input mb-1" id="premio-name" placeholder="Ex: Pamonha tradicional doce" maxlength="60" />
-          <label class="label">Descrição (opcional)</label>
-          <textarea class="input mb-1" id="premio-desc" rows="2" maxlength="200" placeholder="Ex: Uma pamonha doce tradicional, feita na hora"></textarea>
-          <div class="flex gap-1 mb-1">
-            <div style="flex:1">
-              <label class="label">Selos necessários</label>
-              <input class="input" id="premio-stamps" type="number" min="1" max="100" value="10" />
-            </div>
-            <div style="flex:1">
-              <label class="label">Ordem</label>
-              <input class="input" id="premio-order" type="number" value="0" />
-            </div>
-          </div>
-          <label class="label">Foto (opcional)</label>
-          <input class="input mb-1" id="premio-image" type="file" accept="image/*" onchange="previewPremioImage(event)" />
-          <img id="premio-image-preview" class="prod-thumb hidden mb-1" style="width:64px;height:64px" alt="" />
-          <button class="btn btn-primary" onclick="createPremio()">${icon('save','icon icon-sm')} Cadastrar prêmio</button>
-          <p class="text-xs muted mt-1">Os prêmios aparecem para o cliente como <strong>referência</strong>. O resgate é combinado no balcão.</p>
-        </div>
-        <div id="premios-list"><div class="loader"></div></div>
-      `;
-      loadPremios();
-    }
-
-    window.previewPremioImage = (e) => {
-      const file = e.target.files[0];
-      if (!file) { premioImageData = null; return; }
-      const reader = new FileReader();
-      reader.onload = () => {
-        premioImageData = reader.result;
-        const img = $('#premio-image-preview');
-        if (img) { img.src = premioImageData; img.classList.remove('hidden'); }
-      };
-      reader.readAsDataURL(file);
-    };
-
-    async function loadPremios() {
-      try {
-        const data = await api.get('/api/admin/premios?includeInactive=1');
-        premiosCache = data.premios;
-        renderPremiosList();
-      } catch (e) { toast.show(e.message, 'error'); }
-    }
-
-    function renderPremiosList() {
-      const box = $('#premios-list');
-      if (!box) return;
-      if (!premiosCache.length) { box.innerHTML = `<div class="empty-state"><p>Nenhum prêmio cadastrado ainda.</p></div>`; return; }
-      box.innerHTML = premiosCache.map(p => `
-        <div class="prod-row ${p.active ? '' : 'inactive'}">
-          ${p.imageUrl ? `<img class="prod-thumb" src="${p.imageUrl}" alt="" />` : `<div class="prod-icon-fallback">${icon('trophy','icon icon-sm')}</div>`}
-          <div class="info">
-            <strong>${esc(p.name)}</strong>
-            <span>${p.stampsRequired} selos${p.description ? ' · ' + esc(p.description) : ''}${p.active ? '' : ' · inativo'}</span>
-          </div>
-          <div class="row-actions">
-            <button class="icon-btn" onclick="openEditPremio(${jattr(p)})" title="Editar">${icon('edit','icon')}</button>
-            <button class="icon-btn" onclick="togglePremioActive(${jattr(p)})" title="${p.active ? 'Desativar' : 'Ativar'}">${icon(p.active ? 'minus' : 'plus', 'icon')}</button>
-            <button class="icon-btn danger" onclick="deletePremio('${p._id}')">${icon('trash','icon')}</button>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    window.createPremio = async () => {
-      const name = $('#premio-name') ? $('#premio-name').value.trim() : '';
-      const description = $('#premio-desc') ? $('#premio-desc').value.trim() : '';
-      const stampsRequired = Number($('#premio-stamps') ? $('#premio-stamps').value : 10);
-      const order = Number($('#premio-order') ? $('#premio-order').value : 0);
-      if (!name) return toast.show('Informe o nome do prêmio.', 'error');
-      if (!Number.isInteger(stampsRequired) || stampsRequired < 1 || stampsRequired > 100) return toast.show('Selos precisam ser entre 1 e 100.', 'error');
-      try {
-        await api.post('/api/admin/premios', { name, description, stampsRequired, order, imageUrl: premioImageData });
-        toast.show('Prêmio cadastrado.');
-        if ($('#premio-name')) $('#premio-name').value = '';
-        if ($('#premio-desc')) $('#premio-desc').value = '';
-        if ($('#premio-stamps')) $('#premio-stamps').value = '10';
-        if ($('#premio-order')) $('#premio-order').value = '0';
-        premioImageData = null;
-        const preview = $('#premio-image-preview'); if (preview) { preview.classList.add('hidden'); preview.src = ''; }
-        const file = $('#premio-image'); if (file) file.value = '';
-        loadPremios();
-      } catch (e) { toast.show(e.message, 'error'); }
-    };
-
-    window.togglePremioActive = async (p) => {
-      try { await api.put(`/api/admin/premios/${p._id}`, { active: !p.active }); loadPremios(); }
-      catch (e) { toast.show(e.message, 'error'); }
-    };
-
-    window.deletePremio = async (id) => {
-      if (!confirm('Remover este prêmio?')) return;
-      try { await api.del(`/api/admin/premios/${id}`); toast.show('Prêmio removido.'); loadPremios(); }
-      catch (e) { toast.show(e.message, 'error'); }
-    };
-
-    let editPremioImageData = undefined;
-    window.openEditPremio = (p) => {
-      editPremioImageData = undefined;
-      const overlay = document.createElement('div');
-      overlay.className = 'modal-overlay';
-      overlay.id = 'edit-premio-overlay';
-      overlay.innerHTML = `
-        <div class="modal-card">
-          <h3 class="surface-title">${icon('edit','icon icon-sm')} Editar prêmio</h3>
-          <label class="label">Nome</label>
-          <input class="input mb-1" id="edit-premio-name" value="${esc(p.name)}" maxlength="60" />
-          <label class="label">Descrição</label>
-          <textarea class="input mb-1" id="edit-premio-desc" rows="2" maxlength="200">${esc(p.description || '')}</textarea>
-          <div class="flex gap-1 mb-1">
-            <div style="flex:1"><label class="label">Selos</label><input class="input" id="edit-premio-stamps" type="number" min="1" max="100" value="${p.stampsRequired}" /></div>
-            <div style="flex:1"><label class="label">Ordem</label><input class="input" id="edit-premio-order" type="number" value="${p.order || 0}" /></div>
-          </div>
-          <label class="label">Foto</label>
-          <input class="input mb-1" id="edit-premio-image" type="file" accept="image/*" onchange="previewEditPremioImage(event)" />
-          <div class="flex gap-1 mt-1">
-            <button class="btn btn-outline" style="flex:1" onclick="closeModal()">Cancelar</button>
-            <button class="btn btn-primary" style="flex:1" onclick="saveEditPremio('${p._id}')">${icon('save','icon icon-sm')} Salvar</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-    };
-
-    window.previewEditPremioImage = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => { editPremioImageData = reader.result; };
-      reader.readAsDataURL(file);
-    };
-
-    window.saveEditPremio = async (id) => {
-      const name = $('#edit-premio-name') ? $('#edit-premio-name').value.trim() : '';
-      const description = $('#edit-premio-desc') ? $('#edit-premio-desc').value.trim() : '';
-      const stampsRequired = Number($('#edit-premio-stamps') ? $('#edit-premio-stamps').value : 10);
-      const order = Number($('#edit-premio-order') ? $('#edit-premio-order').value : 0);
-      if (!name) return toast.show('Informe o nome do prêmio.', 'error');
-      try {
-        const body = { name, description, stampsRequired, order };
-        if (editPremioImageData !== undefined) body.imageUrl = editPremioImageData;
-        await api.put(`/api/admin/premios/${id}`, body);
-        toast.show('Prêmio atualizado.');
-        closeModal();
-        loadPremios();
-      } catch (e) { toast.show(e.message, 'error'); }
-    };
-
-    // ==========================================================================
     // LOCAIS
     // ==========================================================================
     let locaisCache = [];
@@ -3494,17 +3285,10 @@ function renderTxPill() {
       container.innerHTML = `
         <div class="surface section-gap">
           <h3 class="surface-title">${icon('map','icon icon-sm')} Novo local</h3>
-          <label class="label">Buscar o lugar pelo nome</label>
-          <div class="flex gap-1 mb-1">
-            <input class="input" id="local-search" placeholder="Ex: Feira da Figueira, Duque de Caxias" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarLocalPorNome();}" />
-            <button class="btn btn-primary" style="width:auto" onclick="buscarLocalPorNome()">${icon('search','icon icon-sm')} Buscar</button>
-          </div>
-          <div id="local-search-results"></div>
-          <div class="text-center text-xs muted mb-1">— ou —</div>
-          <button class="btn btn-outline mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Usar minha localização atual (GPS)</button>
-          <p class="text-xs muted mb-1">Depois de achar, pode arrastar o pino no mapa para ajustar o ponto exato.</p>
-          <label class="label">Nome do local (como aparece para o cliente)</label>
+          <label class="label">Nome</label>
           <input class="input mb-1" id="local-name" placeholder="Ex: Feira da Figueira" maxlength="60" />
+          <button class="btn btn-outline mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Usar minha localização</button>
+          <p class="text-xs muted mb-1">Ou arraste o marcador no mapa para o ponto exato.</p>
           <div id="local-map" class="local-map"></div>
           <div class="flex gap-1 mt-1 mb-1">
             <div style="flex:1"><label class="label">Latitude</label><input class="input" id="local-lat" readonly placeholder="—" /></div>
@@ -3519,41 +3303,6 @@ function renderTxPill() {
       initLocalMap(-22.83, -43.28);
       loadLocais();
     }
-
-    window.buscarLocalPorNome = async () => {
-      const input = $('#local-search');
-      const box = $('#local-search-results');
-      if (!input || !box) return;
-      const q = input.value.trim();
-      if (q.length < 3) return toast.show('Digite pelo menos 3 letras.', 'error');
-      box.innerHTML = `<p class="text-xs muted mb-1">Buscando…</p>`;
-      try {
-        const data = await api.get('/api/admin/geocode?q=' + encodeURIComponent(q));
-        const resultados = data.resultados || [];
-        if (!resultados.length) { box.innerHTML = `<p class="text-xs muted mb-1">Nada encontrado. Tente incluir a cidade.</p>`; return; }
-        box.innerHTML = resultados.map((r, i) => `
-          <button class="notif-client-item mb-1" onclick='escolherLocalBuscado(${JSON.stringify(JSON.stringify(r))})'>
-            <span style="font-size:0.85rem">${esc(r.displayName)}</span>
-          </button>
-        `).join('');
-      } catch (e) { box.innerHTML = `<p class="text-xs" style="color:var(--error)">${esc(e.message)}</p>`; }
-    };
-
-    window.escolherLocalBuscado = (json) => {
-      const r = JSON.parse(json);
-      // Preenche latitude/longitude e move o mapa.
-      setLocalLatLng(r.lat, r.lng);
-      if (localMapInstance && localMapMarker) {
-        localMapInstance.setView([r.lat, r.lng], 17);
-        localMapMarker.setLatLng([r.lat, r.lng]);
-        if (localMapCircle) localMapCircle.setLatLng([r.lat, r.lng]);
-      }
-      // Preenche o nome do local com o shortName, se o campo ainda estiver vazio.
-      const nameEl = $('#local-name');
-      if (nameEl && !nameEl.value.trim()) nameEl.value = r.shortName || '';
-      const box = $('#local-search-results');
-      if (box) box.innerHTML = `<p class="text-xs" style="color:var(--husk-700)">✓ Local encontrado. Confira o pino no mapa e clique em "Cadastrar local".</p>`;
-    };
 
     function initLocalMap(lat, lng) {
       const el = $('#local-map');

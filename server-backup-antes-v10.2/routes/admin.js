@@ -1,8 +1,7 @@
-// routes/admin.js — v10.2
-// Novidades v10.2:
-//  - CRUD de Prêmios (GET/POST/PUT/DELETE /api/admin/premios)
-//  - GET /api/admin/geocode?q=... (busca de endereço via OpenStreetMap)
-// O resto é igual à v10.1.
+
+// routes/admin.js — v10
+// Admin completo: clientes, QR, notificações, feedbacks, produtos, locais, vendas,
+// gráficos (ano→mês→semana) e limpeza seletiva de dados.
 
 const express = require('express');
 const User = require('../models/User');
@@ -13,7 +12,6 @@ const Feedback = require('../models/Feedback');
 const Produto = require('../models/Produto');
 const Local = require('../models/Local');
 const Venda = require('../models/Venda');
-const Premio = require('../models/Premio');
 const auth = require('../middleware/auth');
 const adminOnly = require('../middleware/admin');
 const { verifyQrToken } = require('./qr');
@@ -24,60 +22,18 @@ const { matchLocal } = require('../utils/geo');
 const router = express.Router();
 router.use(auth, adminOnly);
 
-function escapeRegex(str) {
-  return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+// ============================================================================
+// CLIENTES
+// ============================================================================
 
-// ============================================================================
-// GEOCODE — busca de endereço por nome (proxy do OpenStreetMap)
-// ============================================================================
-router.get('/geocode', async (req, res) => {
-  try {
-    const q = String(req.query.q || '').trim();
-    if (q.length < 3) return res.status(400).json({ error: 'Digite pelo menos 3 letras para buscar.' });
-    if (typeof fetch !== 'function') {
-      return res.status(500).json({ error: 'Servidor Node desatualizado. Atualize para Node 18+.' });
-    }
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);
-    try {
-      // Limita a busca ao Brasil.
-      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&accept-language=pt-BR&countrycodes=br&q=${encodeURIComponent(q)}`;
-      const r = await fetch(url, {
-        signal: ctrl.signal,
-        headers: { 'User-Agent': 'PamonhaNetFidelidade/1.0 (cartao fidelidade; contato via site)' },
-      });
-      if (!r.ok) return res.status(502).json({ error: 'Serviço de endereços indisponível. Tente de novo.' });
-      const json = await r.json();
-      const resultados = (json || []).map((it) => ({
-        displayName: it.display_name,
-        lat: Number(it.lat),
-        lng: Number(it.lon),
-        // Um nome curto pra colocar no campo do local por padrão
-        shortName: it.name || (it.display_name || '').split(',')[0].trim(),
-      }));
-      res.json({ resultados });
-    } finally {
-      clearTimeout(timer);
-    }
-  } catch (err) {
-    console.error('[geocode]', err);
-    res.status(500).json({ error: 'Não foi possível buscar o endereço.' });
-  }
-});
-
-// ============================================================================
-// CLIENTES (igual à v10.1)
-// ============================================================================
 router.get('/clients', async (req, res) => {
   try {
     const { search = '', sort = 'name', page = 1, limit = 20 } = req.query;
     const query = { role: 'client' };
     if (search.trim()) {
       const digitsOnly = search.replace(/\D/g, '');
-      const safeSearch = escapeRegex(search.trim());
-      query.$or = [{ fullName: { $regex: safeSearch, $options: 'i' } }];
-      if (digitsOnly) query.$or.push({ phone: { $regex: escapeRegex(digitsOnly) } });
+      query.$or = [{ fullName: { $regex: search.trim(), $options: 'i' } }];
+      if (digitsOnly) query.$or.push({ phone: { $regex: digitsOnly } });
     }
     const sortMap = { name: { fullName: 1 }, stamps: { stamps: -1 } };
     const sortOption = sortMap[sort] || sortMap.name;
@@ -108,7 +64,12 @@ router.get('/clients', async (req, res) => {
 
     res.json({
       clients,
-      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) || 1 },
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum) || 1,
+      },
     });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível carregar a lista de clientes.' });
@@ -129,7 +90,9 @@ router.get('/clients/:id', async (req, res) => {
 router.post('/clients/:id/stamps', async (req, res) => {
   try {
     const { action } = req.body;
-    if (!['add', 'remove'].includes(action)) return res.status(400).json({ error: 'Ação inválida. Use "add" ou "remove".' });
+    if (!['add', 'remove'].includes(action)) {
+      return res.status(400).json({ error: 'Ação inválida. Use "add" ou "remove".' });
+    }
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
@@ -146,15 +109,20 @@ router.post('/clients/:id/stamps', async (req, res) => {
       const lastAdd = await StampHistory.findOne({ userId: client._id, action: 'add' }).sort({ createdAt: -1 });
       if (lastAdd) await StampHistory.deleteOne({ _id: lastAdd._id });
     }
+
     res.json({ client });
     liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível atualizar o carimbo.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o carimbo.' });
+  }
 });
 
 router.post('/clients/:id/stamps/set', async (req, res) => {
   try {
     const target = Number(req.body.target);
-    if (!Number.isInteger(target) || target < 0 || target > 10) return res.status(400).json({ error: 'Valor inválido. Escolha de 0 a 10 selos.' });
+    if (!Number.isInteger(target) || target < 0 || target > 10) {
+      return res.status(400).json({ error: 'Valor inválido. Escolha de 0 a 10 selos.' });
+    }
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
@@ -168,14 +136,19 @@ router.post('/clients/:id/stamps/set', async (req, res) => {
       await StampHistory.insertMany(entries);
       client.lastStampAt = new Date();
     } else if (delta < 0) {
-      const toRemove = await StampHistory.find({ userId: client._id, action: 'add' }).sort({ createdAt: -1 }).limit(-delta);
+      const toRemove = await StampHistory.find({ userId: client._id, action: 'add' })
+        .sort({ createdAt: -1 })
+        .limit(-delta);
       await StampHistory.deleteMany({ _id: { $in: toRemove.map((d) => d._id) } });
     }
+
     client.stamps = target;
     await client.save();
     res.json({ client });
     liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível atualizar o cartão.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o cartão.' });
+  }
 });
 
 router.post('/clients/:id/reset', async (req, res) => {
@@ -188,7 +161,9 @@ router.post('/clients/:id/reset', async (req, res) => {
     await StampHistory.deleteMany({ userId: client._id });
     res.json({ client });
     liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível resetar o cartão.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível resetar o cartão.' });
+  }
 });
 
 router.delete('/clients/:id/history', async (req, res) => {
@@ -197,104 +172,62 @@ router.delete('/clients/:id/history', async (req, res) => {
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
     await StampHistory.deleteMany({ userId: client._id });
     res.json({ message: 'Histórico de carimbos apagado com sucesso.' });
-  } catch (err) { res.status(500).json({ error: 'Erro ao apagar histórico de carimbos.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao apagar histórico de carimbos.' });
+  }
 });
 
+// POST /api/admin/scan-qr — aceita token cru OU URL completa (?scan=)
 router.post('/scan-qr', async (req, res) => {
   try {
     const { qrToken } = req.body;
     if (!qrToken) return res.status(400).json({ error: 'Nenhum QR Code informado.' });
+
     let userId;
-    try { userId = verifyQrToken(qrToken); } catch (err) { return res.status(400).json({ error: err.message }); }
+    try {
+      userId = verifyQrToken(qrToken);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
     const client = await User.findOne({ _id: userId, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente do QR Code não foi encontrado.' });
     res.json({ message: `Cartão de ${client.fullName} encontrado.`, client });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível processar o QR Code.' }); }
-});
-
-// ============================================================================
-// PRÊMIOS (NOVO na v10.2)
-// ============================================================================
-router.get('/premios', async (req, res) => {
-  try {
-    const { includeInactive } = req.query;
-    const query = includeInactive ? {} : { active: true };
-    const premios = await Premio.find(query).sort({ order: 1, name: 1 });
-    res.json({ premios });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível carregar os prêmios.' }); }
-});
-
-router.post('/premios', async (req, res) => {
-  try {
-    const { name, description, stampsRequired, imageUrl, order } = req.body;
-    if (!name || !String(name).trim()) return res.status(400).json({ error: 'O nome do prêmio é obrigatório.' });
-    const numStamps = stampsRequired !== undefined ? Number(stampsRequired) : 10;
-    if (!Number.isInteger(numStamps) || numStamps < 1 || numStamps > 100) {
-      return res.status(400).json({ error: 'A quantidade de selos precisa ser entre 1 e 100.' });
-    }
-    const premio = await Premio.create({
-      name: String(name).trim(),
-      description: (description || '').trim().slice(0, 200),
-      stampsRequired: numStamps,
-      imageUrl: imageUrl || null,
-      order: order !== undefined ? Number(order) : 0,
-      createdBy: req.user.id,
-    });
-    res.status(201).json({ premio });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível cadastrar o prêmio.' }); }
-});
-
-router.put('/premios/:id', async (req, res) => {
-  try {
-    const premio = await Premio.findById(req.params.id);
-    if (!premio) return res.status(404).json({ error: 'Prêmio não encontrado.' });
-    const { name, description, stampsRequired, imageUrl, active, order } = req.body;
-    if (name !== undefined) {
-      if (!String(name).trim()) return res.status(400).json({ error: 'O nome do prêmio é obrigatório.' });
-      premio.name = String(name).trim();
-    }
-    if (description !== undefined) premio.description = String(description).trim().slice(0, 200);
-    if (stampsRequired !== undefined) {
-      const num = Number(stampsRequired);
-      if (!Number.isInteger(num) || num < 1 || num > 100) return res.status(400).json({ error: 'A quantidade de selos precisa ser entre 1 e 100.' });
-      premio.stampsRequired = num;
-    }
-    if (imageUrl !== undefined) premio.imageUrl = imageUrl;
-    if (active !== undefined) premio.active = Boolean(active);
-    if (order !== undefined) premio.order = Number(order);
-    await premio.save();
-    res.json({ premio });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível atualizar o prêmio.' }); }
-});
-
-router.delete('/premios/:id', async (req, res) => {
-  try {
-    const premio = await Premio.findByIdAndDelete(req.params.id);
-    if (!premio) return res.status(404).json({ error: 'Prêmio não encontrado.' });
-    res.json({ message: 'Prêmio removido com sucesso.' });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível remover o prêmio.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível processar o QR Code.' });
+  }
 });
 
 // ============================================================================
 // NOTIFICAÇÕES
 // ============================================================================
+
 router.post('/notifications', async (req, res) => {
   try {
     const { title, message, userId } = req.body;
     if (!title || !message) return res.status(400).json({ error: 'Título e mensagem são obrigatórios.' });
-    const notif = await Notification.create({ title: title.trim(), message: message.trim(), userId: userId || null, broadcast: !userId });
+    const notif = await Notification.create({
+      title: title.trim(),
+      message: message.trim(),
+      userId: userId || null,
+      broadcast: !userId,
+    });
     const pushResult = await sendPushToUser({ userId: userId || null, title: title.trim(), body: message.trim() });
     res.status(201).json({ notification: notif, push: pushResult });
     if (notif.broadcast) liveEvents.broadcast('notification', { id: notif._id, title: notif.title });
     else liveEvents.sendToUser(notif.userId, 'notification', { id: notif._id, title: notif.title });
-  } catch (err) { res.status(500).json({ error: 'Erro ao criar notificação.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao criar notificação.' });
+  }
 });
 
 router.get('/notifications', async (req, res) => {
   try {
     const list = await Notification.find().sort({ createdAt: -1 }).populate('userId', 'fullName phone');
     res.json({ notifications: list });
-  } catch (err) { res.status(500).json({ error: 'Erro ao listar notificações.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar notificações.' });
+  }
 });
 
 router.get('/notifications/:id/views', async (req, res) => {
@@ -302,9 +235,17 @@ router.get('/notifications/:id/views', async (req, res) => {
     const notif = await Notification.findById(req.params.id);
     if (!notif) return res.status(404).json({ error: 'Notificação não encontrada.' });
     const totalClients = notif.broadcast ? await User.countDocuments({ role: 'client' }) : 1;
-    const reads = await NotificationRead.find({ notificationId: notif._id }).populate('userId', 'fullName phone').sort({ viewedAt: -1 });
-    res.json({ totalRecipients: totalClients, viewedCount: reads.length, viewers: reads.map((r) => ({ fullName: r.userId?.fullName, phone: r.userId?.phone, viewedAt: r.viewedAt })) });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível carregar as visualizações.' }); }
+    const reads = await NotificationRead.find({ notificationId: notif._id })
+      .populate('userId', 'fullName phone')
+      .sort({ viewedAt: -1 });
+    res.json({
+      totalRecipients: totalClients,
+      viewedCount: reads.length,
+      viewers: reads.map((r) => ({ fullName: r.userId?.fullName, phone: r.userId?.phone, viewedAt: r.viewedAt })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar as visualizações.' });
+  }
 });
 
 router.delete('/notifications', async (req, res) => {
@@ -315,44 +256,64 @@ router.delete('/notifications', async (req, res) => {
     if (scope === 'individual') filter.broadcast = false;
     await Notification.deleteMany(filter);
     res.json({ message: 'Notificações removidas com sucesso.' });
-  } catch (err) { res.status(500).json({ error: 'Erro ao limpar notificações.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao limpar notificações.' });
+  }
 });
 
 router.delete('/notifications/:id', async (req, res) => {
-  try { await Notification.findByIdAndDelete(req.params.id); res.json({ message: 'Notificação removida.' }); }
-  catch (err) { res.status(500).json({ error: 'Erro ao remover notificação.' }); }
+  try {
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Notificação removida.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao remover notificação.' });
+  }
 });
 
 router.post('/leaderboard/reset', async (req, res) => {
-  try { await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } }); res.json({ message: 'Ranking reiniciado com sucesso.' }); }
-  catch (err) { res.status(500).json({ error: 'Não foi possível reiniciar o ranking.' }); }
+  try {
+    await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } });
+    res.json({ message: 'Ranking reiniciado com sucesso.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível reiniciar o ranking.' });
+  }
 });
 
 // ============================================================================
 // FEEDBACK
 // ============================================================================
+
 router.get('/feedbacks', async (req, res) => {
   try {
     const list = await Feedback.find().sort({ createdAt: -1 }).populate('userId', 'fullName phone');
     res.json({ feedbacks: list });
-  } catch (err) { res.status(500).json({ error: 'Erro ao listar avaliações.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao listar avaliações.' });
+  }
 });
 
 router.delete('/feedbacks/:id', async (req, res) => {
-  try { await Feedback.findByIdAndDelete(req.params.id); res.json({ message: 'Avaliação removida.' }); }
-  catch (err) { res.status(500).json({ error: 'Erro ao remover avaliação.' }); }
+  try {
+    await Feedback.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Avaliação removida.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao remover avaliação.' });
+  }
 });
 
 // ============================================================================
 // PRODUTOS
 // ============================================================================
+
 router.get('/produtos', async (req, res) => {
   try {
     const { includeInactive } = req.query;
     const query = includeInactive ? {} : { active: true };
     const produtos = await Produto.find(query).sort({ name: 1 });
     res.json({ produtos });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível carregar os produtos.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os produtos.' });
+  }
 });
 
 router.post('/produtos', async (req, res) => {
@@ -363,9 +324,17 @@ router.post('/produtos', async (req, res) => {
     if (!Number.isFinite(numericPrice) || numericPrice < 0) return res.status(400).json({ error: 'Informe um preço válido.' });
     const numericCost = costPrice !== undefined ? Number(costPrice) : 0;
     if (!Number.isFinite(numericCost) || numericCost < 0) return res.status(400).json({ error: 'Informe um custo válido.' });
-    const produto = await Produto.create({ name: String(name).trim(), price: numericPrice, costPrice: numericCost, imageUrl: imageUrl || null, createdBy: req.user.id });
+    const produto = await Produto.create({
+      name: String(name).trim(),
+      price: numericPrice,
+      costPrice: numericCost,
+      imageUrl: imageUrl || null,
+      createdBy: req.user.id,
+    });
     res.status(201).json({ produto });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível cadastrar o produto.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível cadastrar o produto.' });
+  }
 });
 
 router.put('/produtos/:id', async (req, res) => {
@@ -373,14 +342,27 @@ router.put('/produtos/:id', async (req, res) => {
     const produto = await Produto.findById(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado.' });
     const { name, price, costPrice, imageUrl, active } = req.body;
-    if (name !== undefined) { if (!String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' }); produto.name = String(name).trim(); }
-    if (price !== undefined) { const n = Number(price); if (!Number.isFinite(n) || n < 0) return res.status(400).json({ error: 'Informe um preço válido.' }); produto.price = n; }
-    if (costPrice !== undefined) { const n = Number(costPrice); if (!Number.isFinite(n) || n < 0) return res.status(400).json({ error: 'Informe um custo válido.' }); produto.costPrice = n; }
+    if (name !== undefined) {
+      if (!String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' });
+      produto.name = String(name).trim();
+    }
+    if (price !== undefined) {
+      const numericPrice = Number(price);
+      if (!Number.isFinite(numericPrice) || numericPrice < 0) return res.status(400).json({ error: 'Informe um preço válido.' });
+      produto.price = numericPrice;
+    }
+    if (costPrice !== undefined) {
+      const numericCost = Number(costPrice);
+      if (!Number.isFinite(numericCost) || numericCost < 0) return res.status(400).json({ error: 'Informe um custo válido.' });
+      produto.costPrice = numericCost;
+    }
     if (imageUrl !== undefined) produto.imageUrl = imageUrl;
     if (active !== undefined) produto.active = Boolean(active);
     await produto.save();
     res.json({ produto });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível atualizar o produto.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o produto.' });
+  }
 });
 
 router.delete('/produtos/:id', async (req, res) => {
@@ -388,19 +370,24 @@ router.delete('/produtos/:id', async (req, res) => {
     const produto = await Produto.findByIdAndDelete(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado.' });
     res.json({ message: 'Produto removido com sucesso.' });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível remover o produto.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível remover o produto.' });
+  }
 });
 
 // ============================================================================
 // LOCAIS
 // ============================================================================
+
 router.get('/locais', async (req, res) => {
   try {
     const { includeInactive } = req.query;
     const query = includeInactive ? {} : { active: true };
     const locais = await Local.find(query).sort({ name: 1 });
     res.json({ locais });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível carregar os locais.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os locais.' });
+  }
 });
 
 router.post('/locais', async (req, res) => {
@@ -409,10 +396,20 @@ router.post('/locais', async (req, res) => {
     if (!name || !String(name).trim()) return res.status(400).json({ error: 'O nome do local é obrigatório.' });
     const numericLat = Number(lat);
     const numericLng = Number(lng);
-    if (!Number.isFinite(numericLat) || !Number.isFinite(numericLng)) return res.status(400).json({ error: 'Coordenadas inválidas para este local.' });
-    const local = await Local.create({ name: String(name).trim(), lat: numericLat, lng: numericLng, radiusMeters: radiusMeters !== undefined ? Number(radiusMeters) : undefined, createdBy: req.user.id });
+    if (!Number.isFinite(numericLat) || !Number.isFinite(numericLng)) {
+      return res.status(400).json({ error: 'Coordenadas inválidas para este local.' });
+    }
+    const local = await Local.create({
+      name: String(name).trim(),
+      lat: numericLat,
+      lng: numericLng,
+      radiusMeters: radiusMeters !== undefined ? Number(radiusMeters) : undefined,
+      createdBy: req.user.id,
+    });
     res.status(201).json({ local });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível cadastrar o local.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível cadastrar o local.' });
+  }
 });
 
 router.put('/locais/:id', async (req, res) => {
@@ -420,14 +417,19 @@ router.put('/locais/:id', async (req, res) => {
     const local = await Local.findById(req.params.id);
     if (!local) return res.status(404).json({ error: 'Local não encontrado.' });
     const { name, lat, lng, radiusMeters, active } = req.body;
-    if (name !== undefined) { if (!String(name).trim()) return res.status(400).json({ error: 'O nome do local é obrigatório.' }); local.name = String(name).trim(); }
+    if (name !== undefined) {
+      if (!String(name).trim()) return res.status(400).json({ error: 'O nome do local é obrigatório.' });
+      local.name = String(name).trim();
+    }
     if (lat !== undefined) local.lat = Number(lat);
     if (lng !== undefined) local.lng = Number(lng);
     if (radiusMeters !== undefined) local.radiusMeters = Number(radiusMeters);
     if (active !== undefined) local.active = Boolean(active);
     await local.save();
     res.json({ local });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível atualizar o local.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o local.' });
+  }
 });
 
 router.delete('/locais/:id', async (req, res) => {
@@ -435,16 +437,23 @@ router.delete('/locais/:id', async (req, res) => {
     const local = await Local.findByIdAndDelete(req.params.id);
     if (!local) return res.status(404).json({ error: 'Local não encontrado.' });
     res.json({ message: 'Local removido com sucesso.' });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível remover o local.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível remover o local.' });
+  }
 });
 
 // ============================================================================
 // VENDAS
 // ============================================================================
+
+// v10: clientId agora é OPCIONAL. Sem clientId = venda avulsa (sem selos, só gráficos).
 router.post('/vendas', async (req, res) => {
   try {
     const { clientId, items, lat, lng, localId } = req.body;
-    if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: 'Selecione ao menos 1 produto.' });
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Selecione ao menos 1 produto.' });
+    }
 
     const isAvulsa = !clientId;
     let client = null;
@@ -458,29 +467,47 @@ router.post('/vendas', async (req, res) => {
     const produtoMap = new Map(produtos.map((p) => [String(p._id), p]));
 
     const vendaItems = [];
-    let totalValue = 0, totalCost = 0, stampsGiven = 0;
+    let totalValue = 0;
+    let totalCost = 0;
+    let stampsGiven = 0;
+
     for (const item of items) {
       const produto = produtoMap.get(String(item.produtoId));
       const quantity = Number(item.quantity);
       if (!produto) return res.status(400).json({ error: 'Um dos produtos selecionados não foi encontrado.' });
-      if (!Number.isInteger(quantity) || quantity < 1) return res.status(400).json({ error: `Quantidade inválida para "${produto.name}".` });
-      vendaItems.push({ produtoId: produto._id, name: produto.name, price: produto.price, costPrice: produto.costPrice || 0, quantity });
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        return res.status(400).json({ error: `Quantidade inválida para "${produto.name}".` });
+      }
+      vendaItems.push({
+        produtoId: produto._id,
+        name: produto.name,
+        price: produto.price,
+        costPrice: produto.costPrice || 0,
+        quantity,
+      });
       totalValue += produto.price * quantity;
       totalCost += (produto.costPrice || 0) * quantity;
       stampsGiven += quantity;
     }
 
-    let resolvedLocal = null, nearest = [];
+    let resolvedLocal = null;
+    let nearest = [];
     if (localId) {
       resolvedLocal = await Local.findById(localId);
     } else if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
       const locaisAtivos = await Local.find({ active: true });
       const result = matchLocal(Number(lat), Number(lng), locaisAtivos);
       resolvedLocal = result.match;
-      nearest = result.nearest.map((n) => ({ localId: n.local._id, name: n.local.name, distanceMeters: n.distance }));
+      nearest = result.nearest.map((n) => ({
+        localId: n.local._id,
+        name: n.local.name,
+        distanceMeters: n.distance,
+      }));
     }
 
-    let stampsToApply = 0, previousStamps = 0, completedCardOnThisSale = false;
+    let stampsToApply = 0;
+    let previousStamps = 0;
+    let completedCardOnThisSale = false;
     if (client) {
       previousStamps = client.stamps;
       stampsToApply = Math.min(stampsGiven, Math.max(0, 10 - client.stamps));
@@ -493,9 +520,16 @@ router.post('/vendas', async (req, res) => {
     }
 
     const venda = await Venda.create({
-      clientId: client ? client._id : null, adminId: req.user.id, items: vendaItems,
-      totalValue, totalCost, stampsGiven: client ? stampsGiven : 0,
-      gps: { lat: Number.isFinite(Number(lat)) ? Number(lat) : null, lng: Number.isFinite(Number(lng)) ? Number(lng) : null },
+      clientId: client ? client._id : null,
+      adminId: req.user.id,
+      items: vendaItems,
+      totalValue,
+      totalCost,
+      stampsGiven: client ? stampsGiven : 0,
+      gps: {
+        lat: Number.isFinite(Number(lat)) ? Number(lat) : null,
+        lng: Number.isFinite(Number(lng)) ? Number(lng) : null,
+      },
       localId: resolvedLocal ? resolvedLocal._id : null,
       localName: resolvedLocal ? resolvedLocal.name : null,
       completedCardOnThisSale,
@@ -504,16 +538,32 @@ router.post('/vendas', async (req, res) => {
     if (stampsToApply > 0 && client) {
       const now = Date.now();
       const entries = Array.from({ length: stampsToApply }, (_, i) => ({
-        userId: client._id, action: 'add', adminId: req.user.id, source: 'venda', vendaId: venda._id,
+        userId: client._id,
+        action: 'add',
+        adminId: req.user.id,
+        source: 'venda',
+        vendaId: venda._id,
         createdAt: new Date(now + i),
       }));
       await StampHistory.insertMany(entries);
     }
 
     const overflow = client ? stampsGiven - stampsToApply : 0;
-    res.status(201).json({ venda, client: client || null, overflowStamps: overflow, needsLocation: !resolvedLocal, nearestLocais: !resolvedLocal ? nearest : [] });
-    if (client) liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
-  } catch (err) { console.error('Erro ao registrar venda:', err); res.status(500).json({ error: 'Não foi possível registrar a venda.' }); }
+    res.status(201).json({
+      venda,
+      client: client || null,
+      overflowStamps: overflow,
+      needsLocation: !resolvedLocal,
+      nearestLocais: !resolvedLocal ? nearest : [],
+    });
+
+    if (client) {
+      liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
+    }
+  } catch (err) {
+    console.error('Erro ao registrar venda:', err);
+    res.status(500).json({ error: 'Não foi possível registrar a venda.' });
+  }
 });
 
 router.get('/vendas', async (req, res) => {
@@ -526,9 +576,14 @@ router.get('/vendas', async (req, res) => {
       if (from) query.createdAt.$gte = new Date(from);
       if (to) query.createdAt.$lte = new Date(to);
     }
-    const vendas = await Venda.find(query).sort({ createdAt: -1 }).limit(Math.min(Number(limit) || 50, 200)).populate('clientId', 'fullName phone');
+    const vendas = await Venda.find(query)
+      .sort({ createdAt: -1 })
+      .limit(Math.min(Number(limit) || 50, 200))
+      .populate('clientId', 'fullName phone');
     res.json({ vendas });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível carregar as vendas.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar as vendas.' });
+  }
 });
 
 router.patch('/vendas/:id/local', async (req, res) => {
@@ -543,7 +598,9 @@ router.patch('/vendas/:id/local', async (req, res) => {
     venda.localName = local.name;
     await venda.save();
     res.json({ venda });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível vincular o local a esta venda.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível vincular o local a esta venda.' });
+  }
 });
 
 router.delete('/vendas/:id', async (req, res) => {
@@ -552,17 +609,23 @@ router.delete('/vendas/:id', async (req, res) => {
     if (!venda) return res.status(404).json({ error: 'Venda não encontrada.' });
     if (venda.clientId) {
       const client = await User.findById(venda.clientId);
-      if (client) { client.stamps = Math.max(0, client.stamps - venda.stampsGiven); await client.save(); }
+      if (client) {
+        client.stamps = Math.max(0, client.stamps - venda.stampsGiven);
+        await client.save();
+      }
     }
     await StampHistory.deleteMany({ vendaId: venda._id });
     await venda.deleteOne();
     res.json({ message: 'Venda removida e selos revertidos.' });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível remover a venda.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível remover a venda.' });
+  }
 });
 
 // ============================================================================
-// GRÁFICOS (igual v10.1)
+// GRÁFICOS
 // ============================================================================
+
 router.get('/graficos/satisfacao', async (req, res) => {
   try {
     const total = await Feedback.countDocuments();
@@ -572,10 +635,18 @@ router.get('/graficos/satisfacao', async (req, res) => {
       { $group: { _id: { $round: ['$average', 0] }, count: { $sum: 1 } } },
       { $sort: { _id: 1 } },
     ]);
-    res.json({ totalAvaliacoes: total, satisfeitos, percentualSatisfeitos, distribuicaoPorNota: distribuicao.map((d) => ({ nota: d._id, quantidade: d.count })) });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível calcular a satisfação dos clientes.' }); }
+    res.json({
+      totalAvaliacoes: total,
+      satisfeitos,
+      percentualSatisfeitos,
+      distribuicaoPorNota: distribuicao.map((d) => ({ nota: d._id, quantidade: d.count })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível calcular a satisfação dos clientes.' });
+  }
 });
 
+// NOVO na v10: anos que têm vendas.
 router.get('/graficos/anos', async (req, res) => {
   try {
     const result = await Venda.aggregate([
@@ -583,35 +654,82 @@ router.get('/graficos/anos', async (req, res) => {
       { $sort: { _id: -1 } },
     ]);
     res.json({ anos: result.map((r) => r._id).filter(Boolean) });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível carregar os anos.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os anos.' });
+  }
 });
 
+// NOVO na v10: faturamento ano→mês→semana.
+// Sem "mes": 12 posições (uma por mês do ano).
+// Com "mes": 5 posições (uma por semana do mês).
 router.get('/graficos/faturamento', async (req, res) => {
   try {
     const ano = Number(req.query.ano);
     const mes = Number(req.query.mes) || null;
     if (!Number.isFinite(ano)) return res.status(400).json({ error: 'Ano inválido.' });
+
     let start, end;
-    if (mes) { start = new Date(ano, mes - 1, 1); end = new Date(ano, mes, 1); }
-    else { start = new Date(ano, 0, 1); end = new Date(ano + 1, 0, 1); }
+    if (mes) {
+      start = new Date(ano, mes - 1, 1);
+      end = new Date(ano, mes, 1);
+    } else {
+      start = new Date(ano, 0, 1);
+      end = new Date(ano + 1, 0, 1);
+    }
+
     const vendas = await Venda.find({ createdAt: { $gte: start, $lt: end } }).lean();
+
     const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
     const N = mes ? 5 : 12;
-    const posicoes = Array.from({ length: N }, (_, i) => ({ label: mes ? `Sem ${i + 1}` : MESES[i], bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 }));
+    const posicoes = Array.from({ length: N }, (_, i) => ({
+      label: mes ? `Sem ${i + 1}` : MESES[i],
+      bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0,
+    }));
+
     for (const v of vendas) {
       const d = new Date(v.createdAt);
-      let idx = mes ? Math.min(4, Math.floor((d.getDate() - 1) / 7)) : d.getMonth();
+      let idx;
+      if (mes) {
+        idx = Math.min(4, Math.floor((d.getDate() - 1) / 7));
+      } else {
+        idx = d.getMonth();
+      }
       posicoes[idx].bruto += v.totalValue;
       posicoes[idx].custo += v.totalCost || 0;
       posicoes[idx].vendas += 1;
       if (v.completedCardOnThisSale) posicoes[idx].cartoesFechados += 1;
     }
-    for (const p of posicoes) { p.bruto = Math.round(p.bruto * 100) / 100; p.custo = Math.round(p.custo * 100) / 100; p.liquido = Math.round((p.bruto - p.custo) * 100) / 100; }
-    const totais = posicoes.reduce((acc, p) => ({ bruto: acc.bruto + p.bruto, custo: acc.custo + p.custo, liquido: acc.liquido + p.liquido, vendas: acc.vendas + p.vendas, cartoesFechados: acc.cartoesFechados + p.cartoesFechados }), { bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
+    for (const p of posicoes) {
+      p.bruto = Math.round(p.bruto * 100) / 100;
+      p.custo = Math.round(p.custo * 100) / 100;
+      p.liquido = Math.round((p.bruto - p.custo) * 100) / 100;
+    }
+
+    const totais = posicoes.reduce((acc, p) => ({
+      bruto: acc.bruto + p.bruto,
+      custo: acc.custo + p.custo,
+      liquido: acc.liquido + p.liquido,
+      vendas: acc.vendas + p.vendas,
+      cartoesFechados: acc.cartoesFechados + p.cartoesFechados,
+    }), { bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
+
     const comVenda = posicoes.filter((p) => p.vendas > 0).length;
     const media = comVenda > 0 ? Math.round((totais.bruto / comVenda) * 100) / 100 : 0;
-    res.json({ ano, mes, posicoes, totais, medias: { porMes: mes ? 0 : media, porSemana: mes ? media : 0, media } });
-  } catch (err) { console.error('Erro no faturamento:', err); res.status(500).json({ error: 'Não foi possível calcular o faturamento.' }); }
+
+    res.json({
+      ano, mes,
+      posicoes,
+      totais,
+      medias: {
+        porMes: mes ? 0 : media,
+        porSemana: mes ? media : 0,
+        media,
+      },
+    });
+  } catch (err) {
+    console.error('Erro no faturamento:', err);
+    res.status(500).json({ error: 'Não foi possível calcular o faturamento.' });
+  }
 });
 
 router.get('/graficos/cartoes-por-local', async (req, res) => {
@@ -620,12 +738,27 @@ router.get('/graficos/cartoes-por-local', async (req, res) => {
     const match = { completedCardOnThisSale: true };
     if (ano) {
       const y = Number(ano);
-      if (mes) { const m = Number(mes); match.createdAt = { $gte: new Date(y, m - 1, 1), $lt: new Date(y, m, 1) }; }
-      else { match.createdAt = { $gte: new Date(y, 0, 1), $lt: new Date(y + 1, 0, 1) }; }
+      if (mes) {
+        const m = Number(mes);
+        match.createdAt = { $gte: new Date(y, m - 1, 1), $lt: new Date(y, m, 1) };
+      } else {
+        match.createdAt = { $gte: new Date(y, 0, 1), $lt: new Date(y + 1, 0, 1) };
+      }
     }
-    const resultado = await Venda.aggregate([{ $match: match }, { $group: { _id: { $ifNull: ['$localName', 'Local não identificado'] }, cartoesFechados: { $sum: 1 } } }, { $sort: { cartoesFechados: -1 } }]);
+    const resultado = await Venda.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $ifNull: ['$localName', 'Local não identificado'] },
+          cartoesFechados: { $sum: 1 },
+        },
+      },
+      { $sort: { cartoesFechados: -1 } },
+    ]);
     res.json({ porLocal: resultado.map((r) => ({ local: r._id, cartoesFechados: r.cartoesFechados })) });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível calcular os cartões fechados por local.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível calcular os cartões fechados por local.' });
+  }
 });
 
 router.get('/graficos/faturamento-por-local', async (req, res) => {
@@ -634,32 +767,81 @@ router.get('/graficos/faturamento-por-local', async (req, res) => {
     const match = {};
     if (ano) {
       const y = Number(ano);
-      if (mes) { const m = Number(mes); match.createdAt = { $gte: new Date(y, m - 1, 1), $lt: new Date(y, m, 1) }; }
-      else { match.createdAt = { $gte: new Date(y, 0, 1), $lt: new Date(y + 1, 0, 1) }; }
+      if (mes) {
+        const m = Number(mes);
+        match.createdAt = { $gte: new Date(y, m - 1, 1), $lt: new Date(y, m, 1) };
+      } else {
+        match.createdAt = { $gte: new Date(y, 0, 1), $lt: new Date(y + 1, 0, 1) };
+      }
     }
-    const resultado = await Venda.aggregate([{ $match: match }, { $group: { _id: { $ifNull: ['$localName', 'Local não identificado'] }, bruto: { $sum: '$totalValue' }, custo: { $sum: '$totalCost' }, vendas: { $sum: 1 } } }, { $sort: { bruto: -1 } }]);
+
+    const resultado = await Venda.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $ifNull: ['$localName', 'Local não identificado'] },
+          bruto: { $sum: '$totalValue' },
+          custo: { $sum: '$totalCost' },
+          vendas: { $sum: 1 },
+        },
+      },
+      { $sort: { bruto: -1 } },
+    ]);
+
     const porLocal = resultado.map((r) => {
       const bruto = Math.round(r.bruto * 100) / 100;
       const custo = Math.round((r.custo || 0) * 100) / 100;
-      return { local: r._id, faturamento: bruto, faturamentoBruto: bruto, custo, faturamentoLiquido: Math.round((bruto - custo) * 100) / 100, vendas: r.vendas };
+      return {
+        local: r._id,
+        faturamento: bruto,
+        faturamentoBruto: bruto,
+        custo,
+        faturamentoLiquido: Math.round((bruto - custo) * 100) / 100,
+        vendas: r.vendas,
+      };
     });
-    const totais = porLocal.reduce((acc, r) => ({ bruto: acc.bruto + r.faturamentoBruto, custo: acc.custo + r.custo, liquido: acc.liquido + r.faturamentoLiquido, vendas: acc.vendas + r.vendas }), { bruto: 0, custo: 0, liquido: 0, vendas: 0 });
-    res.json({ porLocal, totais: { faturamentoBruto: Math.round(totais.bruto * 100) / 100, custo: Math.round(totais.custo * 100) / 100, faturamentoLiquido: Math.round(totais.liquido * 100) / 100, vendas: totais.vendas } });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível calcular o faturamento por local.' }); }
+
+    const totais = porLocal.reduce(
+      (acc, r) => ({
+        bruto: acc.bruto + r.faturamentoBruto,
+        custo: acc.custo + r.custo,
+        liquido: acc.liquido + r.faturamentoLiquido,
+        vendas: acc.vendas + r.vendas,
+      }),
+      { bruto: 0, custo: 0, liquido: 0, vendas: 0 }
+    );
+
+    res.json({
+      porLocal,
+      totais: {
+        faturamentoBruto: Math.round(totais.bruto * 100) / 100,
+        custo: Math.round(totais.custo * 100) / 100,
+        faturamentoLiquido: Math.round(totais.liquido * 100) / 100,
+        vendas: totais.vendas,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível calcular o faturamento por local.' });
+  }
 });
 
 // ============================================================================
-// LIMPEZA
+// LIMPEZA — NOVO na v10
 // ============================================================================
+
 router.post('/limpeza', async (req, res) => {
   try {
     const { escopo, vendaIds, avaliacaoIds, ano, mes, confirmCode } = req.body;
     let removidos = 0;
+
     if (escopo === 'vendas') {
       if (!Array.isArray(vendaIds) || !vendaIds.length) return res.status(400).json({ error: 'Nenhuma venda selecionada.' });
       const vendas = await Venda.find({ _id: { $in: vendaIds } });
       for (const v of vendas) {
-        if (v.clientId) { const c = await User.findById(v.clientId); if (c) { c.stamps = Math.max(0, c.stamps - v.stampsGiven); await c.save(); } }
+        if (v.clientId) {
+          const c = await User.findById(v.clientId);
+          if (c) { c.stamps = Math.max(0, c.stamps - v.stampsGiven); await c.save(); }
+        }
         await StampHistory.deleteMany({ vendaId: v._id });
         await v.deleteOne();
         removidos++;
@@ -672,10 +854,21 @@ router.post('/limpeza', async (req, res) => {
       const y = Number(ano);
       if (!Number.isFinite(y)) return res.status(400).json({ error: 'Ano inválido para o período.' });
       let start, end;
-      if (mes) { const m = Number(mes); start = new Date(y, m - 1, 1); end = new Date(y, m, 1); }
-      else { start = new Date(y, 0, 1); end = new Date(y + 1, 0, 1); }
+      if (mes) {
+        const m = Number(mes);
+        start = new Date(y, m - 1, 1);
+        end = new Date(y, m, 1);
+      } else {
+        start = new Date(y, 0, 1);
+        end = new Date(y + 1, 0, 1);
+      }
       const vendas = await Venda.find({ createdAt: { $gte: start, $lt: end } });
-      for (const v of vendas) { if (v.clientId) { const c = await User.findById(v.clientId); if (c) { c.stamps = Math.max(0, c.stamps - v.stampsGiven); await c.save(); } } }
+      for (const v of vendas) {
+        if (v.clientId) {
+          const c = await User.findById(v.clientId);
+          if (c) { c.stamps = Math.max(0, c.stamps - v.stampsGiven); await c.save(); }
+        }
+      }
       const rv = await Venda.deleteMany({ createdAt: { $gte: start, $lt: end } });
       const rf = await Feedback.deleteMany({ createdAt: { $gte: start, $lt: end } });
       removidos = (rv.deletedCount || 0) + (rf.deletedCount || 0);
@@ -694,8 +887,12 @@ router.post('/limpeza', async (req, res) => {
     } else {
       return res.status(400).json({ error: 'Escopo inválido.' });
     }
+
     res.json({ removidos });
-  } catch (err) { console.error('Erro na limpeza:', err); res.status(500).json({ error: 'Não foi possível limpar os dados.' }); }
+  } catch (err) {
+    console.error('Erro na limpeza:', err);
+    res.status(500).json({ error: 'Não foi possível limpar os dados.' });
+  }
 });
 
 module.exports = router;
