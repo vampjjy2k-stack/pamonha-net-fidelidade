@@ -1,6 +1,6 @@
-// routes/auth.js — v10.4.8
-// Novidade: ao excluir a conta, raspadinhas ATIVAS viram "cancelled".
-// O registro em ParticipanteRaspadinha continua intacto (a trava permanece).
+// routes/auth.js — v10.4.6
+// Novidade: no /register, checa ParticipanteRaspadinha antes de dar a raspadinha.
+// Se o telefone OU o e-mail já participaram alguma vez, o novo usuário NÃO ganha.
 
 const express = require('express');
 const crypto = require('crypto');
@@ -13,7 +13,6 @@ const Feedback = require('../models/Feedback');
 const Notification = require('../models/Notification');
 const PushSubscription = require('../models/PushSubscription');
 const ParticipanteRaspadinha = require('../models/ParticipanteRaspadinha');
-const Raspadinha = require('../models/Raspadinha');
 const auth = require('../middleware/auth');
 const { sendPasswordResetEmail } = require('../utils/email');
 
@@ -31,7 +30,10 @@ const forgotLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 3, standardHead
 function isValidBrazilianPhone(phone) { const digitsOnly = phone.replace(/\D/g, ''); return /^[1-9]{2}9?[0-9]{8}$/.test(digitsOnly); }
 function isValidEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email); }
 function normalizePhone(phone) { return phone.replace(/\D/g, ''); }
-function sha256(value) { return crypto.createHash('sha256').update(String(value)).digest('hex'); }
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
 
 function signToken(user) {
   return jwt.sign({ id: user._id.toString(), role: user.role }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -69,9 +71,12 @@ router.post('/register', registerLimiter, async (req, res) => {
     const existingEmail = await User.findOne({ email: normalizedEmail });
     if (existingEmail) return res.status(409).json({ error: 'Este e-mail já está cadastrado. Faça login.' });
 
+    // v10.4.6 — checa se o telefone OU o e-mail já participaram da raspadinha antes.
     const phoneHash = sha256(normalizedPhone);
     const emailHash = sha256(normalizedEmail);
-    const jaParticipou = await ParticipanteRaspadinha.findOne({ $or: [{ phoneHash }, { emailHash }] });
+    const jaParticipou = await ParticipanteRaspadinha.findOne({
+      $or: [{ phoneHash }, { emailHash }],
+    });
     const ganhaRaspadinha = !jaParticipou;
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -85,10 +90,17 @@ router.post('/register', registerLimiter, async (req, res) => {
       raspadinhaDisponivel: ganhaRaspadinha,
     });
 
+    // Se ganhou, registra para travar futuras contas com o mesmo telefone/e-mail.
     if (ganhaRaspadinha) {
-      try { await ParticipanteRaspadinha.create({ phoneHash, emailHash }); }
-      catch (e) {
-        if (e.code === 11000) { user.raspadinhaDisponivel = false; await user.save(); }
+      try {
+        await ParticipanteRaspadinha.create({ phoneHash, emailHash });
+      } catch (e) {
+        // Corrida rara (dois cadastros simultâneos com mesmo telefone) — se colidir,
+        // retira a raspadinha do usuário recém-criado por segurança.
+        if (e.code === 11000) {
+          user.raspadinhaDisponivel = false;
+          await user.save();
+        }
       }
     }
 
@@ -106,13 +118,17 @@ router.post('/login', loginLimiter, async (req, res) => {
     const { identifier, phone, password } = req.body;
     const rawIdentifier = (identifier || phone || '').trim();
     if (!rawIdentifier || !password) return res.status(400).json({ error: 'Informe telefone ou e-mail, e senha.' });
+
     const looksLikeEmail = rawIdentifier.includes('@');
     const user = looksLikeEmail
       ? await User.findOne({ email: rawIdentifier.toLowerCase() })
       : await User.findOne({ phone: normalizePhone(rawIdentifier) });
+
     if (!user) return res.status(401).json({ error: 'Conta não encontrada com esses dados.' });
+
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) return res.status(401).json({ error: 'Senha incorreta.' });
+
     const token = signToken(user);
     res.json({ token, user: toPublicUser(user) });
   } catch (err) {
@@ -136,6 +152,7 @@ router.put('/profile', auth, async (req, res) => {
     const { fullName, phone, email, password } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
     if (fullName) {
       if (fullName.trim().length < 3) return res.status(400).json({ error: 'Nome precisa ter pelo menos 3 caracteres.' });
       user.fullName = fullName.trim();
@@ -158,6 +175,7 @@ router.put('/profile', auth, async (req, res) => {
       if (password.length < MIN_PASSWORD_LENGTH) return res.status(400).json({ error: `Senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` });
       user.password = await bcrypt.hash(password, SALT_ROUNDS);
     }
+
     await user.save();
     res.json({ user: toPublicUser(user) });
   } catch (err) {
@@ -166,7 +184,6 @@ router.put('/profile', auth, async (req, res) => {
   }
 });
 
-// v10.4.8: ao excluir a conta, cancela raspadinhas ATIVAS (não usadas).
 router.delete('/account', auth, async (req, res) => {
   try {
     const { password } = req.body;
@@ -178,14 +195,7 @@ router.delete('/account', auth, async (req, res) => {
     if (!passwordMatches) return res.status(401).json({ error: 'Senha incorreta.' });
 
     const userId = user._id;
-
-    // Cancela raspadinhas ativas deste usuário (as usadas ficam no histórico)
-    await Raspadinha.updateMany(
-      { userId, status: 'active' },
-      { $set: { status: 'cancelled' } }
-    );
-
-    // Apaga dados pessoais
+    // IMPORTANTE: ParticipanteRaspadinha NÃO é apagado aqui — é a trava.
     await Promise.all([
       StampHistory.deleteMany({ userId }),
       Feedback.deleteMany({ userId }),
@@ -193,8 +203,6 @@ router.delete('/account', auth, async (req, res) => {
       PushSubscription.deleteMany({ userId }),
       User.deleteOne({ _id: userId }),
     ]);
-
-    // ParticipanteRaspadinha NÃO é apagado — é a trava contra novo cadastro.
 
     res.json({ message: 'Conta excluída com sucesso.' });
   } catch (err) {
@@ -207,15 +215,19 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
   try {
     const { identifier } = req.body;
     if (!identifier) return res.status(400).json({ error: 'Informe seu telefone ou e-mail.' });
+
     const looksLikeEmail = identifier.includes('@');
     const user = looksLikeEmail
       ? await User.findOne({ email: identifier.trim().toLowerCase() })
       : await User.findOne({ phone: normalizePhone(identifier) });
+
     if (!user || !user.email) return res.json(genericResponse);
+
     const rawToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordTokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     user.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
     await user.save();
+
     const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host')}`;
     const resetUrl = `${baseUrl}/?reset=${rawToken}`;
     await sendPasswordResetEmail({ to: user.email, fullName: user.fullName, resetUrl });
@@ -231,13 +243,16 @@ router.post('/reset-password', async (req, res) => {
     const { token, password } = req.body;
     if (!token || !password) return res.status(400).json({ error: 'Link inválido. Peça uma nova redefinição.' });
     if (password.length < MIN_PASSWORD_LENGTH) return res.status(400).json({ error: `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const user = await User.findOne({ resetPasswordTokenHash: tokenHash, resetPasswordExpires: { $gt: new Date() } });
     if (!user) return res.status(400).json({ error: 'Este link expirou ou já foi usado. Peça uma nova redefinição.' });
+
     user.password = await bcrypt.hash(password, SALT_ROUNDS);
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpires = null;
     await user.save();
+
     res.json({ message: 'Senha redefinida com sucesso. Faça login com a nova senha.' });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível redefinir a senha. Tente novamente.' });

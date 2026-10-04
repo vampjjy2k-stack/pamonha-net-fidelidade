@@ -497,16 +497,6 @@
     .switch input:disabled + .switch-track { opacity: 0.4; cursor: not-allowed; }
 
     .local-map { width: 100%; height: 220px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); z-index: 1; }
-    .local-search-wrap { position:relative; }
-    .local-results { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.15); max-height:280px; overflow-y:auto; z-index:1000; margin-top:4px; display:none; }
-    .local-results.show { display:block; }
-    .local-result-item { display:block; width:100%; text-align:left; background:none; border:none; padding:.75rem .9rem; border-bottom:1px solid var(--line-soft); cursor:pointer; font-family:inherit; font-size:.86rem; color:var(--ink); line-height:1.35; }
-    .local-result-item:last-child { border-bottom:none; }
-    .local-result-item:active { background:var(--gold-100); }
-    .local-result-item strong { display:block; color:var(--husk-900); font-size:.9rem; margin-bottom:2px; }
-    .local-result-item span { color:var(--ink-soft); font-size:.75rem; }
-    .local-address { background:var(--husk-300); border-radius:10px; padding:.6rem .85rem; font-size:.84rem; color:var(--husk-900); margin-top:.6rem; display:flex; align-items:flex-start; gap:.5rem; }
-    .local-address .icon { flex-shrink:0; margin-top:2px; }
     .range-input { width: 100%; accent-color: var(--green); height: 22px; }
 
     /* -- Produtos / Locais -- */
@@ -683,8 +673,8 @@
     .scratch-card-wrap {
       position: relative;
       width: 100%;
-      max-width: 240px;
-      height: 130px;
+      max-width: 260px;
+      height: 145px;
       perspective: 1200px;
       -webkit-perspective: 1200px;
       margin: 0.3rem auto;
@@ -3697,27 +3687,25 @@ function renderTxPill() {
     const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
     const MESES_PT_LONG = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
-    // ===== Gráfico de barras mensal — estilo moderno =====
     function renderWaterfallSVG(posicoes, isMesView) {
-      const W = 340, H = 260;
-      const padL = 42, padR = 14, padT = 34, padB = 44;
+      const W = 340, H = 250;
+      const padL = 44, padR = 10, padT = 30, padB = 36;
       const chartW = W - padL - padR;
       const chartH = H - padT - padB;
       const maxVal = Math.max(1, ...posicoes.map(p => p.bruto));
 
-      // Grid horizontal com 4 linhas
       let grid = '';
       const steps = 4;
       for (let i = 0; i <= steps; i++) {
         const y = padT + (chartH * i / steps);
         const val = maxVal * (1 - i / steps);
-        grid += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="rgba(27,94,32,0.08)" stroke-width="1"/>`;
-        grid += `<text x="${padL - 6}" y="${y + 3}" text-anchor="end" font-size="8.5" fill="#90A4AE">${Math.round(val)}</text>`;
+        grid += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>';
+        grid += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="#607D8B">' + Math.round(val) + '</text>';
       }
 
       const n = posicoes.length;
       const barSlot = chartW / n;
-      const barW = Math.max(7, Math.min(barSlot * 0.55, 22));
+      const barW = Math.max(6, Math.min(barSlot * 0.62, 28));
 
       let bars = '';
       posicoes.forEach((p, i) => {
@@ -3726,55 +3714,48 @@ function renderTxPill() {
         const custoH = (p.custo / maxVal) * chartH;
         const baseY = padT + chartH;
 
-        // Barra do custo (por cima) — vermelho suave
-        if (custoH > 0.5) {
-          bars += `<rect x="${x}" y="${baseY - liquidoH - custoH}" width="${barW}" height="${custoH}" fill="#E57373" rx="3"/>`;
-        }
-        // Barra do líquido — dourado suave
         if (liquidoH > 0.5) {
-          bars += `<rect x="${x}" y="${baseY - liquidoH}" width="${barW}" height="${liquidoH}" fill="#F9A825" rx="3"/>`;
+          bars += '<rect x="' + x + '" y="' + (baseY - liquidoH) + '" width="' + barW + '" height="' + liquidoH + '" fill="#F9A825" rx="3"/>';
+        }
+        if (custoH > 0.5) {
+          bars += '<rect x="' + x + '" y="' + (baseY - liquidoH - custoH) + '" width="' + barW + '" height="' + custoH + '" fill="#C62828" rx="3"/>';
         }
 
-        // Área clicável do mês
         const clickable = !isMesView && p.vendas > 0;
-        bars += `<rect x="${x - 4}" y="${padT}" width="${barW + 8}" height="${chartH}" fill="transparent" style="cursor:${clickable ? 'pointer' : 'default'}"${clickable ? ` onclick="drillGraficosMes(${i + 1})"` : ''}/>`;
+        bars += '<rect x="' + (x - 3) + '" y="' + padT + '" width="' + (barW + 6) + '" height="' + chartH + '" fill="transparent" style="cursor:' + (clickable ? 'pointer' : 'default') + '"' + (clickable ? ' onclick="drillGraficosMes(' + (i + 1) + ')"' : '') + '/>';
 
-        // Valor total em cima (só se couber)
+        bars += '<text x="' + (x + barW / 2) + '" y="' + (H - padB + 15) + '" text-anchor="middle" font-size="9.5" fill="#263238">' + p.label + '</text>';
+
         const totalH = liquidoH + custoH;
-        if (totalH > 14 && p.bruto > 0) {
-          bars += `<text x="${x + barW / 2}" y="${baseY - totalH - 5}" text-anchor="middle" font-size="8" font-weight="700" fill="#1B5E20">${Math.round(p.bruto)}</text>`;
+        if (totalH > 8) {
+          bars += '<text x="' + (x + barW / 2) + '" y="' + (baseY - totalH - 4) + '" text-anchor="middle" font-size="8.5" font-weight="700" fill="#1B5E20">' + (p.bruto > 0 ? 'R$' + Math.round(p.bruto) : '') + '</text>';
         }
-
-        // Label do mês embaixo
-        bars += `<text x="${x + barW / 2}" y="${H - padB + 16}" text-anchor="middle" font-size="10" fill="#263238" font-weight="600">${p.label}</text>`;
       });
 
-      // Legenda
-      const legY = 14;
-      let legend = `<g transform="translate(${padL},${legY})">`;
-      legend += `<rect x="0" y="-8" width="10" height="10" fill="#F9A825" rx="2"/><text x="15" y="1" font-size="10" fill="#263238">Líquido</text>`;
-      legend += `<rect x="70" y="-8" width="10" height="10" fill="#E57373" rx="2"/><text x="85" y="1" font-size="10" fill="#263238">Custo</text>`;
-      legend += `</g>`;
+      const legendY = 12;
+      let legend = '<g transform="translate(' + (padL) + ',' + legendY + ')">';
+      legend += '<rect x="0" y="-7" width="9" height="9" fill="#F9A825" rx="2"/><text x="13" y="1" font-size="10" fill="#263238">Líquido</text>';
+      legend += '<rect x="66" y="-7" width="9" height="9" fill="#C62828" rx="2"/><text x="79" y="1" font-size="10" fill="#263238">Custo</text>';
+      legend += '</g>';
 
-      return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">${grid}${bars}${legend}</svg>`;
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">' + grid + bars + legend + '</svg>';
     }
 
-    // ===== Donut de satisfação — mais elegante =====
     function renderPizzaSVG(sat) {
       const dist = [1,2,3,4,5].map(function(n){
         const found = (sat.distribuicaoPorNota || []).find(function(d){ return d.nota === n; });
         return found ? found.quantidade : 0;
       });
       const total = dist.reduce(function(s,v){ return s+v; }, 0);
-      const size = 130, stroke = 20;
+      const size = 140, stroke = 22;
       const radius = (size - stroke) / 2;
       const cx = size / 2, cy = size / 2;
       const circumference = 2 * Math.PI * radius;
-      const colors = ['#C62828', '#E57373', '#F9A825', '#8BC34A', '#2E7D32'];
+      const colors = ['#E65100', '#F9A825', '#FDD835', '#7CB342', '#2E7D32'];
 
       let slices = '';
       if (total === 0) {
-        slices = `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="#E8F5E9" stroke-width="${stroke}"/>`;
+        slices = '<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="none" stroke="#E8F5E9" stroke-width="' + stroke + '"/>';
       } else {
         let offset = 0;
         dist.forEach(function(qty, i){
@@ -3782,55 +3763,54 @@ function renderTxPill() {
           const fraction = qty / total;
           const dash = fraction * circumference;
           const gap = circumference - dash;
-          slices += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${colors[i]}" stroke-width="${stroke}" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" stroke-linecap="butt"/>`;
+          slices += '<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="none" stroke="' + colors[i] + '" stroke-width="' + stroke + '" stroke-dasharray="' + dash + ' ' + gap + '" stroke-dashoffset="' + (-offset) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
           offset += dash;
         });
       }
-      return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">${slices}</svg>`;
+      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg">' + slices + '</svg>';
     }
 
-    // ===== Barras horizontais =====
     function svgHBarChart(data, opts) {
       const { valueFmt = (v) => String(v), color = 'var(--husk-700)' } = opts || {};
-      const width = 320, rowH = 34, gap = 12, labelW = 100;
+      const width = 320, rowH = 30, gap = 12, labelW = 100;
       const barAreaW = width - labelW - 54;
       const max = Math.max(1, ...data.map((d) => d.value));
       const height = data.length * (rowH + gap) - gap + 6;
       const rows = data.map((d, i) => {
         const y = i * (rowH + gap);
-        const barW = Math.max(4, (d.value / max) * barAreaW);
+        const barW = Math.max(3, (d.value / max) * barAreaW);
         return `
-          <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="11" font-weight="600" fill="#263238" font-family="var(--font-body)">${esc(d.label)}</text>
-          <rect x="${labelW}" y="${y + 5}" width="${barAreaW}" height="${rowH - 10}" rx="${(rowH - 10) / 2}" fill="rgba(27,94,32,0.08)" />
-          <rect x="${labelW}" y="${y + 5}" width="${barW}" height="${rowH - 10}" rx="${(rowH - 10) / 2}" fill="${color}" />
-          <text x="${labelW + barAreaW + 8}" y="${y + rowH / 2 + 4}" font-size="11" font-weight="700" fill="var(--gold-700)" font-family="var(--font-body)">${valueFmt(d.value)}</text>
+          <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="10.5" fill="var(--ink)" font-family="var(--font-body)">${esc(d.label)}</text>
+          <rect x="${labelW}" y="${y + 3}" width="${barAreaW}" height="${rowH - 6}" rx="${(rowH - 6) / 2}" fill="var(--husk-300)" />
+          <rect x="${labelW}" y="${y + 3}" width="${barW}" height="${rowH - 6}" rx="${(rowH - 6) / 2}" fill="${color}" />
+          <text x="${labelW + barAreaW + 8}" y="${y + rowH / 2 + 4}" font-size="10.5" font-weight="700" fill="var(--amber-dark)" font-family="var(--font-body)">${valueFmt(d.value)}</text>
         `;
       }).join('');
       return `<svg class="bar-chart-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${rows}</svg>`;
     }
 
-    // ===== Barras agrupadas (bruto + líquido) =====
     function svgGroupedBarChart(data) {
-      const width = 320, rowH = 52, gap = 16, labelW = 100, subH = 14, subGap = 5;
-      const barAreaW = width - labelW - 66;
+      const width = 320, rowH = 46, gap = 14, labelW = 100, subH = 13, subGap = 4;
+      const barAreaW = width - labelW - 62;
       const max = Math.max(1, ...data.flatMap((d) => [d.bruto, d.liquido]));
       const height = data.length * (rowH + gap) - gap + 6;
       const rows = data.map((d, i) => {
         const y = i * (rowH + gap);
-        const wBruto = Math.max(4, (d.bruto / max) * barAreaW);
-        const wLiquido = Math.max(4, (d.liquido / max) * barAreaW);
+        const wBruto = Math.max(3, (d.bruto / max) * barAreaW);
+        const wLiquido = Math.max(3, (d.liquido / max) * barAreaW);
         return `
-          <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="11" font-weight="600" fill="#263238" font-family="var(--font-body)">${esc(d.label)}</text>
-          <rect x="${labelW}" y="${y + 2}" width="${barAreaW}" height="${subH}" rx="${subH / 2}" fill="rgba(27,94,32,0.08)" />
-          <rect x="${labelW}" y="${y + 2}" width="${wBruto}" height="${subH}" rx="${subH / 2}" fill="#2E7D32" />
-          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH - 3}" font-size="10" font-weight="700" fill="#1B5E20" font-family="var(--font-body)">R$ ${fmtMoney(d.bruto)}</text>
-          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${barAreaW}" height="${subH}" rx="${subH / 2}" fill="rgba(249,168,37,0.18)" />
-          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${wLiquido}" height="${subH}" rx="${subH / 2}" fill="#F9A825" />
-          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH + subGap + subH - 3}" font-size="10" font-weight="700" fill="#E65100" font-family="var(--font-body)">R$ ${fmtMoney(d.liquido)}</text>
+          <text x="${labelW - 8}" y="${y + rowH / 2 + 4}" text-anchor="end" font-size="10.5" fill="var(--ink)" font-family="var(--font-body)">${esc(d.label)}</text>
+          <rect x="${labelW}" y="${y + 2}" width="${barAreaW}" height="${subH}" rx="6.5" fill="var(--husk-300)" />
+          <rect x="${labelW}" y="${y + 2}" width="${wBruto}" height="${subH}" rx="6.5" fill="var(--green)" />
+          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH - 2}" font-size="9.5" font-weight="700" fill="var(--green-dark)" font-family="var(--font-body)">R$ ${fmtMoney(d.bruto)}</text>
+          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${barAreaW}" height="${subH}" rx="6.5" fill="var(--amber-soft)" />
+          <rect x="${labelW}" y="${y + 2 + subH + subGap}" width="${wLiquido}" height="${subH}" rx="6.5" fill="var(--amber)" />
+          <text x="${labelW + barAreaW + 8}" y="${y + 2 + subH + subGap + subH - 2}" font-size="9.5" font-weight="700" fill="var(--amber-dark)" font-family="var(--font-body)">R$ ${fmtMoney(d.liquido)}</text>
         `;
       }).join('');
       return `<svg class="bar-chart-svg" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">${rows}</svg>`;
     }
+
     function fmtMoney(v) { return (v || 0).toFixed(2).replace('.', ','); }
     function fmtMoneyFull(v) { return 'R$ ' + fmtMoney(v); }
 
@@ -4338,20 +4318,26 @@ function renderTxPill() {
         const list = data.raspadinhas || [];
         if (!list.length) { box.innerHTML = `<div class="empty-state"><p>Nenhuma raspadinha neste filtro.</p></div>`; return; }
         box.innerHTML = list.map(r => {
-          const statusTxt=r.status==='active'?'Ativa':r.status==='used'?'Usada':'Cancelada';
-          const statusColor=r.status==='active'?'var(--husk-700)':r.status==='used'?'var(--ink-soft)':'var(--error)';
-          const contaExcluida=!r.userId, cli=contaExcluida?'Conta excluída':r.userId.fullName;
-          const cliPhone=!contaExcluida&&r.userId.phone?formatPhone(r.userId.phone):'';
-          const avisoExcluida=contaExcluida&&r.status==='active'?`<div style="font-size:.75rem;color:var(--error);margin-top:.3rem">⚠ O cliente apagou a conta. Este prêmio não pode mais ser resgatado. Cancele para limpar.</div>`:'';
-          const btnCancelar=r.status==='active'?`<button class="btn btn-outline mt-1" style="color:var(--error);border-color:rgba(198,40,40,.35);width:100%" onclick="abrirCancelarRaspadinha('${r._id}', '${esc(r.code)}')">${icon('trash','icon icon-sm')} Cancelar prêmio</button>`:'';
-          return `<div class="venda-row"><div class="top"><div><div class="client">${esc(cli)}</div><div class="meta">${esc(cliPhone)}${cliPhone?' · ':''}${formatDate(r.createdAt)}</div></div><div class="value" style="color:${statusColor}">${r.discountPercent}%</div></div><div style="font-family:monospace;font-size:1.05rem;font-weight:700;color:var(--husk-900);letter-spacing:.06em;margin:.4rem 0">${esc(r.code)}</div><span class="venda-badge ${r.status==='active'?'ok':'warn'}">${statusTxt}${r.usedAt?' · '+formatDateShort(r.usedAt):''}</span>${avisoExcluida}${btnCancelar}</div>`;
+          const statusTxt = r.status === 'active' ? 'Ativa' : r.status === 'used' ? 'Usada' : 'Cancelada';
+          const statusColor = r.status === 'active' ? 'var(--husk-700)' : r.status === 'used' ? 'var(--ink-soft)' : 'var(--error)';
+          const cli = r.userId ? r.userId.fullName : 'Cliente';
+          const cliPhone = r.userId && r.userId.phone ? formatPhone(r.userId.phone) : '';
+          return `
+            <div class="venda-row">
+              <div class="top">
+                <div>
+                  <div class="client">${esc(cli)}</div>
+                  <div class="meta">${esc(cliPhone)} · ${formatDate(r.createdAt)}</div>
+                </div>
+                <div class="value" style="color:${statusColor}">${r.discountPercent}%</div>
+              </div>
+              <div style="font-family:monospace;font-size:1.05rem;font-weight:700;color:var(--husk-900);letter-spacing:0.06em;margin:0.4rem 0">${esc(r.code)}</div>
+              <span class="venda-badge ${r.status === 'active' ? 'ok' : 'warn'}">${statusTxt}${r.usedAt ? ' · ' + formatDateShort(r.usedAt) : ''}</span>
+            </div>
+          `;
         }).join('');
       } catch (e) { box.innerHTML = `<p class="text-xs muted">${esc(e.message)}</p>`; }
     }
-
-    window.abrirCancelarRaspadinha=(id,code)=>{const o=document.createElement('div');o.className='modal-overlay';o.id='cancel-rasp-overlay';o.innerHTML=`<div class="modal-card"><h3 class="surface-title" style="color:var(--error)">${icon('trash','icon icon-sm')} Cancelar prêmio</h3><p class="text-sm mb-1">Cancelar esta raspadinha? O aviso também vai sumir do app do cliente (se a conta ainda existir). Esta ação não pode ser desfeita.</p><p class="text-xs muted mb-2">Para confirmar, digite exatamente o código da raspadinha:</p><div style="background:var(--husk-300);border-radius:8px;padding:.5rem .8rem;font-family:monospace;font-weight:700;text-align:center;font-size:1.05rem;letter-spacing:.1em;color:var(--husk-900);margin-bottom:.6rem">${esc(code)}</div><input class="input mb-2" id="cancel-rasp-confirm" placeholder="Digite o código aqui" style="text-transform:uppercase;font-family:monospace"/><button class="btn btn-danger mb-1" id="cancel-rasp-btn">${icon('trash','icon icon-sm')} Cancelar prêmio</button><button class="btn btn-outline" onclick="fecharCancelarRaspadinha()">Voltar</button></div>`;document.body.appendChild(o);const b=$('#cancel-rasp-btn');if(b)b.onclick=()=>confirmarCancelarRaspadinha(id,code);};
-    window.fecharCancelarRaspadinha=()=>{const e=$('#cancel-rasp-overlay');if(e)e.remove();};
-    window.confirmarCancelarRaspadinha=async(id,code)=>{const i=$('#cancel-rasp-confirm'),d=i?i.value.trim().toUpperCase():'';if(d!==code)return toast.show('O código digitado não confere.','error');try{await api.post('/api/admin/raspadinhas/'+id+'/cancelar',{code});toast.show('Prêmio cancelado.');fecharCancelarRaspadinha();loadRaspadinhasStats();loadRaspadinhas('all');}catch(e){toast.show(e.message,'error');}};
 
     window.resgatarRaspadinha = async () => {
       const input = $('#rasp-code');
@@ -4377,30 +4363,67 @@ function renderTxPill() {
     async function renderAdminLocais(container) {
       container.innerHTML = `
         <div class="surface section-gap">
-          <h3 class="surface-title">${icon('pin','icon icon-sm')} Adicionar um ponto</h3>
-          <p class="text-xs muted mb-1">Digite o endereço, nome da feira ou referência. Escolha uma das opções.</p>
-          <div class="local-search-wrap"><input class="input" id="local-search" placeholder="Ex: Feira da Figueira, Duque de Caxias" autocomplete="off" oninput="buscarLocalDebounce()" /><div id="local-search-results" class="local-results"></div></div>
-          <button class="btn btn-outline mt-1 mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Ou usar minha localização atual</button>
-          <div id="local-map" class="local-map" style="height:280px;margin-top:0.6rem"></div>
-          <div id="local-found-address" class="local-address hidden"></div>
-          <label class="label mt-1">Nome para o cliente ver</label><input class="input mb-1" id="local-name" placeholder="Ex: Feira da Figueira" maxlength="60" />
+          <h3 class="surface-title">${icon('map','icon icon-sm')} Novo local</h3>
+          <label class="label">Buscar o lugar pelo nome</label>
+          <div class="flex gap-1 mb-1">
+            <input class="input" id="local-search" placeholder="Ex: Feira da Figueira, Duque de Caxias" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarLocalPorNome();}" />
+            <button class="btn btn-primary" style="width:auto" onclick="buscarLocalPorNome()">${icon('search','icon icon-sm')} Buscar</button>
+          </div>
+          <div id="local-search-results"></div>
+          <div class="text-center text-xs muted mb-1">— ou —</div>
+          <button class="btn btn-outline mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Usar minha localização atual (GPS)</button>
+          <p class="text-xs muted mb-1">Depois de achar, pode arrastar o pino no mapa para ajustar o ponto exato.</p>
+          <label class="label">Nome do local (como aparece para o cliente)</label>
+          <input class="input mb-1" id="local-name" placeholder="Ex: Feira da Figueira" maxlength="60" />
+          <div id="local-map" class="local-map"></div>
+          <div class="flex gap-1 mt-1 mb-1">
+            <div style="flex:1"><label class="label">Latitude</label><input class="input" id="local-lat" readonly placeholder="—" /></div>
+            <div style="flex:1"><label class="label">Longitude</label><input class="input" id="local-lng" readonly placeholder="—" /></div>
+          </div>
           <label class="label">Raio: <span id="local-radius-val">150</span> m</label>
           <input type="range" class="range-input mb-1" id="local-radius" min="10" max="500" value="150" oninput="onLocalRadiusChange(this.value)" />
-          <button class="btn btn-primary" onclick="createLocal()">${icon('save','icon icon-sm')} Salvar este ponto</button>
-        </div><div id="locais-list"><div class="loader"></div></div>
+          <button class="btn btn-primary" onclick="createLocal()">${icon('save','icon icon-sm')} Cadastrar local</button>
+        </div>
+        <div id="locais-list"><div class="loader"></div></div>
       `;
-      initLocalMap(-22.83, -43.28); loadLocais();
+      initLocalMap(-22.83, -43.28);
+      loadLocais();
     }
-    let localSearchTimer = null;
-    window.buscarLocalDebounce = () => { clearTimeout(localSearchTimer); localSearchTimer = setTimeout(buscarLocalPorNome, 500); };
+
     window.buscarLocalPorNome = async () => {
-      const input=$('#local-search'), box=$('#local-search-results'); if(!input||!box)return;
-      const q=input.value.trim(); if(q.length<3){box.classList.remove('show');box.innerHTML='';return;}
-      box.innerHTML=`<div style="padding:.75rem .9rem;font-size:.82rem;color:var(--ink-soft)">Buscando…</div>`;box.classList.add('show');
-      try{const data=await api.get('/api/admin/geocode?q='+encodeURIComponent(q));const resultados=data.resultados||[];if(!resultados.length){box.innerHTML=`<div style="padding:.75rem .9rem;font-size:.82rem;color:var(--ink-soft)">Nada encontrado. Tente incluir a cidade.</div>`;return;}box.innerHTML=resultados.map((r,i)=>`<button class="local-result-item" onclick='escolherLocalBuscadoIdx(${i})' data-idx="${i}"><strong>${esc(r.shortLabel||r.displayName.split(',')[0])}</strong><span>${esc(r.displayName)}</span></button>`).join('');box._resultados=resultados;}catch(e){box.innerHTML=`<div style="padding:.75rem .9rem;font-size:.82rem;color:var(--error)">${esc(e.message)}</div>`;}
+      const input = $('#local-search');
+      const box = $('#local-search-results');
+      if (!input || !box) return;
+      const q = input.value.trim();
+      if (q.length < 3) return toast.show('Digite pelo menos 3 letras.', 'error');
+      box.innerHTML = `<p class="text-xs muted mb-1">Buscando…</p>`;
+      try {
+        const data = await api.get('/api/admin/geocode?q=' + encodeURIComponent(q));
+        const resultados = data.resultados || [];
+        if (!resultados.length) { box.innerHTML = `<p class="text-xs muted mb-1">Nada encontrado. Tente incluir a cidade.</p>`; return; }
+        box.innerHTML = resultados.map((r, i) => `
+          <button class="notif-client-item mb-1" onclick='escolherLocalBuscado(${JSON.stringify(JSON.stringify(r))})'>
+            <span style="font-size:0.85rem">${esc(r.displayName)}</span>
+          </button>
+        `).join('');
+      } catch (e) { box.innerHTML = `<p class="text-xs" style="color:var(--error)">${esc(e.message)}</p>`; }
     };
-    window.escolherLocalBuscadoIdx = (idx) => {const box=$('#local-search-results');if(!box||!box._resultados)return;const r=box._resultados[idx];if(!r)return;setLocalLatLng(r.lat,r.lng);if(localMapInstance&&localMapMarker){localMapInstance.setView([r.lat,r.lng],17);localMapMarker.setLatLng([r.lat,r.lng]);if(localMapCircle)localMapCircle.setLatLng([r.lat,r.lng]);}const nameEl=$('#local-name');if(nameEl&&!nameEl.value.trim())nameEl.value=r.shortLabel||'';const addr=$('#local-found-address');if(addr){addr.innerHTML=`${icon('check','icon icon-sm')} <span>${esc(r.displayName)}</span>`;addr.classList.remove('hidden');}box.classList.remove('show');box.innerHTML='';box._resultados=null;$('#local-search').blur();};
-    document.addEventListener('click',(e)=>{const wrap=document.querySelector('.local-search-wrap');if(!wrap||wrap.contains(e.target))return;const box=$('#local-search-results');if(box)box.classList.remove('show');});
+
+    window.escolherLocalBuscado = (json) => {
+      const r = JSON.parse(json);
+      // Preenche latitude/longitude e move o mapa.
+      setLocalLatLng(r.lat, r.lng);
+      if (localMapInstance && localMapMarker) {
+        localMapInstance.setView([r.lat, r.lng], 17);
+        localMapMarker.setLatLng([r.lat, r.lng]);
+        if (localMapCircle) localMapCircle.setLatLng([r.lat, r.lng]);
+      }
+      // Preenche o nome do local com o shortName, se o campo ainda estiver vazio.
+      const nameEl = $('#local-name');
+      if (nameEl && !nameEl.value.trim()) nameEl.value = r.shortName || '';
+      const box = $('#local-search-results');
+      if (box) box.innerHTML = `<p class="text-xs" style="color:var(--husk-700)">✓ Local encontrado. Confira o pino no mapa e clique em "Cadastrar local".</p>`;
+    };
 
     function initLocalMap(lat, lng) {
       const el = $('#local-map');
@@ -4435,7 +4458,25 @@ function renderTxPill() {
       if (localMapCircle) localMapCircle.setRadius(Number(val));
     };
 
-    window.useMyLocationForLocal = () => { if(!navigator.geolocation)return toast.show('Este dispositivo não tem GPS.','error');toast.show('Buscando sua localização…');navigator.geolocation.getCurrentPosition(async(pos)=>{const {latitude,longitude}=pos.coords;setLocalLatLng(latitude,longitude);if(localMapInstance&&localMapMarker){localMapInstance.setView([latitude,longitude],17);localMapMarker.setLatLng([latitude,longitude]);if(localMapCircle)localMapCircle.setLatLng([latitude,longitude]);}try{const data=await api.get('/api/admin/geocode?q='+latitude+','+longitude);if(data.resultados&&data.resultados[0]){const r=data.resultados[0],addr=$('#local-found-address'),nameEl=$('#local-name');if(addr){addr.innerHTML=`${icon('pin','icon icon-sm')} <span>${esc(r.displayName)}</span>`;addr.classList.remove('hidden');}if(nameEl&&!nameEl.value.trim())nameEl.value=r.shortLabel||'';}}catch(e){}toast.show('Localização preenchida.');},()=>toast.show('Não foi possível obter sua localização.','error'),{enableHighAccuracy:true,timeout:8000}); };
+    window.useMyLocationForLocal = () => {
+      if (!navigator.geolocation) return toast.show('Este dispositivo não tem GPS disponível.', 'error');
+      toast.show('Buscando sua localização…');
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          setLocalLatLng(latitude, longitude);
+          if (localMapInstance && localMapMarker) {
+            localMapInstance.setView([latitude, longitude], 16);
+            localMapMarker.setLatLng([latitude, longitude]);
+            if (localMapCircle) localMapCircle.setLatLng([latitude, longitude]);
+          }
+          toast.show('Localização preenchida.');
+        },
+        () => toast.show('Não foi possível obter sua localização.', 'error'),
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    };
+
     async function loadLocais() {
       try {
         const data = await api.get('/api/admin/locais?includeInactive=1');
@@ -4653,8 +4694,8 @@ function renderTxPill() {
               <option value="">Selecione um local cadastrado…</option>
               ${locaisCache.filter(l => l.active).map(l => `<option value="${l._id}" ${salesAvulsaLocalId === l._id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}
             </select>
-            <button class="btn btn-outline" onclick="useMyLocationForSalesAvulsa()">${icon('pin','icon icon-sm')} Usar GPS (opcional)</button>
-            ${salesAvulsaCoords ? `<p class="text-xs muted mt-1">${icon('check','icon icon-sm')} Localização GPS capturada.</p>` : `<p class="text-xs muted mt-1">Se não escolher nem usar GPS, a venda fica como <strong>local não identificado</strong> — entra nos gráficos totais normalmente.</p>`}
+            <button class="btn btn-outline" onclick="useMyLocationForSalesAvulsa()">${icon('pin','icon icon-sm')} Usar GPS</button>
+            ${salesAvulsaCoords ? `<p class="text-xs muted mt-1">${icon('check','icon icon-sm')} Localização GPS capturada.</p>` : ''}
           `;
         }
       }
@@ -4717,7 +4758,9 @@ function renderTxPill() {
     window.confirmSalesHub = async () => {
       const items = Object.entries(salesCart).map(([produtoId, quantity]) => ({ produtoId, quantity }));
       if (!items.length) return toast.show('Escolha ao menos 1 produto.', 'error');
-      // v10.4.9: GPS/local agora é opcional. Venda avulsa sem local entra como "não identificado".
+      if (salesAvulsa && !salesAvulsaLocalId && !salesAvulsaCoords) {
+        return toast.show('Venda avulsa precisa de um local cadastrado ou do GPS.', 'error');
+      }
 
       let coords = salesAvulsa ? salesAvulsaCoords : null;
       if (!salesAvulsa && navigator.geolocation) {
