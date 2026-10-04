@@ -96,6 +96,25 @@ router.post('/raspadinhas/:id/cancelar', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Não foi possível cancelar.' }); }
 });
 
+// v10.4.10: exclusão definitiva com confirmação dupla.
+// A coleção ParticipanteRaspadinha nunca é tocada: a trava antifraude permanece.
+router.delete('/raspadinhas/:id', async (req, res) => {
+  try {
+    const confirmCode = String(req.body.code || '').trim().toUpperCase();
+    const confirmPhrase = String(req.body.confirm || '').trim().toUpperCase();
+    const rasp = await Raspadinha.findById(req.params.id);
+    if (!rasp) return res.status(404).json({ error: 'Raspadinha não encontrada.' });
+    if (confirmCode !== rasp.code) return res.status(400).json({ error: 'O código digitado não confere.' });
+    if (confirmPhrase !== 'APAGAR RASPADINHA') return res.status(400).json({ error: 'Digite APAGAR RASPADINHA para confirmar.' });
+
+    await Notification.deleteMany({ raspadinhaId: rasp._id });
+    await Raspadinha.deleteOne({ _id: rasp._id });
+    res.json({ message: 'Raspadinha apagada definitivamente.' });
+  } catch (err) {
+    console.error('Erro ao apagar raspadinha:', err);
+    res.status(500).json({ error: 'Não foi possível apagar a raspadinha.' });
+  }
+});
 // ============================================================================
 // GEOCODE
 // ============================================================================
