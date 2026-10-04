@@ -1,9 +1,8 @@
-// routes/client.js — v10.4
-// Novidades: POST /raspadinha/raspar (sorteio seguro no servidor),
-// GET /raspadinha (consulta se tem alguma ativa).
+// routes/client.js — v10.2
+// Novidade: GET /api/client/premios (lista para o cliente, ordem definida pelo admin).
+// O resto é igual à v10.
 
 const express = require('express');
-const crypto = require('crypto');
 const User = require('../models/User');
 const StampHistory = require('../models/StampHistory');
 const Notification = require('../models/Notification');
@@ -12,130 +11,18 @@ const Feedback = require('../models/Feedback');
 const PushSubscription = require('../models/PushSubscription');
 const Local = require('../models/Local');
 const Premio = require('../models/Premio');
-const Raspadinha = require('../models/Raspadinha');
 const auth = require('../middleware/auth');
 const { generateQrToken, generateQrImage, QR_TOKEN_TTL_SECONDS } = require('./qr');
-const liveEvents = require('../utils/events');
 
 const router = express.Router();
 router.use(auth);
 
-// ============================================================================
-// RASPADINHA (v10.4)
-// ============================================================================
-
-// Tabela de prêmios com pesos. Total = 100 (60 + 30 + 10).
-// O sorteio é feito no SERVIDOR, com crypto — o cliente NUNCA decide.
-const PRIZE_TABLE = [
-  { percent: 5, weight: 60 },
-  { percent: 8, weight: 30 },
-  { percent: 10, weight: 10 },
-];
-
-function sortearDesconto() {
-  const total = PRIZE_TABLE.reduce((s, p) => s + p.weight, 0);
-  const r = crypto.randomInt(1, total + 1); // 1..100
-  let acc = 0;
-  for (const p of PRIZE_TABLE) {
-    acc += p.weight;
-    if (r <= acc) return p.percent;
-  }
-  return PRIZE_TABLE[0].percent;
-}
-
-function gerarCodigoRaspadinha() {
-  // Alfabeto sem caracteres confusos (0/O, 1/I/L).
-  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += alphabet[crypto.randomInt(0, alphabet.length)];
-  return 'PAM-' + code;
-}
-
-// POST /api/client/raspadinha/raspar
-// Só funciona uma vez por conta. O servidor decide o prêmio.
-router.post('/raspadinha/raspar', async (req, res) => {
-  try {
-    // Reivindicação atômica: duas requisições simultâneas não podem gerar dois prêmios.
-    const user = await User.findOneAndUpdate(
-      { _id: req.user.id, raspadinhaDisponivel: true },
-      { $set: { raspadinhaDisponivel: false } },
-      { new: true }
-    );
-    if (!user) {
-      const exists = await User.exists({ _id: req.user.id });
-      return res.status(exists ? 400 : 404).json({ error: exists ? 'Você já raspou sua raspadinha.' : 'Usuário não encontrado.' });
-    }
-    // Gera código único (tenta até 8 vezes, colisão é praticamente nula)
-    let code = null;
-    for (let i = 0; i < 8; i++) {
-      const candidato = gerarCodigoRaspadinha();
-      const existe = await Raspadinha.findOne({ code: candidato });
-      if (!existe) { code = candidato; break; }
-    }
-    if (!code) return res.status(500).json({ error: 'Não foi possível gerar o código. Tente novamente.' });
-
-    const discountPercent = sortearDesconto();
-
-    const raspadinha = await Raspadinha.create({
-      userId: user._id,
-      code,
-      discountPercent,
-      status: 'active',
-    });
-
-    // Marca que o usuário já raspou
-    user.raspadinhaDisponivel = false;
-    await user.save();
-
-    // Cria a notificação especial (não pode ser apagada pelo admin — só resgatada)
-    await Notification.create({
-      userId: user._id,
-      title: `🎁 Você ganhou ${discountPercent}% de desconto!`,
-      message: `Mostre o código abaixo no balcão da Pamonha Net na sua próxima compra.`,
-      type: 'raspadinha',
-      raspadinhaId: raspadinha._id,
-      code: raspadinha.code,
-      broadcast: false,
-    });
-
-    // Avisa o app do cliente em tempo real
-    liveEvents.sendToUser(user._id, 'notification', { id: raspadinha._id, title: 'Novo prêmio' });
-
-    res.json({ raspadinha });
-  } catch (err) {
-    console.error('Erro na raspadinha:', err);
-    res.status(500).json({ error: 'Não foi possível gerar sua raspadinha. Tente de novo.' });
-  }
-});
-
-// GET /api/client/raspadinha — consulta se o usuário tem raspadinha ativa
-router.get('/raspadinha', async (req, res) => {
-  try {
-    const rasp = await Raspadinha.findOne({ userId: req.user.id, status: 'active' }).lean();
-    res.json({ raspadinha: rasp });
-  } catch (err) {
-    res.status(500).json({ error: 'Não foi possível consultar a raspadinha.' });
-  }
-});
-
-// ============================================================================
-// DASHBOARD
-// ============================================================================
 router.get('/dashboard', async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
     const history = await StampHistory.find({ userId: user._id, action: 'add' }).sort({ createdAt: -1 }).limit(10);
-    res.json({
-      fullName: user.fullName,
-      phone: user.phone,
-      email: user.email || null,
-      stamps: user.stamps,
-      completedCards: user.completedCards || 0,
-      lastStampAt: user.lastStampAt,
-      raspadinhaDisponivel: user.raspadinhaDisponivel === true,
-      history,
-    });
+    res.json({ fullName: user.fullName, phone: user.phone, email: user.email || null, stamps: user.stamps, completedCards: user.completedCards || 0, lastStampAt: user.lastStampAt, history });
   } catch (err) { res.status(500).json({ error: 'Não foi possível carregar seus dados.' }); }
 });
 
@@ -222,6 +109,7 @@ router.get('/locais', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Não foi possível carregar os locais.' }); }
 });
 
+// NOVO na v10.2
 router.get('/premios', async (req, res) => {
   try {
     const premios = await Premio.find({ active: true }).sort({ order: 1, name: 1 }).select('name description stampsRequired imageUrl order').lean();

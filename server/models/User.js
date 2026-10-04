@@ -1,5 +1,6 @@
 // models/User.js
-// Representa um usuário do sistema: "client" (cliente da pamonharia) ou "admin".
+// v10.4: adicionado campo "raspadinhaDisponivel".
+// Default é false — só contas criadas a partir de agora ganham a raspadinha.
 
 const mongoose = require('mongoose');
 
@@ -11,63 +12,19 @@ const userSchema = new mongoose.Schema(
       trim: true,
       minlength: [3, 'O nome precisa ter pelo menos 3 caracteres.'],
     },
-    // Telefone continua sendo um identificador de login válido, no formato BR (só dígitos).
-    phone: {
-      type: String,
-      required: [true, 'O telefone é obrigatório.'],
-      unique: true,
-      trim: true,
-    },
-    // E-mail: usado para login alternativo e para recuperação de senha.
-    // "sparse" permite múltiplos documentos sem e-mail (contas antigas) sem violar o índice único.
-    email: {
-      type: String,
-      trim: true,
-      lowercase: true,
-      unique: true,
-      sparse: true,
-    },
-    // Nunca armazenamos a senha em texto puro — sempre o hash gerado pelo bcrypt.
-    password: {
-      type: String,
-      required: [true, 'A senha é obrigatória.'],
-    },
-    role: {
-      type: String,
-      enum: ['client', 'admin'],
-      default: 'client',
-    },
-    // Número de carimbos atuais no cartão fidelidade (0 a 10).
-    stamps: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 10,
-    },
-    // Quantos cartões o cliente já completou e resgatou ao longo do tempo (ranking).
-    completedCards: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    // Data do último carimbo recebido — usada para detectar clientes inativos.
-    lastStampAt: {
-      type: Date,
-      default: null,
-    },
-    // Recuperação de senha por e-mail: hash do token (nunca o token em si) + expiração.
-    resetPasswordTokenHash: {
-      type: String,
-      default: null,
-    },
-    resetPasswordExpires: {
-      type: Date,
-      default: null,
-    },
+    phone: { type: String, required: [true, 'O telefone é obrigatório.'], unique: true, trim: true },
+    email: { type: String, trim: true, lowercase: true, unique: true, sparse: true },
+    password: { type: String, required: [true, 'A senha é obrigatória.'] },
+    role: { type: String, enum: ['client', 'admin'], default: 'client' },
+    stamps: { type: Number, default: 0, min: 0, max: 10 },
+    completedCards: { type: Number, default: 0, min: 0 },
+    lastStampAt: { type: Date, default: null },
+    // v10.4: true = ainda pode raspar; false = já raspou (ou não tem direito).
+    raspadinhaDisponivel: { type: Boolean, default: false },
+    resetPasswordTokenHash: { type: String, default: null },
+    resetPasswordExpires: { type: Date, default: null },
   },
-  {
-    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
-  }
+  { timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' } }
 );
 
 module.exports = mongoose.model('User', userSchema);

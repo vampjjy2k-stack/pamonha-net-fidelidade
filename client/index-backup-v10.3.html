@@ -637,92 +637,6 @@
       *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     }
     :focus-visible { outline: 2px solid var(--gold-700); outline-offset: 2px; }
-    /* ==================== RASPADINHA DE BOAS-VINDAS ==================== */
-    .scratch-overlay {
-      position: fixed; inset: 0; z-index: 500;
-      background: linear-gradient(160deg, #1B5E20 0%, #0d3d10 100%);
-      display: flex; align-items: center; justify-content: center;
-      padding: 1.5rem;
-      animation: fadeIn 0.4s ease both;
-    }
-    .scratch-container { max-width: 380px; width: 100%; perspective: 1400px; }
-    .scratch-card {
-      position: relative; aspect-ratio: 989 / 553; width: 100%;
-      transform-style: preserve-3d;
-      transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .scratch-card.flipped { transform: rotateY(180deg); }
-    .scratch-face {
-      position: absolute; inset: 0;
-      backface-visibility: hidden; -webkit-backface-visibility: hidden;
-      border-radius: 18px; overflow: hidden;
-      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
-    }
-    .scratch-front { background: #fff; }
-    .scratch-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .scratch-back {
-      transform: rotateY(180deg);
-      background: #8D6E63;
-      position: relative;
-    }
-    .scratch-back canvas {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      cursor: crosshair; touch-action: none;
-    }
-    .scratch-hint {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: rgba(255,255,255,0.9); text-align: center; padding: 1rem;
-      font-family: var(--font-display); pointer-events: none;
-    }
-    .scratch-hint strong { font-size: 1.15rem; display: block; margin-bottom: 0.3rem; }
-    .scratch-hint span { font-size: 0.85rem; opacity: 0.85; max-width: 200px; }
-    .scratch-hint-icon { font-size: 2rem; margin-bottom: 0.4rem; animation: scratchWiggle 2s ease-in-out infinite; }
-    @keyframes scratchWiggle {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-8px); }
-      75% { transform: translateX(8px); }
-    }
-    .scratch-reveal {
-      text-align: center; color: #fff;
-      animation: fadeIn 0.6s ease both;
-    }
-    .scratch-reveal .big { font-size: 3.5rem; margin-bottom: 0.3rem; line-height: 1; }
-    .scratch-reveal h2 {
-      font-family: var(--font-display); font-size: 1.7rem;
-      margin-bottom: 0.5rem; color: var(--gold-300);
-    }
-    .scratch-reveal .discount {
-      font-family: var(--font-display); font-size: 4rem; font-weight: 900;
-      color: var(--gold-300); line-height: 1;
-      margin: 0.6rem 0; text-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    }
-    .scratch-reveal .code-box {
-      display: inline-block;
-      background: rgba(255,255,255,0.12);
-      border: 2px dashed rgba(255,255,255,0.5);
-      border-radius: 12px;
-      padding: 0.65rem 1rem; margin: 1rem 0;
-      font-family: monospace; font-size: 1.3rem; font-weight: 700;
-      letter-spacing: 0.12em; color: #fff;
-    }
-    .scratch-reveal .instructions {
-      font-size: 0.92rem; color: rgba(255,255,255,0.88);
-      margin-bottom: 1.5rem; line-height: 1.5; max-width: 300px; margin-left: auto; margin-right: auto;
-    }
-    .scratch-reveal .btn { max-width: 320px; }
-    .scratch-skip {
-      position: fixed; bottom: 1.5rem; right: 1.5rem;
-      background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9);
-      border: 1px solid rgba(255,255,255,0.35);
-      border-radius: 999px; padding: 0.5rem 1rem;
-      font-size: 0.78rem; font-weight: 600;
-      cursor: pointer; font-family: inherit;
-      animation: fadeIn 0.5s ease both;
-    }
-    .scratch-confetti {
-      position: fixed; inset: 0; pointer-events: none; z-index: 600;
-    }
 
     /* ==================== LANDING PAGE ==================== */
     .landing {
@@ -1500,8 +1414,6 @@ router.register('card', (container) => {
   renderCarroSlot();
   loadCard();
   startCardAutoRefresh();
-  // Raspadinha de boas-vindas (só para contas novas que ainda não rasparam)
-  setTimeout(() => mostrarRaspadinhaSeDisponivel(), 700);
 });
 
 let lastKnownStamps = null;
@@ -1651,26 +1563,15 @@ async function loadNotifications() {
     if (!data.notifications.length) {
       list.innerHTML = `<div class="empty-state">${icon('mail', 'icon')}<p>Nenhum aviso por enquanto. Avisaremos quando houver novidade para você.</p></div>`;
     } else {
-      list.innerHTML = data.notifications.map(n => {
-        const isRasp = n.type === 'raspadinha';
-        const rowStyle = isRasp ? 'border-left-color:#F9A825;background:linear-gradient(135deg,#FFF8E1,#FFFDF5)' : '';
-        const badge = isRasp
-          ? '<span class="new-tag" style="background:#F9A825;color:#1B5E20">🎁 prêmio</span>'
-          : (!n.read ? '<span class="new-tag">novo</span>' : '');
-        const codeHTML = (isRasp && n.code)
-          ? `<div style="display:inline-block;background:#fff;border:2px dashed #F9A825;border-radius:10px;padding:0.5rem 0.9rem;margin-top:0.5rem;font-family:monospace;font-weight:700;font-size:1.05rem;letter-spacing:0.06em;color:#1B5E20">${esc(n.code)}</div>`
-          : '';
-        return `
-          <div class="row ${n.read ? 'is-read' : ''}" style="${rowStyle}">
-            <h4>${esc(n.title)} ${badge}</h4>
-            <p>${esc(n.message)}</p>
-            ${codeHTML}
-            <div class="row-foot">
-              <span class="text-xs">${formatDate(n.createdAt)}</span>
-            </div>
+      list.innerHTML = data.notifications.map(n => `
+        <div class="row ${n.read ? 'is-read' : ''}">
+          <h4>${esc(n.title)} ${!n.read ? '<span class="new-tag">novo</span>' : ''}</h4>
+          <p>${esc(n.message)}</p>
+          <div class="row-foot">
+            <span class="text-xs">${formatDate(n.createdAt)}</span>
           </div>
-        `;
-      }).join('');
+        </div>
+      `).join('');
     }
     refreshUnreadBadge();
   } catch (e) { toast.show(e.message, 'error'); }
@@ -1812,251 +1713,6 @@ window.sendFeedback = async () => {
         }).join('') + `<p class="text-xs muted text-center mt-2">Resgate combinado no balcão com a equipe.</p>`;
       } catch (e) {
         box.innerHTML = `<div class="empty-state"><p>${esc(e.message)}</p></div>`;
-      }
-    }
-
-    // ==========================================================================
-    // RASPADINHA DE BOAS-VINDAS
-    // ==========================================================================
-    let scratchState = { active: false, canvas: null, ctx: null, revealed: false, touchStart: null };
-
-    async function mostrarRaspadinhaSeDisponivel() {
-      if (!api.user || api.user.raspadinhaDisponivel !== true) return;
-      if (scratchState.active) return;
-      if (sessionStorage.getItem('pnf_scratch_postponed') === '1') return;
-      scratchState.active = true;
-      abrirOverlayRaspadinha();
-    }
-
-    function abrirOverlayRaspadinha() {
-      const overlay = document.createElement('div');
-      overlay.className = 'scratch-overlay';
-      overlay.id = 'scratch-overlay';
-      overlay.innerHTML = `
-        <div class="scratch-container">
-          <div class="scratch-card" id="scratch-card">
-            <div class="scratch-face scratch-front">
-              <img src="/card.jpg" alt="Cartão Pamonha Net" />
-            </div>
-            <div class="scratch-face scratch-back">
-              <canvas id="scratch-canvas"></canvas>
-              <div class="scratch-hint" id="scratch-hint">
-                <div class="scratch-hint-icon">👆</div>
-                <strong>Raspe aqui!</strong>
-                <span>Passe o dedo para revelar seu presente de boas-vindas</span>
-              </div>
-            </div>
-          </div>
-          <div id="scratch-result"></div>
-        </div>
-      `;
-      document.body.appendChild(overlay);
-
-      // Espera um instante e vira o cartão
-      setTimeout(() => {
-        const card = $('#scratch-card');
-        if (card) card.classList.add('flipped');
-        setTimeout(() => iniciarCanvasRaspadinha(), 950);
-      }, 1300);
-
-      // Botão "Raspar depois" aparece em 20s (saída de emergência)
-      setTimeout(() => {
-        if (scratchState.revealed) return;
-        if (!$('#scratch-overlay')) return;
-        if ($('.scratch-skip')) return;
-        const skip = document.createElement('button');
-        skip.className = 'scratch-skip';
-        skip.textContent = 'Raspar depois';
-        skip.onclick = () => {
-          sessionStorage.setItem('pnf_scratch_postponed', '1');
-          fecharOverlayRaspadinha(false);
-        };
-        const ov = $('#scratch-overlay');
-        if (ov) ov.appendChild(skip);
-      }, 20000);
-    }
-
-    function iniciarCanvasRaspadinha() {
-      const canvas = $('#scratch-canvas');
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      const ctx = canvas.getContext('2d');
-      // Cor base marrom + granulado
-      ctx.fillStyle = '#8D6E63';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // Granulado aleatório (manchas escuras)
-      for (let i = 0; i < 900; i++) {
-        const r = Math.random() * 40 + 60;
-        const g = Math.random() * 30 + 40;
-        const b = Math.random() * 20 + 25;
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${Math.random() * 0.5 + 0.15})`;
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 2 + 0.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // Granulado claro (pequenos brilhos)
-      for (let i = 0; i < 300; i++) {
-        ctx.fillStyle = `rgba(220, 200, 180, ${Math.random() * 0.4 + 0.1})`;
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.4 + 0.3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      scratchState.canvas = canvas;
-      scratchState.ctx = ctx;
-      scratchState.revealed = false;
-      scratchState.touchStart = null;
-
-      canvas.addEventListener('touchstart', onScratchStart, { passive: false });
-      canvas.addEventListener('touchmove', onScratchMove, { passive: false });
-      canvas.addEventListener('touchend', onScratchEnd);
-      canvas.addEventListener('mousedown', onScratchStart);
-      canvas.addEventListener('mousemove', onScratchMove);
-      canvas.addEventListener('mouseup', onScratchEnd);
-      canvas.addEventListener('mouseleave', onScratchEnd);
-    }
-
-    function onScratchStart(e) {
-      e.preventDefault();
-      const canvas = scratchState.canvas;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const pt = e.touches ? e.touches[0] : e;
-      const x = pt.clientX - rect.left;
-      const y = pt.clientY - rect.top;
-      scratchState.touchStart = { x, y };
-      rasparPonto(x, y);
-    }
-
-    function onScratchMove(e) {
-      if (!scratchState.touchStart) return;
-      e.preventDefault();
-      const canvas = scratchState.canvas;
-      if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      const pt = e.touches ? e.touches[0] : e;
-      const x = pt.clientX - rect.left;
-      const y = pt.clientY - rect.top;
-      const prev = scratchState.touchStart;
-      const dist = Math.hypot(x - prev.x, y - prev.y);
-      const steps = Math.max(1, Math.ceil(dist / 6));
-      for (let i = 1; i <= steps; i++) {
-        const t = i / steps;
-        rasparPonto(prev.x + (x - prev.x) * t, prev.y + (y - prev.y) * t);
-      }
-      scratchState.touchStart = { x, y };
-    }
-
-    function onScratchEnd() {
-      scratchState.touchStart = null;
-      checarProgressoRaspadinha();
-    }
-
-    function rasparPonto(x, y) {
-      const ctx = scratchState.ctx;
-      if (!ctx) return;
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.beginPath();
-      ctx.arc(x, y, 24, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function checarProgressoRaspadinha() {
-      if (scratchState.revealed) return;
-      const canvas = scratchState.canvas;
-      if (!canvas) return;
-      const ctx = scratchState.ctx;
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      let transparentes = 0;
-      let amostras = 0;
-      // Amostra a cada 16 pixels (performance em celular fraco)
-      for (let i = 3; i < data.length; i += 4 * 16) {
-        amostras++;
-        if (data[i] < 128) transparentes++;
-      }
-      const percent = amostras > 0 ? transparentes / amostras : 0;
-      if (percent > 0.55) {
-        scratchState.revealed = true;
-        revelarRaspadinha();
-      }
-    }
-
-    async function revelarRaspadinha() {
-      try {
-        const data = await api.post('/api/client/raspadinha/raspar', {});
-        const rasp = data.raspadinha;
-        // Atualiza o user local
-        if (api.user) {
-          api.user.raspadinhaDisponivel = false;
-          localStorage.setItem('pnf_user', JSON.stringify(api.user));
-        }
-        // Fade out do canvas e da dica
-        const canvas = scratchState.canvas;
-        const hint = $('#scratch-hint');
-        if (canvas) { canvas.style.transition = 'opacity 0.4s ease'; canvas.style.opacity = '0'; }
-        if (hint) { hint.style.transition = 'opacity 0.3s ease'; hint.style.opacity = '0'; }
-        setTimeout(() => mostrarResultadoRaspadinha(rasp), 500);
-      } catch (e) {
-        toast.show(e.message || 'Erro ao gerar sua raspadinha.', 'error');
-        fecharOverlayRaspadinha(false);
-      }
-    }
-
-    function mostrarResultadoRaspadinha(rasp) {
-      const overlay = $('#scratch-overlay');
-      if (!overlay) return;
-      const container = overlay.querySelector('.scratch-container');
-      if (!container) return;
-      container.innerHTML = `
-        <div class="scratch-reveal">
-          <div class="big">🎉</div>
-          <h2>Parabéns!</h2>
-          <p style="font-size:1.05rem;color:rgba(255,255,255,0.95);margin-bottom:0.4rem">Você ganhou</p>
-          <div class="discount">${rasp.discountPercent}% OFF</div>
-          <p style="font-size:1rem;color:rgba(255,255,255,0.9);margin-bottom:1rem">na sua próxima compra</p>
-          <div class="code-box">${esc(rasp.code)}</div>
-          <p class="instructions">Mostre este código no balcão da Pamonha Net.<br>Ele também fica salvo na aba <strong>Avisos</strong>.</p>
-          <button class="btn btn-primary" onclick="fecharOverlayRaspadinha(true)">Começar a usar o app</button>
-        </div>
-      `;
-      mostrarConfeteRaspadinha();
-    }
-
-    function mostrarConfeteRaspadinha() {
-      const el = document.createElement('div');
-      el.className = 'scratch-confetti';
-      const colors = ['#FFD54F', '#F9A825', '#FFFFFF', '#E8F5E9'];
-      for (let i = 0; i < 40; i++) {
-        const p = document.createElement('div');
-        p.style.position = 'absolute';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.top = '-10px';
-        p.style.width = p.style.height = (6 + Math.random() * 8) + 'px';
-        p.style.background = colors[Math.floor(Math.random() * colors.length)];
-        p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-        p.style.opacity = '1';
-        p.style.transform = `rotate(${Math.random() * 360}deg)`;
-        p.style.transition = `transform ${2 + Math.random() * 1.5}s ease-in, opacity ${2 + Math.random() * 1.5}s ease-in`;
-        p.style.animation = `confettiFall ${2.2 + Math.random() * 1.2}s ease-out forwards`;
-        p.style.animationDelay = (Math.random() * 0.6) + 's';
-        el.appendChild(p);
-      }
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 4500);
-    }
-
-    function fecharOverlayRaspadinha(reload) {
-      const overlay = $('#scratch-overlay');
-      if (overlay) overlay.remove();
-      scratchState.active = false;
-      scratchState.canvas = null;
-      scratchState.ctx = null;
-      if (reload) {
-        router.render();
-        refreshUnreadBadge();
-        setTimeout(() => loadNotifications(), 500);
       }
     }
 
@@ -2797,7 +2453,6 @@ function renderTxPill() {
     const ADMIN_MORE_ITEMS = [
       { tab: 'produtos', icon: 'box', label: 'Produtos' },
       { tab: 'premios', icon: 'trophy', label: 'Prêmios' },
-      { tab: 'raspadinhas', icon: 'ticket', label: 'Raspadinhas' },
       { tab: 'locais', icon: 'map', label: 'Locais' },
       { tab: 'avaliacoes', icon: 'star', label: 'Avaliações recebidas' },
       { tab: 'notificacoes', icon: 'bell', label: 'Notificações enviadas' },
@@ -2837,7 +2492,6 @@ function renderTxPill() {
       if (adminActiveTab === 'vendas') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminVendas($('#admin-sub')); }
       if (adminActiveTab === 'produtos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminProdutos($('#admin-sub')); }
       if (adminActiveTab === 'premios') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminPremios($('#admin-sub')); }
-      if (adminActiveTab === 'raspadinhas') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminRaspadinhas($('#admin-sub')); }
       if (adminActiveTab === 'locais') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminLocais($('#admin-sub')); }
       if (adminActiveTab === 'avaliacoes') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminAvaliacoes($('#admin-sub')); }
       if (adminActiveTab === 'notificacoes') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminNotificacoes($('#admin-sub')); }
@@ -4086,97 +3740,6 @@ function renderTxPill() {
         toast.show('Prêmio atualizado.');
         closeModal();
         loadPremios();
-      } catch (e) { toast.show(e.message, 'error'); }
-    };
-
-    // ==========================================================================
-    // RASPADINHAS (admin) — v10.4
-    // ==========================================================================
-    async function renderAdminRaspadinhas(container) {
-      container.innerHTML = `
-        <div class="surface section-gap">
-          <h3 class="surface-title">${icon('ticket','icon icon-sm')} Resgatar raspadinha</h3>
-          <p class="text-xs muted mb-1">Digite o código que o cliente está mostrando no celular. O código tem 10 caracteres (PAM-XXXXXX).</p>
-          <div class="flex gap-1 mb-1">
-            <input class="input" id="rasp-code" placeholder="PAM-XXXXXX" maxlength="20" style="text-transform:uppercase;font-family:monospace;letter-spacing:0.05em" onkeydown="if(event.key==='Enter'){event.preventDefault();resgatarRaspadinha();}" />
-            <button class="btn btn-primary" style="width:auto" onclick="resgatarRaspadinha()">${icon('check','icon icon-sm')} Resgatar</button>
-          </div>
-        </div>
-        <div class="surface section-gap">
-          <h3 class="surface-title">${icon('chart','icon icon-sm')} Estatísticas</h3>
-          <div class="stat-grid" id="rasp-stats"><div class="loader"></div></div>
-        </div>
-        <div class="surface section-gap">
-          <h3 class="surface-title">${icon('history','icon icon-sm')} Raspadinhas</h3>
-          <div class="flex gap-1 mb-1">
-            <button class="btn btn-outline" style="flex:1" onclick="filtrarRaspadinhas('active')">Ativas</button>
-            <button class="btn btn-outline" style="flex:1" onclick="filtrarRaspadinhas('used')">Usadas</button>
-            <button class="btn btn-outline" style="flex:1" onclick="filtrarRaspadinhas('all')">Todas</button>
-          </div>
-          <div id="rasp-list"><div class="loader"></div></div>
-        </div>
-      `;
-      loadRaspadinhasStats();
-      loadRaspadinhas('all');
-    }
-
-    async function loadRaspadinhasStats() {
-      const box = $('#rasp-stats');
-      if (!box) return;
-      try {
-        const s = await api.get('/api/admin/raspadinhas/stats');
-        box.innerHTML = `
-          <div class="stat-box"><div class="num">${s.total}</div><div class="lbl">Total</div></div>
-          <div class="stat-box"><div class="num" style="color:var(--husk-700)">${s.ativas}</div><div class="lbl">Ativas</div></div>
-          <div class="stat-box"><div class="num" style="color:var(--gold-700)">${s.usadas}</div><div class="lbl">Usadas</div></div>
-        `;
-      } catch (e) { box.innerHTML = `<p class="text-xs muted">Não foi possível carregar.</p>`; }
-    }
-
-    window.filtrarRaspadinhas = (status) => { loadRaspadinhas(status); };
-
-    async function loadRaspadinhas(status) {
-      const box = $('#rasp-list');
-      if (!box) return;
-      box.innerHTML = `<div class="loader"></div>`;
-      try {
-        const data = await api.get('/api/admin/raspadinhas?status=' + status);
-        const list = data.raspadinhas || [];
-        if (!list.length) { box.innerHTML = `<div class="empty-state"><p>Nenhuma raspadinha neste filtro.</p></div>`; return; }
-        box.innerHTML = list.map(r => {
-          const statusTxt = r.status === 'active' ? 'Ativa' : r.status === 'used' ? 'Usada' : 'Cancelada';
-          const statusColor = r.status === 'active' ? 'var(--husk-700)' : r.status === 'used' ? 'var(--ink-soft)' : 'var(--error)';
-          const cli = r.userId ? r.userId.fullName : 'Cliente';
-          const cliPhone = r.userId && r.userId.phone ? formatPhone(r.userId.phone) : '';
-          return `
-            <div class="venda-row">
-              <div class="top">
-                <div>
-                  <div class="client">${esc(cli)}</div>
-                  <div class="meta">${esc(cliPhone)} · ${formatDate(r.createdAt)}</div>
-                </div>
-                <div class="value" style="color:${statusColor}">${r.discountPercent}%</div>
-              </div>
-              <div style="font-family:monospace;font-size:1.05rem;font-weight:700;color:var(--husk-900);letter-spacing:0.06em;margin:0.4rem 0">${esc(r.code)}</div>
-              <span class="venda-badge ${r.status === 'active' ? 'ok' : 'warn'}">${statusTxt}${r.usedAt ? ' · ' + formatDateShort(r.usedAt) : ''}</span>
-            </div>
-          `;
-        }).join('');
-      } catch (e) { box.innerHTML = `<p class="text-xs muted">${esc(e.message)}</p>`; }
-    }
-
-    window.resgatarRaspadinha = async () => {
-      const input = $('#rasp-code');
-      if (!input) return;
-      const code = input.value.trim().toUpperCase();
-      if (!code) return toast.show('Digite o código.', 'error');
-      if (!confirm('Confirmar o resgate de ' + code + '? O desconto será aplicado e o aviso vai sumir do app do cliente.')) return;
-      try {
-        const data = await api.post('/api/admin/raspadinhas/resgatar', { code });
-        toast.show('Resgatado: ' + data.raspadinha.discountPercent + '% de desconto.');
-        input.value = '';
-        loadRaspadinhasStats();
-        loadRaspadinhas('all');
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
