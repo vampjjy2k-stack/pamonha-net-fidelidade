@@ -31,18 +31,15 @@ if (!process.env.JWT_SECRET) {
   console.error('❌ JWT_SECRET não definida.');
   process.exit(1);
 }
-if (!process.env.CLIENT_URL || process.env.CLIENT_URL === '*') {
-  console.error('❌ CLIENT_URL não definida (ou está "*").');
-  process.exit(1);
-}
-
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+const clientUrl = process.env.CLIENT_URL && process.env.CLIENT_URL !== '*' ? process.env.CLIENT_URL : null;
+// O frontend é servido pelo próprio servidor; sem CLIENT_URL, não habilitamos CORS.
+app.use(clientUrl ? cors({ origin: clientUrl, credentials: true }) : cors({ origin: false }));
 app.use(express.json({ limit: '8mb' }));
 ensureConfigured();
 
