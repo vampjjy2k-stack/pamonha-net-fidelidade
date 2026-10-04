@@ -2,8 +2,8 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#4F7A2E" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1B5E20" />
   <meta name="description" content="Cartão fidelidade digital da Pamonha Net. Junte selos a cada compra e troque por prêmios." />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -15,38 +15,38 @@
   <style>
     :root {
       /* -- Paleta: milho vivo, palha e terra (ajustada para amarelo e verde mais claros) -- */
-      --paper: #FFE14D;
-      --paper-deep: #FFD400;
-      --cream-card: #FFFDF5;
-      --husk-900: #4F7A2E;
-      --husk-700: #6B9A3E;
-      --husk-500: #8FB863;
-      --husk-300: #E2F0C7;
-      --gold-700: #A9720B;
-      --gold-600: #E0A215;
-      --gold-300: #FFE38A;
-      --gold-100: #FFF3CF;
+      --paper: #FFFDF5;
+      --paper-deep: #FFF8E1;
+      --cream-card: #FFFFFF;
+      --husk-900: #1B5E20;
+      --husk-700: #2E7D32;
+      --husk-500: #4C9A3A;
+      --husk-300: #E8F5E9;
+      --gold-700: #E65100;
+      --gold-600: #F9A825;
+      --gold-300: #FFD54F;
+      --gold-100: #FFF8E1;
       --clay-600: #A2653A;
       --clay-100: #F1E0CE;
-      --ink: #2A2118;
-      --ink-soft: #6D6151;
-      --ink-faint: #8C7F68;
-      --line: rgba(79, 122, 46, 0.2);
-      --line-soft: rgba(79, 122, 46, 0.1);
-      --success: #4C7A34;
-      --error: #B23A22;
-      --radius-lg: 22px;
-      --radius-md: 16px;
-      --radius-sm: 12px;
+      --ink: #263238;
+      --ink-soft: #607D8B;
+      --ink-faint: #90A4AE;
+      --line: rgba(27, 94, 32, 0.16);
+      --line-soft: rgba(27, 94, 32, 0.08);
+      --success: #2E7D32;
+      --error: #C62828;
+      --radius-lg: 14px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
       --ease: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       --font-display: 'Fraunces', Georgia, serif;
       --font-body: 'Work Sans', system-ui, -apple-system, sans-serif;
       /* -- Aliases do design system v8 (mesmos valores, nomes do contrato) -- */
-      --green: var(--husk-900); --green-dark: #3D5F22; --green-soft: var(--husk-300);
+      --green: var(--husk-900); --green-dark: #1B5E20; --green-soft: var(--husk-300);
       --amber: var(--gold-600); --amber-dark: var(--gold-700); --amber-soft: var(--gold-100);
       --bg: var(--paper); --surface: var(--cream-card); --text: var(--ink); --text-soft: var(--ink-soft);
       --danger: var(--error); --radius: var(--radius-md);
-      --shadow: 0 2px 10px rgba(79,122,46,.14);
+      --shadow: 0 2px 10px rgba(27,94,32,.10);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -371,27 +371,29 @@
     }
     .sent-notif-row strong { display: block; font-size: 0.86rem; color: var(--ink); }
 
-    /* -- Avaliar: pills de emoji (nunca estrelas, conforme o padrão visual do app) -- */
+    /* -- Avaliar: 5 estrelas interativas -- */
     .fb-question-card { text-align: center; }
     .fb-question-title { font-weight: 600; font-size: 0.96rem; color: var(--husk-900); text-align: center; margin-bottom: 0.7rem; }
-    .rate-pill-row { display: flex; gap: 0.45rem; justify-content: center; }
-    .rate-pill {
-      background: var(--cream-card); border: 2px solid var(--line); border-radius: 999px;
-      width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: transform var(--ease), border-color var(--ease), background var(--ease);
-      font-size: 1.5rem; line-height: 1;
+    .star-row { display: flex; gap: 0.3rem; justify-content: center; }
+    .star-btn {
+      background: none; border: none; padding: 0.2rem; cursor: pointer; color: var(--line);
+      transition: transform var(--ease), color var(--ease);
     }
-    .rate-pill:active { transform: scale(0.88); }
-    .rate-pill.selected { border-color: var(--tone); background: color-mix(in srgb, var(--tone) 16%, var(--cream-card)); transform: scale(1.08); }
-    .star-caption { font-size: 0.8rem; font-weight: 700; margin-top: 0.5rem; }
+    .star-btn .icon { width: 34px; height: 34px; fill: currentColor; stroke: currentColor; }
+    .star-btn:active { transform: scale(0.88); }
+    .star-btn.filled { color: var(--amber); }
+    .star-caption { font-size: 0.8rem; font-weight: 700; margin-top: 0.4rem; }
     .thanks-check {
       width: 64px; height: 64px; border-radius: 50%; background: var(--husk-300); color: var(--husk-900);
       display: flex; align-items: center; justify-content: center; margin: 0 auto;
       animation: stampIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
     }
     .thanks-check .icon { width: 32px; height: 32px; stroke-width: 2.2; }
-    .rate-mini { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; font-weight: 700; color: var(--tone); }
-    .rate-mini-emoji { font-size: 1rem; line-height: 1; }
+    .rate-mini { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 700; }
+    .mini-stars { display: inline-flex; gap: 1px; }
+    .mini-star { color: var(--line); }
+    .mini-star .icon { width: 13px; height: 13px; fill: currentColor; stroke: currentColor; }
+    .mini-star.on { color: var(--amber); }
 
     /* -- Admin -- */
     .client-row { background: var(--cream-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 0.9rem; margin-bottom: 0.6rem; }
@@ -602,10 +604,6 @@
     .breadcrumb-back { background: var(--green-soft); border: none; border-radius: 8px; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--green-dark); }
     .breadcrumb-back .icon { width: 14px; height: 14px; transform: scaleX(-1); }
     .pizza-wrap { display: flex; align-items: center; gap: 1.1rem; margin-bottom: 0.4rem; }
-    .pizza-wrap.is-bar { flex-direction: column; align-items: stretch; }
-    .pizza-wrap.is-bar .chart-legend { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 0.6rem 0.9rem; margin-top: 0.6rem; }
-    .pizza-wrap.is-bar .legend-item strong { margin-left: 0.25rem; }
-    .chart-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.85rem; }
     .pizza-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
     .pizza-center strong { font-family: var(--font-display); font-size: 1.15rem; color: var(--text); }
     .pizza-center span { font-size: 0.6rem; color: var(--text-soft); }
@@ -643,6 +641,49 @@
       *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     }
     :focus-visible { outline: 2px solid var(--gold-700); outline-offset: 2px; }
+
+    /* ==================== CARRO DA PAMONHA ==================== */
+    .carro-banner-img { display:block; width:100%; border:none; padding:0; background:none; border-radius:16px; overflow:hidden; cursor:pointer; box-shadow:0 3px 10px rgba(27,94,32,0.25); }
+    .carro-banner-img img { display:block; width:100%; height:auto; }
+    .carro-live { display:flex; align-items:center; gap:0.8rem; width:100%; padding:0.85rem 0.9rem; border-radius:18px; border:2px solid #FFD54F; cursor:pointer; text-align:left; color:#fff;
+      background:linear-gradient(135deg,#1B5E20,#2E9B3C); box-shadow:0 6px 18px rgba(27,94,32,0.4); position:relative; overflow:hidden; font-family:inherit; }
+    .carro-live::after { content:''; position:absolute; inset:0; background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,0.22) 50%,transparent 70%); transform:translateX(-100%); animation:carroShine 3.2s ease-in-out infinite; pointer-events:none; }
+    @keyframes carroShine { 60%,100% { transform:translateX(100%); } }
+    .carro-live-dot { width:14px; height:14px; border-radius:50%; background:#FFD54F; flex-shrink:0; box-shadow:0 0 0 0 rgba(255,213,79,0.8); animation:carroPulse 1.6s infinite; }
+    @keyframes carroPulse { 70% { box-shadow:0 0 0 12px rgba(255,213,79,0); } 100% { box-shadow:0 0 0 0 rgba(255,213,79,0); } }
+    .carro-live-body { flex:1; min-width:0; display:flex; flex-direction:column; gap:0.1rem; }
+    .carro-live-body strong { font-family:var(--font-display); font-size:1.02rem; line-height:1.15; }
+    .carro-live-body span { font-size:0.8rem; opacity:0.92; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .carro-live-cta { background:#FFD54F; color:#1B5E20; font-weight:800; font-size:0.82rem; padding:0.55rem 0.85rem; border-radius:999px; flex-shrink:0; }
+    .carro-aviso { display:flex; gap:0.7rem; align-items:flex-start; width:100%; text-align:left; padding:0.8rem 0.9rem; border-radius:16px; border:1.5px dashed var(--husk-500); background:#F4FBEA; cursor:pointer; font-family:inherit; color:var(--husk-900); }
+    .carro-aviso .icon { width:22px; height:22px; flex-shrink:0; margin-top:0.1rem; }
+    .carro-aviso strong { display:block; font-size:0.92rem; }
+    .carro-aviso span { font-size:0.8rem; color:var(--husk-700); }
+    .carro-hero { border-radius:18px; overflow:hidden; margin-bottom:0.9rem; box-shadow:0 4px 14px rgba(27,94,32,0.25); }
+    .carro-hero img { display:block; width:100%; height:auto; }
+    .carro-title { font-family:var(--font-display); font-weight:700; font-size:1.25rem; color:var(--husk-900); display:flex; align-items:center; gap:0.5rem; }
+    .carro-badge { display:inline-flex; align-items:center; gap:0.35rem; font-size:0.72rem; font-weight:800; letter-spacing:0.04em; text-transform:uppercase; background:#C62828; color:#fff; padding:0.2rem 0.55rem; border-radius:999px; }
+    .carro-badge::before { content:''; width:7px; height:7px; border-radius:50%; background:#fff; animation:carroPulse 1.4s infinite; }
+    .carro-place { font-family:var(--font-display); font-size:1.15rem; font-weight:600; color:var(--ink); margin:0.5rem 0 0.2rem; line-height:1.25; }
+    .carro-map { height:55vh; min-height:320px; max-height:520px; border-radius:18px; overflow:hidden; border:2px solid var(--husk-500); margin:0.7rem 0; position:relative; z-index:0; }
+    .carro-pin { font-size:26px; line-height:40px; text-align:center; width:40px; height:40px; border-radius:50%; background:#fff; border:3px solid #2E7D32; box-shadow:0 2px 8px rgba(0,0,0,0.35); }
+    .carro-pin-me { width:16px; height:16px; border-radius:50%; background:#1E88E5; border:3px solid #fff; box-shadow:0 0 0 2px rgba(30,136,229,0.4); }
+    .carro-meta { display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.7rem; }
+    .carro-chip { font-size:0.76rem; background:var(--husk-300); color:var(--husk-900); padding:0.3rem 0.65rem; border-radius:999px; font-weight:600; }
+    .carro-chip.warn { background:#FFF3CD; color:#8A5A00; }
+    .carro-actions { display:flex; gap:0.5rem; flex-wrap:wrap; }
+    .carro-actions .btn { flex:1; min-width:140px; }
+    .carro-actions a.btn { text-decoration:none; }
+    .carro-recenter { position:absolute; right:10px; bottom:10px; z-index:500; background:#fff; border:2px solid var(--husk-500); color:var(--husk-900); font-weight:700; font-size:0.78rem; padding:0.45rem 0.7rem; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,0.25); cursor:pointer; }
+    .carro-big-btn { width:100%; border:none; border-radius:20px; padding:1.1rem; font-family:var(--font-display); font-size:1.2rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.6rem; }
+    .carro-big-btn.on { background:linear-gradient(135deg,#2E7D32,#4C9A3A); color:#fff; box-shadow:0 6px 16px rgba(46,125,50,0.4); }
+    .carro-big-btn.off { background:#fff; color:#C62828; border:2px solid #C62828; }
+    .carro-big-btn:disabled { opacity:0.6; }
+    .carro-tx-pill { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(76px + env(safe-area-inset-bottom,0px)); z-index:900; background:#1B5E20; color:#fff; border:2px solid #FFD54F; border-radius:999px; padding:0.45rem 0.9rem; font-size:0.78rem; font-weight:700; display:flex; align-items:center; gap:0.5rem; cursor:pointer; box-shadow:0 4px 14px rgba(0,0,0,0.3); font-family:inherit; }
+    .carro-tx-pill .carro-live-dot { width:10px; height:10px; }
+    .carro-kv { display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.8rem; font-size:0.84rem; margin:0.7rem 0; }
+    .carro-kv dt { color:var(--ink-soft); } .carro-kv dd { margin:0; font-weight:600; color:var(--ink); word-break:break-word; }
+    .textarea { width:100%; min-height:70px; resize:vertical; font-family:inherit; }
   </style>
 </head>
 <body>
@@ -651,6 +692,11 @@
       <symbol id="i-kernel" viewBox="0 0 24 24">
         <path d="M12 4.2c1.5 0 2.7 1.6 2.7 4.3v7c0 2.1-1.2 4.3-2.7 4.3s-2.7-2.2-2.7-4.3v-7c0-2.7 1.2-4.3 2.7-4.3Z"/>
         <path d="M12 8.4v0M12 12v0M12 15.6v0" stroke-width="2.6"/>
+      </symbol>
+      <symbol id="i-van" viewBox="0 0 24 24">
+        <path d="M2.5 16V9.5a1.5 1.5 0 0 1 1.5-1.5h9l4.3 3.6h2.2a1.5 1.5 0 0 1 1.5 1.5V16"/>
+        <path d="M2.5 16h2M8 16h6.5M19.5 16h2"/>
+        <circle cx="6.5" cy="16.8" r="1.8"/><circle cx="17" cy="16.8" r="1.8"/>
       </symbol>
       <symbol id="i-pin" viewBox="0 0 24 24">
         <path d="M12 21.5s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/>
@@ -832,7 +878,7 @@
     function officialCardHTML(stamps, interactive) {
       const slots = CARD_STAMP_POSITIONS.map(([x, y], i) => `
         <div class="official-stamp ${i < stamps ? 'filled' : ''}" style="left:${x}%;top:${y}%"
-             ${interactive ? `onclick="setHubTarget(${i + 1}, ${i === 0})"` : ''}>
+             ${interactive ? `onclick="setHubTarget(${i + 1})"` : ''}>
           ${i < stamps ? '<img src="/stamp.png" alt="" />' : ''}
         </div>
       `).join('');
@@ -917,6 +963,7 @@
       render() {
         if (typeof stopScanner === 'function') stopScanner();
         if (typeof stopCardAutoRefresh === 'function') stopCardAutoRefresh();
+        if (typeof destroyCarroMap === 'function') destroyCarroMap();
         const hash = location.hash.replace('#','') || 'card';
         const fn = this.routes[hash] || this.routes['card'];
         $('#main-container').innerHTML = '';
@@ -1077,6 +1124,8 @@
           </div>
           <button class="btn btn-qr-green mt-2" id="btn-qr" onclick="generateQr()">${icon('qr', 'icon icon-sm')} Gerar QR Code</button>
 
+          <div class="mt-2" id="carro-slot"></div>
+
           <button class="rate-cta mt-2" style="background:linear-gradient(135deg, #CFE8A6, #F2F9E6); border-color:var(--husk-500)" onclick="router.go('feedback')">
             <span class="rate-cta-icon" style="color:var(--husk-700)">${icon('star', 'icon')}</span>
             <span class="rate-cta-text">
@@ -1102,6 +1151,7 @@
         </div>
       `;
       lastKnownStamps = null;
+      renderCarroSlot();
       loadCard();
       startCardAutoRefresh();
     });
@@ -1213,8 +1263,8 @@
         } else {
           list.innerHTML = data.notifications.map(n => `
             <div class="row ${n.read ? 'is-read' : ''}">
-              <h4>${n.title} ${!n.read ? '<span class="new-tag">novo</span>' : ''}</h4>
-              <p>${n.message}</p>
+              <h4>${esc(n.title)} ${!n.read ? '<span class="new-tag">novo</span>' : ''}</h4>
+              <p>${esc(n.message)}</p>
               <div class="row-foot">
                 <span class="text-xs">${formatDate(n.createdAt)}</span>
               </div>
@@ -1234,24 +1284,26 @@
 
     // Escala de 1 a 5 estrelas (substitui as antigas carinhas/emoji).
     const RATE_LEVELS = [
-      { val: 1, lbl: 'Ruim', tone: 'var(--error)', emoji: '😞' },
-      { val: 2, lbl: 'Regular', tone: 'var(--clay-600)', emoji: '😕' },
-      { val: 3, lbl: 'Bom', tone: 'var(--gold-600)', emoji: '🙂' },
-      { val: 4, lbl: 'Muito bom', tone: 'var(--husk-500)', emoji: '😃' },
-      { val: 5, lbl: 'Excelente', tone: 'var(--husk-900)', emoji: '🤩' },
+      { val: 1, lbl: 'Ruim', tone: 'var(--error)' },
+      { val: 2, lbl: 'Regular', tone: '#E65100' },
+      { val: 3, lbl: 'Bom', tone: 'var(--gold-600)' },
+      { val: 4, lbl: 'Muito bom', tone: 'var(--husk-500)' },
+      { val: 5, lbl: 'Excelente', tone: 'var(--husk-900)' },
     ];
     function starsHTML(key, selected) {
-      const pills = RATE_LEVELS.map(r => `
-        <button type="button" class="rate-pill ${selected === r.val ? 'selected' : ''}" style="--tone:${r.tone}"
-                data-val="${r.val}" onclick="setRating('${key}', ${r.val})" aria-label="${r.lbl}">${r.emoji}</button>
-      `).join('');
+      let stars = '';
+      for (let i = 1; i <= 5; i++) {
+        stars += `<button type="button" class="star-btn ${selected && i <= selected ? 'filled' : ''}" data-val="${i}" onclick="setRating('${key}', ${i})" aria-label="${i} estrela${i>1?'s':''}">${icon('star','icon')}</button>`;
+      }
       const lbl = selected ? RATE_LEVELS.find(r => r.val === selected)?.lbl : 'Toque para avaliar';
       const tone = selected ? RATE_LEVELS.find(r => r.val === selected)?.tone : 'var(--text-soft)';
-      return `<div class="rate-pill-row">${pills}</div><div class="star-caption" style="color:${tone}">${lbl}</div>`;
+      return `<div class="star-row">${stars}</div><div class="star-caption" style="color:${tone}">${lbl}</div>`;
     }
     function rateMiniHTML(val) {
       const r = RATE_LEVELS.find(x => x.val === Math.round(val)) || RATE_LEVELS[2];
-      return `<span class="rate-mini" style="--tone:${r.tone}"><span class="rate-mini-emoji">${r.emoji}</span>${Number(val).toFixed(1)}</span>`;
+      let stars = '';
+      for (let i = 1; i <= 5; i++) stars += `<span class="mini-star ${i <= Math.round(val) ? 'on' : ''}">${icon('star','icon icon-sm')}</span>`;
+      return `<span class="rate-mini" style="--tone:${r.tone}"><span class="mini-stars">${stars}</span></span>`;
     }
 
     router.register('feedback', (container) => {
@@ -1259,7 +1311,7 @@
       container.innerHTML = `
         <div class="page" id="feedback-page">
           <h2 class="page-title">${icon('star')} Avaliar</h2>
-          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Toque no emoji que representa sua experiência em cada pergunta — pode retocar quantas vezes quiser.</p>
+          <p class="text-sm muted mb-2" style="margin-top:-0.5rem">Toque nas estrelas que representam sua experiência em cada pergunta — pode retocar quantas vezes quiser.</p>
           <div id="feedback-form">
             ${FEEDBACK_QUESTIONS.map((f) => `
               <div class="surface section-gap fb-question-card">
@@ -1314,8 +1366,7 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
-    const FEIRA_NOME = 'Feira da Figueira';
-    const FEIRA_ENDERECO = 'Estr. Velha do Pilar, 408 - Chácaras Rio-Petrópolis, Duque de Caxias - RJ, 25230-610';
+    const FEIRA_ENDERECO = 'Feira de Figueira';
 
     router.register('ranking', (container) => {
       if (!api.token) return router.go('login');
@@ -1350,7 +1401,7 @@
         list.innerHTML = `<div class="rank-list">` + data.leaderboard.map(r => `
           <div class="rank-row ${r.isSelf ? 'is-self' : ''}">
             <span class="rank-pos">${medal(r.position) || ('#' + r.position)}</span>
-            <span class="rank-name">${r.displayName}${r.isSelf ? ' <span class="text-xs" style="color:var(--husk-700)">(você)</span>' : ''}</span>
+            <span class="rank-name">${esc(r.displayName)}${r.isSelf ? ' <span class="text-xs" style="color:var(--husk-700)">(você)</span>' : ''}</span>
             <span class="rank-count">${r.completedCards}</span>
           </div>
         `).join('') + `</div>`;
@@ -1441,7 +1492,7 @@
         if (!locais.length) { box.innerHTML = `<p class="text-sm muted">Nenhum local cadastrado ainda.</p>`; return; }
         box.innerHTML = locais.map(l => `
           <a class="find-link" href="${l.mapsUrl || ('https://www.google.com/maps/search/?api=1&query=' + l.lat + ',' + l.lng)}" target="_blank" rel="noopener">
-            ${icon('pin', 'icon icon-sm')} ${l.name}
+            ${icon('pin', 'icon icon-sm')} ${esc(l.name)}
           </a>
         `).join('');
       } catch (e) { box.innerHTML = `<p class="text-sm muted">Não foi possível carregar os locais.</p>`; }
@@ -1551,6 +1602,7 @@
     function renderAdminTabBody() {
       const body = $('#admin-tab-body');
       if (!body) return;
+      if (adminActiveTab === 'carro') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminCarro($('#admin-sub')); }
       if (adminActiveTab === 'operacao') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminOperacao($('#admin-sub')); }
       if (adminActiveTab === 'graficos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminGraficos($('#admin-sub')); }
       if (adminActiveTab === 'vendas') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminVendas($('#admin-sub')); }
@@ -1564,6 +1616,12 @@
 
     async function renderAdminHub(container) {
       container.innerHTML = `
+        <button class="hub-card" onclick="setAdminTab('carro')" style="border:2px solid var(--husk-500)">
+          <span class="hub-card-icon" style="background:var(--husk-700);color:#fff">${icon('van','icon')}</span>
+          <span class="hub-card-body"><strong>Carro da Pamonha</strong><span>Entrar no carro, compartilhar localização e avisos</span></span>
+          <span id="hub-carro-badge"></span>
+          ${icon('send','icon icon-sm hub-card-arrow')}
+        </button>
         <button class="hub-card" onclick="setAdminTab('operacao')">
           <span class="hub-card-icon" style="background:var(--husk-300);color:var(--husk-900)">${icon('cart','icon')}</span>
           <span class="hub-card-body"><strong>Operação da loja</strong><span>Escanear QR, registrar venda e ajustar selos</span></span>
@@ -1581,6 +1639,7 @@
         </button>
         <button class="btn btn-outline mt-1" onclick="openAdminMoreSheet()">${icon('more','icon icon-sm')} ⋮ Mais opções</button>
       `;
+      renderAdminHubCarroBadge();
     }
 
     function renderAdminOperacao(container) {
@@ -1588,7 +1647,7 @@
           <div class="surface section-gap">
             <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
             <div id="scanner-idle">
-              <p class="text-sm muted mb-1">Aponte a câmera para o QR Code do cliente. O cartão dele abre na hora para você confirmar os selos ou registrar a venda.</p>
+              <p class="text-sm muted mb-1">Aponte a câmera para o QR Code do cliente. O selo é adicionado automaticamente, sem precisar tocar em nada.</p>
               <button class="btn btn-success" onclick="startScanner()">${icon('qr', 'icon icon-sm')} Ativar câmera</button>
             </div>
             <div id="scanner-active" class="hidden">
@@ -1675,20 +1734,20 @@
         <div class="client-row">
           <div class="top">
             <div>
-              <div class="name">${c.fullName}</div>
+              <div class="name">${esc(c.fullName)}</div>
               <div class="phone">${formatPhone(c.phone)}</div>
               ${c.isInactive ? `<span class="inactive-badge">${icon('bell','icon icon-sm')} ${c.weeksInactive} semana${c.weeksInactive === 1 ? '' : 's'} sem carimbar</span>` : ''}
             </div>
             <div class="count">${c.stamps}/10</div>
           </div>
           <div class="actions">
-            <button class="btn btn-qr-green" onclick='openStampHub(${JSON.stringify(c)})'>${icon('card-simple', 'icon icon-sm')} Ajuste manual</button>
-            <button class="btn btn-primary" onclick='openSalesHub(${JSON.stringify(c)})'>${icon('cart', 'icon icon-sm')} Registrar venda</button>
+            <button class="btn btn-qr-green" onclick="openStampHub(${jattr(c)})">${icon('card-simple', 'icon icon-sm')} Ajuste manual</button>
+            <button class="btn btn-primary" onclick="openSalesHub(${jattr(c)})">${icon('cart', 'icon icon-sm')} Registrar venda</button>
           </div>
           <div class="actions">
             <button class="btn btn-secondary" onclick="resetCard('${c._id}')">${icon('reset', 'icon icon-sm')} Zerar</button>
             <button class="btn btn-outline" onclick="deleteHistory('${c._id}')">${icon('trash', 'icon icon-sm')} Histórico</button>
-            <button class="btn btn-outline" style="border-color:#25D36660;color:#1a8a4a" onclick='shareCardWhatsapp(${JSON.stringify(c)})'>${icon('whatsapp', 'icon icon-sm')} Compartilhar</button>
+            <button class="btn btn-outline" style="border-color:#25D36660;color:#1a8a4a" onclick="shareCardWhatsapp(${jattr(c)})">${icon('whatsapp', 'icon icon-sm')} Compartilhar</button>
           </div>
         </div>
       `;
@@ -1774,8 +1833,8 @@
       const matches = adminClientCache.filter(c => matchesClientQuery(c, q)).slice(0, 6);
       list.innerHTML = matches.length
         ? matches.map(c => `
-            <button class="notif-client-item" onclick='selectNotifClient(${JSON.stringify(c._id)}, ${JSON.stringify(c.fullName)})'>
-              <span>${c.fullName}</span><span class="text-xs muted">${formatPhone(c.phone)}</span>
+            <button class="notif-client-item" onclick="selectNotifClient(${jattr(c._id)}, ${jattr(c.fullName)})">
+              <span>${esc(c.fullName)}</span><span class="text-xs muted">${formatPhone(c.phone)}</span>
             </button>
           `).join('')
         : `<p class="text-xs muted p-1">Nenhum cliente encontrado.</p>`;
@@ -1786,7 +1845,7 @@
       $('#notif-client-list').innerHTML = '';
       $('#notif-client-search').value = '';
       $('#notif-selected-chip').innerHTML = `
-        <span class="notif-chip">${name} <button onclick="clearNotifClient()" aria-label="Remover">×</button></span>
+        <span class="notif-chip">${esc(name)} <button onclick="clearNotifClient()" aria-label="Remover">×</button></span>
       `;
     };
 
@@ -1981,7 +2040,7 @@
       overlay.id = 'stamp-hub-overlay';
       overlay.innerHTML = `
         <div class="modal-card" style="max-width:380px">
-          <h3 class="surface-title">${icon('card-simple','icon icon-sm')} Ajuste manual — ${client.fullName.split(' ')[0]}</h3>
+          <h3 class="surface-title">${icon('card-simple','icon icon-sm')} Ajuste manual — ${esc(client.fullName.split(' ')[0])}</h3>
           <p class="text-xs muted mb-1">Toque no selo até onde quer deixar marcado, depois confirme. Use só para correções — isso não gera venda nem entra nos gráficos por local. Para vendas normais, use "Registrar venda".</p>
           <div id="hub-card-slot">${officialCardHTML(hubTarget, true)}</div>
           <p class="text-center font-bold mt-1" id="hub-target-label" style="color:var(--husk-900)">${hubTarget} de 10 selos</p>
@@ -1989,15 +2048,14 @@
             <button class="btn btn-outline" style="flex:1" onclick="closeStampHub()">Cancelar</button>
             <button class="btn btn-qr-green" style="flex:1" onclick="confirmStampHub()">${icon('check','icon icon-sm')} Confirmar ajuste</button>
           </div>
-          <button class="btn btn-primary mt-1" onclick='closeStampHub(); openSalesHub(${JSON.stringify(client)})'>${icon('cart','icon icon-sm')} Registrar venda com produtos</button>
+          <button class="btn btn-primary mt-1" onclick="const c = hubClient; closeStampHub(); openSalesHub(c)">${icon('cart','icon icon-sm')} Registrar venda com produtos</button>
         </div>
       `;
       document.body.appendChild(overlay);
     };
 
-    window.setHubTarget = (n, isFirstSlot = false) => {
-      // Tocando novamente no primeiro selo quando só ele está marcado, zera o cartão.
-      hubTarget = isFirstSlot && hubTarget === 1 ? 0 : n;
+    window.setHubTarget = (n) => {
+      hubTarget = n;
       $('#hub-card-slot').innerHTML = officialCardHTML(hubTarget, true);
       $('#hub-target-label').textContent = `${hubTarget} de 10 selos`;
     };
@@ -2046,9 +2104,9 @@
           return;
         }
         box.innerHTML = data.notifications.slice(0, 15).map(n => `
-          <button class="sent-notif-row" onclick='openNotifViews(${JSON.stringify(n._id)}, ${JSON.stringify(n.title)})'>
+          <button class="sent-notif-row" onclick="openNotifViews(${jattr(n._id)}, ${jattr(n.title)})">
             <span>
-              <strong>${n.title}</strong>
+              <strong>${esc(n.title)}</strong>
               <span class="text-xs muted">${n.broadcast ? 'Para todos' : ('Para ' + (n.userId?.fullName || 'um cliente'))} · ${formatDate(n.createdAt)}</span>
             </span>
             ${icon('send', 'icon icon-sm')}
@@ -2114,7 +2172,7 @@
               <div class="fb-line"><span>Sabor</span>${rateMiniHTML(f.tasteRating)}</div>
               <div class="fb-line"><span>Atendimento</span>${rateMiniHTML(f.serviceRating)}</div>
             </div>
-            ${f.comment ? `<p class="fb-comment">"${f.comment}"</p>` : ''}
+            ${f.comment ? `<p class="fb-comment">"${esc(f.comment)}"</p>` : ''}
             <button class="link-btn mt-1" style="color:var(--error)" onclick="deleteFeedback('${f._id}')">${icon('trash', 'icon icon-sm')} Excluir avaliação</button>
           </div>
         `).join('');
@@ -2167,6 +2225,7 @@
     // carimba, reseta ou manda um aviso — sem esperar os 20s do poll de segurança.
     let liveSource = null;
     function connectLiveEvents() {
+      connectCarro();
       if (!api.token || typeof EventSource === 'undefined') return;
       if (liveSource) liveSource.close();
       liveSource = new EventSource('/api/events?token=' + encodeURIComponent(api.token));
@@ -2183,6 +2242,8 @@
       liveSource.onerror = () => { /* EventSource já tenta reconectar sozinho */ };
     }
     function disconnectLiveEvents() {
+      if (carroTx.active) carroSaiDoCarro(true);
+      disconnectCarro();
       if (liveSource) { liveSource.close(); liveSource = null; }
     }
 
@@ -2287,6 +2348,435 @@
       let binary = '';
       bytes.forEach((b) => { binary += String.fromCharCode(b); });
       return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    // ==========================================================================
+    // CARRO DA PAMONHA — localização móvel ao vivo
+    // Admin: "Entrar no carro" transmite o GPS do celular. Clientes: veem o botão
+    // "Acompanhar" SOMENTE enquanto o admin estiver transmitindo.
+    // ==========================================================================
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    const jattr = (obj) => esc(JSON.stringify(obj)); // objeto seguro dentro de onclick="..." (nomes com apóstrofo, ex: D'Ávila)
+
+    let carroState = null;          // último estado público recebido
+    let carroServerOffset = 0;      // relógio do servidor - relógio do celular
+    let carroSource = null, carroPollTimer = null, carroTickTimer = null;
+
+    function carroApply(s) {
+      if (!s) return;
+      const wasLive = !!(carroState && carroState.live);
+      carroState = s;
+      if (s.serverTime) carroServerOffset = Date.parse(s.serverTime) - Date.now();
+      const hash = location.hash.replace('#', '') || 'card';
+      if (hash === 'card') renderCarroSlot();
+      if (hash === 'carro') { if (wasLive !== !!s.live) renderCarroPage(); else updateCarroPage(); }
+      if (hash === 'admin' && adminActiveTab === 'carro' && typeof renderCarroAdminLive === 'function') renderCarroAdminLive();
+      if (hash === 'admin' && adminActiveTab === 'hub') renderAdminHubCarroBadge();
+    }
+    async function fetchCarro() {
+      try { carroApply(await api.get('/api/carro')); } catch (e) { /* sem rede: mantém o último estado */ }
+    }
+    function connectCarro() {
+      if (!api.token) return;
+      disconnectCarro();
+      fetchCarro();
+      if (typeof EventSource !== 'undefined') {
+        carroSource = new EventSource('/api/carro/stream?token=' + encodeURIComponent(api.token));
+        carroSource.addEventListener('carro', (ev) => { try { carroApply(JSON.parse(ev.data)); } catch (e) {} });
+      }
+      carroPollTimer = setInterval(fetchCarro, 30000); // rede de segurança caso o SSE caia
+    }
+    function disconnectCarro() {
+      if (carroSource) { carroSource.close(); carroSource = null; }
+      clearInterval(carroPollTimer); carroPollTimer = null;
+      carroState = null;
+    }
+    const carroAgeSec = () => carroState && carroState.position ? Math.max(0, Math.round((Date.now() + carroServerOffset - Date.parse(carroState.position.at)) / 1000)) : null;
+    function agoText(sec) {
+      if (sec === null || sec === undefined) return '—';
+      if (sec < 5) return 'agora mesmo';
+      if (sec < 60) return `há ${sec}s`;
+      if (sec < 3600) return `há ${Math.floor(sec / 60)} min`;
+      return `há ${Math.floor(sec / 3600)} h`;
+    }
+    function fmtHoraCurta(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+    function fmtDiaHora(iso) {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const hoje = new Date();
+      const mesmoDia = d.toDateString() === hoje.toDateString();
+      return (mesmoDia ? 'hoje' : d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })) + ' às ' + fmtHoraCurta(iso);
+    }
+    function avisoQuando(av) {
+      if (!av) return '';
+      if (av.status === 'agendado') return `Começa ${fmtDiaHora(av.showAt)}` + (av.hideAt ? ` · termina ${fmtDiaHora(av.hideAt)}` : '');
+      return av.hideAt ? `No ar até ${fmtDiaHora(av.hideAt)}` : 'No ar hoje';
+    }
+
+    // ---- Cliente: faixa na tela do cartão ----
+    function carroSlotHTML() {
+      const s = carroState;
+      if (s && s.live) {
+        return `<button class="carro-live" onclick="router.go('carro')">
+          <span class="carro-live-dot"></span>
+          <span class="carro-live-body"><strong>O Carro da Pamonha está na rua!</strong><span>${esc(s.place?.name || 'Localização ao vivo')}</span></span>
+          <span class="carro-live-cta">Acompanhar</span>
+        </button>`;
+      }
+      if (s && s.aviso) {
+        return `<button class="carro-aviso" onclick="router.go('carro')">
+          ${icon('pin', 'icon')}
+          <span><strong>${esc(s.aviso.message)}</strong><span>${s.aviso.place ? esc(s.aviso.place) + ' · ' : ''}${esc(avisoQuando(s.aviso))}</span></span>
+        </button>`;
+      }
+      return `<button class="carro-banner-img" onclick="router.go('carro')" aria-label="Carro da Pamonha: saiba aonde vai estar"><img src="/carro-banner.jpg" alt="Carro da Pamonha — saiba aonde vai estar" /></button>`;
+    }
+    function renderCarroSlot() {
+      const el = $('#carro-slot');
+      if (el) el.innerHTML = carroSlotHTML();
+    }
+
+    // ---- Cliente: página dedicada ----
+    let carroMap = null, carroMarker = null, carroAccCircle = null, carroMeMarker = null, carroFollow = true;
+
+    router.register('carro', (container) => {
+      if (!api.token) return router.go('login');
+      container.innerHTML = `<div class="page"><button class="btn-back" onclick="router.go('card')">${icon('logout', 'icon icon-sm')} <span>Voltar</span></button><div id="carro-page-body"></div></div>`;
+      renderCarroPage();
+      fetchCarro();
+    });
+
+    function destroyCarroMap() {
+      if (carroMap) { carroMap.remove(); carroMap = null; carroMarker = null; carroAccCircle = null; carroMeMarker = null; }
+      clearInterval(carroTickTimer); carroTickTimer = null;
+    }
+
+    function renderCarroPage() {
+      const body = $('#carro-page-body');
+      if (!body) return;
+      destroyCarroMap();
+      const s = carroState;
+      if (s && s.live && s.position) {
+        carroFollow = true;
+        body.innerHTML = `
+          <div class="carro-title">🚐 Carro da Pamonha <span class="carro-badge">ao vivo</span></div>
+          <div class="carro-place" id="carro-place"></div>
+          <div class="carro-meta" id="carro-meta"></div>
+          <div class="carro-map" id="carro-map"><button class="carro-recenter hidden" id="carro-recenter" onclick="carroRecenter()">Recentralizar</button></div>
+          <div class="carro-actions">
+            <a class="btn btn-success" id="carro-route" target="_blank" rel="noopener">${icon('map', 'icon icon-sm')} Como chegar</a>
+            <button class="btn btn-outline" onclick="carroDistanceFromMe()">${icon('pin', 'icon icon-sm')} Quanto falta até mim?</button>
+          </div>
+          <p class="text-xs muted mt-1" id="carro-dist"></p>
+          ${s.aviso ? `<div class="surface mt-1"><strong style="color:var(--husk-900)">${esc(s.aviso.message)}</strong><p class="text-xs muted" style="margin-top:0.2rem">${esc(avisoQuando(s.aviso))}</p></div>` : ''}
+        `;
+        const p = s.position;
+        if (typeof L !== 'undefined') {
+          carroMap = L.map('carro-map', { zoomControl: true, attributionControl: false }).setView([p.lat, p.lng], 17);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(carroMap);
+          carroMarker = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: '<div class="carro-pin">🚐</div>', iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(carroMap);
+          carroAccCircle = L.circle([p.lat, p.lng], { radius: p.accuracy || 20, color: '#2E7D32', weight: 1, fillColor: '#2E7D32', fillOpacity: 0.12 }).addTo(carroMap);
+          carroMap.on('dragstart', () => { carroFollow = false; $('#carro-recenter')?.classList.remove('hidden'); });
+        }
+        updateCarroPage();
+        carroTickTimer = setInterval(updateCarroMeta, 1000);
+      } else {
+        body.innerHTML = `
+          <div class="carro-hero"><img src="/carro-hero.jpg" alt="Carro da Pamonha" /></div>
+          <div class="carro-title">🚐 Carro da Pamonha</div>
+          <p class="text-sm muted" style="margin:0.3rem 0 0.8rem">O carro não está compartilhando a localização agora. Quando sair para as ruas, esta tela mostra o caminho em tempo real.</p>
+          ${s && s.aviso ? `<div class="carro-aviso" style="cursor:default; margin-bottom:0.8rem">${icon('pin', 'icon')}<span><strong>${esc(s.aviso.message)}</strong><span>${s.aviso.place ? esc(s.aviso.place) + ' · ' : ''}${esc(avisoQuando(s.aviso))}</span></span></div>` : ''}
+          <div class="surface">
+            <h3 class="surface-title">${icon('pin', 'icon icon-sm')} Pontos fixos</h3>
+            <div id="carro-locais"><div class="loader"></div></div>
+          </div>
+        `;
+        loadCarroLocais();
+      }
+    }
+
+    function updateCarroPage() {
+      const s = carroState;
+      if (!s || !s.live || !s.position) return;
+      const p = s.position;
+      const placeEl = $('#carro-place');
+      if (placeEl) placeEl.textContent = s.place?.name || 'Localização ao vivo';
+      const route = $('#carro-route');
+      if (route) route.href = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+      if (carroMap && carroMarker) {
+        carroMarker.setLatLng([p.lat, p.lng]);
+        carroAccCircle.setLatLng([p.lat, p.lng]).setRadius(p.accuracy || 20);
+        if (carroFollow) carroMap.panTo([p.lat, p.lng], { animate: true, duration: 1 });
+      }
+      updateCarroMeta();
+    }
+
+    function updateCarroMeta() {
+      const s = carroState, el = $('#carro-meta');
+      if (!el || !s || !s.position) return;
+      const age = carroAgeSec();
+      const fraco = age !== null && age > 90;
+      const p = s.position;
+      const chips = [`<span class="carro-chip ${fraco ? 'warn' : ''}">${fraco ? '⚠ Sinal fraco · ' : '📍 '}atualizado ${agoText(age)}</span>`];
+      if (p.accuracy !== null) chips.push(`<span class="carro-chip">precisão ±${p.accuracy} m</span>`);
+      if (p.speed !== null && p.speed > 0.8) chips.push(`<span class="carro-chip">${Math.round(p.speed * 3.6)} km/h · em movimento</span>`);
+      else if (p.speed !== null) chips.push(`<span class="carro-chip">parado</span>`);
+      el.innerHTML = chips.join('');
+    }
+
+    window.carroRecenter = () => {
+      carroFollow = true;
+      $('#carro-recenter')?.classList.add('hidden');
+      const p = carroState?.position;
+      if (carroMap && p) carroMap.setView([p.lat, p.lng], Math.max(carroMap.getZoom(), 16), { animate: true });
+    };
+
+    window.carroDistanceFromMe = () => {
+      if (!navigator.geolocation) return toast.show('Este aparelho não tem GPS disponível.', 'error');
+      const p = carroState?.position;
+      if (!p) return;
+      $('#carro-dist').textContent = 'Buscando sua localização…';
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        const d = haversineMeters(me, p);
+        $('#carro-dist').textContent = d < 1000 ? `O carro está a cerca de ${Math.round(d / 10) * 10} m de você.` : `O carro está a cerca de ${(d / 1000).toFixed(1).replace('.', ',')} km de você.`;
+        if (carroMap) {
+          if (carroMeMarker) carroMeMarker.setLatLng([me.lat, me.lng]);
+          else carroMeMarker = L.marker([me.lat, me.lng], { icon: L.divIcon({ className: '', html: '<div class="carro-pin-me"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }) }).addTo(carroMap);
+          carroFollow = false; $('#carro-recenter')?.classList.remove('hidden');
+          carroMap.fitBounds([[me.lat, me.lng], [p.lat, p.lng]], { padding: [50, 50], maxZoom: 17 });
+        }
+      }, () => { $('#carro-dist').textContent = 'Não foi possível pegar sua localização. Verifique a permissão do navegador.'; }, { enableHighAccuracy: true, timeout: 10000 });
+    };
+
+    function haversineMeters(a, b) {
+      const r = (d) => d * Math.PI / 180, R = 6371000;
+      const h = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lng - a.lng) / 2) ** 2;
+      return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+    }
+
+    async function loadCarroLocais() {
+      const box = $('#carro-locais');
+      if (!box) return;
+      try {
+        const data = await api.get('/api/client/locais');
+        const locais = data.locais || [];
+        if (!locais.length) { box.innerHTML = `<p class="text-sm muted">Nenhum ponto fixo cadastrado ainda.</p>`; return; }
+        box.innerHTML = locais.map(l => `<a class="find-link" href="${esc(l.mapsUrl || ('https://www.google.com/maps/search/?api=1&query=' + l.lat + ',' + l.lng))}" target="_blank" rel="noopener">${icon('pin', 'icon icon-sm')} ${esc(l.name)}</a>`).join('');
+      } catch (e) { box.innerHTML = `<p class="text-sm muted">Não foi possível carregar os pontos fixos.</p>`; }
+    }
+
+    // ---- Admin: transmissor (GPS do celular -> servidor) ----
+    const carroTx = { active: false, watchId: null, timer: null, wakeLock: null, lastSentAt: 0, lastSent: null, last: null, error: '', busy: false, sentCount: 0 };
+
+    function getPositionOnce(opts) {
+      return new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, opts));
+    }
+    const coordsBody = (c) => ({ lat: c.latitude, lng: c.longitude, accuracy: c.accuracy, speed: c.speed, heading: c.heading });
+
+    async function requestWakeLock() {
+      try { if ('wakeLock' in navigator && !carroTx.wakeLock) { carroTx.wakeLock = await navigator.wakeLock.request('screen'); carroTx.wakeLock.addEventListener('release', () => { carroTx.wakeLock = null; }); } } catch (e) {}
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && carroTx.active) { requestWakeLock(); if (carroTx.last) carroSend(carroTx.last, true); }
+    });
+
+    async function carroSend(coords, force) {
+      const now = Date.now();
+      const moved = carroTx.lastSent ? haversineMeters({ lat: coords.latitude, lng: coords.longitude }, carroTx.lastSent) : Infinity;
+      const gap = now - carroTx.lastSentAt;
+      // anda: manda a cada 5s · parado: batimento a cada 20s (mantém "sinal ok" para os clientes)
+      if (!force && !((moved > 8 && gap >= 5000) || gap >= 20000)) return;
+      if (carroTx.busy) return;
+      carroTx.busy = true;
+      try {
+        await api.post('/api/carro/posicao', coordsBody(coords));
+        carroTx.lastSentAt = Date.now();
+        carroTx.lastSent = { lat: coords.latitude, lng: coords.longitude };
+        carroTx.sentCount++; carroTx.error = '';
+      } catch (e) {
+        carroTx.error = /não está ativo/i.test(e.message) ? 'O carro foi encerrado pelo servidor.' : 'Sem conexão — tentando de novo…';
+        if (/não está ativo/i.test(e.message)) carroStopLocal();
+      } finally { carroTx.busy = false; renderCarroAdminLive(); renderTxPill(); }
+    }
+
+    function carroStartWatch() {
+      if (carroTx.watchId !== null) return;
+      carroTx.watchId = navigator.geolocation.watchPosition(
+        (pos) => { carroTx.last = pos.coords; carroSend(pos.coords, false); renderCarroAdminLive(); },
+        (err) => {
+          if (err.code === 1) { carroTx.error = 'Permissão de localização negada. Libere o GPS para este site nas configurações do navegador.'; carroSaiDoCarro(true); toast.show('Permissão de GPS negada.', 'error'); }
+          else { carroTx.error = 'GPS sem sinal no momento. Procure um local aberto.'; renderCarroAdminLive(); }
+        },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 30000 }
+      );
+      // O navegador só avisa quando a posição MUDA. Este relógio garante o envio atrasado (carro andou
+      // há pouco) e o "batimento" quando o carro está parado, para os clientes não verem "sinal fraco".
+      clearInterval(carroTx.timer);
+      carroTx.timer = setInterval(() => { if (carroTx.last) carroSend(carroTx.last, false); renderCarroAdminLive(); }, 3000);
+    }
+    function carroStopLocal() {
+      if (carroTx.watchId !== null) { navigator.geolocation.clearWatch(carroTx.watchId); carroTx.watchId = null; }
+      clearInterval(carroTx.timer); carroTx.timer = null;
+      if (carroTx.wakeLock) { try { carroTx.wakeLock.release(); } catch (e) {} carroTx.wakeLock = null; }
+      carroTx.active = false;
+      renderTxPill();
+    }
+
+    window.carroEntrar = async () => {
+      if (!navigator.geolocation) return toast.show('Este aparelho não tem GPS disponível.', 'error');
+      const btn = $('#carro-toggle'); if (btn) { btn.disabled = true; btn.textContent = 'Buscando o GPS…'; }
+      try {
+        const pos = await getPositionOnce({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+        const placeName = ($('#carro-place-input')?.value || '').trim();
+        const st = await api.post('/api/carro/iniciar', { ...coordsBody(pos.coords), placeName });
+        carroApply(st);
+        carroTx.active = true; carroTx.last = pos.coords; carroTx.lastSentAt = Date.now(); carroTx.lastSent = { lat: pos.coords.latitude, lng: pos.coords.longitude }; carroTx.error = '';
+        carroStartWatch(); requestWakeLock();
+        toast.show('Você entrou no carro! Os clientes já podem acompanhar.');
+      } catch (e) {
+        toast.show(e.code === 1 ? 'Permissão de GPS negada. Libere a localização para este site.' : (e.code ? 'Não consegui pegar o GPS. Vá para um local aberto e tente de novo.' : e.message), 'error');
+      }
+      renderCarroAdminLive(); renderTxPill();
+    };
+
+    window.carroRetomar = async () => {
+      if (!navigator.geolocation) return toast.show('Este aparelho não tem GPS disponível.', 'error');
+      try {
+        const pos = await getPositionOnce({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+        carroApply(await api.post('/api/carro/posicao', coordsBody(pos.coords)));
+        carroTx.active = true; carroTx.last = pos.coords; carroTx.lastSentAt = Date.now(); carroTx.lastSent = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        carroStartWatch(); requestWakeLock();
+        toast.show('Transmissão retomada.');
+      } catch (e) { toast.show(e.message || 'Não foi possível retomar.', 'error'); }
+      renderCarroAdminLive(); renderTxPill();
+    };
+
+    window.carroSaiDoCarro = async (silent) => {
+      carroStopLocal();
+      try { carroApply(await api.post('/api/carro/parar', {})); if (silent !== true) toast.show('Você saiu do carro. O botão sumiu para os clientes.'); }
+      catch (e) { toast.show(e.message, 'error'); }
+      renderCarroAdminLive();
+    };
+
+    window.carroSalvarLugar = async () => {
+      try { carroApply(await api.put('/api/carro/lugar', { placeName: ($('#carro-place-edit').value || '').trim() })); toast.show('Nome do lugar atualizado.'); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    function renderTxPill() {
+      let pill = $('#carro-tx-pill');
+      const show = carroTx.active && api.user?.role === 'admin';
+      if (!show) { if (pill) pill.remove(); return; }
+      if (!pill) {
+        pill = document.createElement('button');
+        pill.id = 'carro-tx-pill'; pill.className = 'carro-tx-pill';
+        pill.onclick = () => { router.go('admin'); setTimeout(() => setAdminTab('carro'), 0); };
+        document.body.appendChild(pill);
+      }
+      pill.innerHTML = `<span class="carro-live-dot"></span> Transmitindo o carro${carroTx.error ? ' · ⚠' : ''}`;
+    }
+
+    // ---- Admin: tela "Carro da Pamonha" ----
+    async function renderAdminCarro(container) {
+      container.innerHTML = `
+        <div class="surface section-gap" id="carro-admin-main"><div class="loader"></div></div>
+        <div class="surface section-gap" id="carro-admin-aviso"></div>
+      `;
+      try { const st = await api.get('/api/carro/admin'); carroApply(st); carroAdminAviso = st.avisoAdmin || null; }
+      catch (e) { carroAdminAviso = null; toast.show(e.message, 'error'); }
+      renderCarroAdminLive();
+      renderCarroAdminAviso();
+    }
+    let carroAdminAviso = null;
+
+    function renderCarroAdminLive() {
+      const box = $('#carro-admin-main');
+      if (!box) return;
+      const s = carroState, live = !!(s && s.live);
+      const editing = document.activeElement && (document.activeElement.id === 'carro-place-input' || document.activeElement.id === 'carro-place-edit');
+      if (editing) return; // não atrapalha quem está digitando
+      if (!live) {
+        box.innerHTML = `
+          <h3 class="surface-title">🚐 Carro da Pamonha</h3>
+          <p class="text-sm muted mb-1">Ao entrar no carro, o GPS deste celular é compartilhado com todos os clientes e o botão <strong>Acompanhar</strong> aparece no app deles.</p>
+          <label class="label">Nome do lugar (opcional)</label>
+          <input class="input mb-1" id="carro-place-input" maxlength="80" placeholder="Deixe vazio: o site descobre sozinho" />
+          <button class="carro-big-btn on" id="carro-toggle" onclick="carroEntrar()">🚐 Entrar no carro</button>
+          <p class="text-xs muted mt-1">Dica: o nome sai automático da feira cadastrada em <strong>Locais</strong> ou, fora delas, da rua/bairro.</p>
+        `;
+        return;
+      }
+      const age = carroAgeSec();
+      const transmitindo = carroTx.active;
+      box.innerHTML = `
+        <h3 class="surface-title">🚐 Carro da Pamonha <span class="carro-badge" style="margin-left:auto">no ar</span></h3>
+        ${transmitindo ? '' : `<div class="carro-chip warn" style="display:block;margin-bottom:0.7rem;border-radius:12px;padding:0.6rem 0.8rem">Este celular não está transmitindo (a página foi recarregada). Toque em <strong>Retomar</strong> para voltar a enviar o GPS.</div>`}
+        ${carroTx.error ? `<div class="carro-chip warn" style="display:block;margin-bottom:0.7rem;border-radius:12px;padding:0.6rem 0.8rem">${esc(carroTx.error)}</div>` : ''}
+        <dl class="carro-kv">
+          <dt>Lugar</dt><dd>${esc(s.place?.name || 'identificando…')}${s.place?.source === 'manual' ? ' <span class="muted">(manual)</span>' : ''}</dd>
+          <dt>Última posição</dt><dd>${agoText(age)}</dd>
+          <dt>Precisão</dt><dd>${s.position?.accuracy !== null && s.position?.accuracy !== undefined ? '±' + s.position.accuracy + ' m' : '—'}</dd>
+          <dt>Enviadas</dt><dd>${carroTx.sentCount}</dd>
+        </dl>
+        <label class="label">Corrigir nome do lugar</label>
+        <div class="flex gap-1 mb-1">
+          <input class="input" id="carro-place-edit" maxlength="80" placeholder="Ex: Feira da Figueira — banca 12" value="${esc(s.place?.source === 'manual' ? s.place.name : '')}" />
+          <button class="btn btn-outline" style="width:auto" onclick="carroSalvarLugar()">Salvar</button>
+        </div>
+        ${transmitindo ? '' : `<button class="btn btn-success mb-1" onclick="carroRetomar()">Retomar transmissão</button>`}
+        <button class="carro-big-btn off" id="carro-toggle" onclick="carroSaiDoCarro()">Sair do carro</button>
+        <p class="text-xs muted mt-1">Mantenha o app aberto e a tela ligada enquanto estiver no carro — o celular só envia o GPS com o app aberto.</p>
+      `;
+    }
+    setInterval(() => { if ($('#carro-admin-main') && carroState?.live) renderCarroAdminLive(); }, 5000);
+
+    function localInputValue(iso) {
+      if (!iso) return '';
+      const d = new Date(iso), p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+    function renderCarroAdminAviso() {
+      const box = $('#carro-admin-aviso');
+      if (!box) return;
+      const a = carroAdminAviso;
+      const statusTxt = a ? ({ agendado: 'Agendado — ainda não apareceu para os clientes', ativo: 'No ar — os clientes estão vendo', encerrado: 'Encerrado — os clientes não veem mais' }[a.status]) : '';
+      box.innerHTML = `
+        <h3 class="surface-title">${icon('bell', 'icon icon-sm')} Aviso do carro</h3>
+        <p class="text-sm muted mb-1">Avise quando o carro estará na rua. O aviso aparece na tela inicial dos clientes no horário de início e some sozinho no de término (se o carro ainda estiver transmitindo, ele também é encerrado nessa hora).</p>
+        ${a ? `<div class="carro-chip ${a.status === 'encerrado' ? 'warn' : ''}" style="display:block;border-radius:12px;padding:0.5rem 0.8rem;margin-bottom:0.7rem">${esc(statusTxt)}</div>` : ''}
+        <label class="label">Mensagem</label>
+        <textarea class="input mb-1" id="aviso-msg" rows="2" maxlength="200" placeholder="Ex: Sábado o carro estará na Feira da Figueira">${esc(a?.message || '')}</textarea>
+        <label class="label">Onde (opcional)</label>
+        <input class="input mb-1" id="aviso-place" maxlength="80" placeholder="Ex: Feira da Figueira" value="${esc(a?.place || '')}" />
+        <label class="label">Aparece para os clientes em</label>
+        <input class="input mb-1" type="datetime-local" id="aviso-show" style="min-width:0" value="${localInputValue(a?.showAt)}" />
+        <label class="label">Some sozinho em</label>
+        <input class="input mb-1" type="datetime-local" id="aviso-hide" style="min-width:0" value="${localInputValue(a?.hideAt)}" />
+        <p class="text-xs muted mb-1">Deixe "Aparece em" vazio para mostrar agora.</p>
+        <button class="btn btn-primary" onclick="carroSalvarAviso()">${icon('save', 'icon icon-sm')} Salvar aviso</button>
+        ${a ? `<button class="btn btn-danger mt-1" onclick="carroRemoverAviso()">Remover aviso</button>` : ''}
+      `;
+    }
+    window.carroSalvarAviso = async () => {
+      const toIso = (v) => v ? new Date(v).toISOString() : null;
+      try {
+        const st = await api.put('/api/carro/aviso', { message: $('#aviso-msg').value, place: $('#aviso-place').value, showAt: toIso($('#aviso-show').value), hideAt: toIso($('#aviso-hide').value) });
+        carroAdminAviso = st.avisoAdmin; carroApply(st); renderCarroAdminAviso();
+        toast.show('Aviso salvo.');
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.carroRemoverAviso = async () => {
+      try { const st = await api.del('/api/carro/aviso'); carroAdminAviso = null; carroApply(st); renderCarroAdminAviso(); toast.show('Aviso removido.'); }
+      catch (e) { toast.show(e.message, 'error'); }
+    };
+    function renderAdminHubCarroBadge() {
+      const b = $('#hub-carro-badge');
+      if (b) b.innerHTML = carroState?.live ? '<span class="carro-badge">no ar</span>' : '';
     }
 
     async function init() {
@@ -2460,12 +2950,12 @@
         <div class="prod-row ${p.active ? '' : 'inactive'}">
           ${p.imageUrl ? `<img class="prod-thumb" src="${p.imageUrl}" alt="" />` : `<div class="prod-icon-fallback">${icon('box','icon icon-sm')}</div>`}
           <div class="info">
-            <strong>${p.name}</strong>
+            <strong>${esc(p.name)}</strong>
             <span>R$ ${p.price.toFixed(2).replace('.', ',')} · custo R$ ${(p.costPrice || 0).toFixed(2).replace('.', ',')} · lucro R$ ${margem.toFixed(2).replace('.', ',')}${p.active ? '' : ' · inativo'}</span>
           </div>
           <div class="row-actions">
-            <button class="icon-btn" onclick='openEditProduto(${JSON.stringify(p)})' title="Editar">${icon('edit','icon')}</button>
-            <button class="icon-btn" onclick='toggleProdutoActive(${JSON.stringify(p)})' title="${p.active ? 'Desativar' : 'Ativar'}">${icon(p.active ? 'minus' : 'plus', 'icon')}</button>
+            <button class="icon-btn" onclick="openEditProduto(${jattr(p)})" title="Editar">${icon('edit','icon')}</button>
+            <button class="icon-btn" onclick="toggleProdutoActive(${jattr(p)})" title="${p.active ? 'Desativar' : 'Ativar'}">${icon(p.active ? 'minus' : 'plus', 'icon')}</button>
             <button class="icon-btn danger" onclick="deleteProduto('${p._id}')">${icon('trash','icon')}</button>
           </div>
         </div>
@@ -2511,7 +3001,7 @@
         <div class="modal-card">
           <h3 class="surface-title">${icon('edit','icon icon-sm')} Editar produto</h3>
           <label class="label">Nome</label>
-          <input class="input mb-1" id="edit-prod-name" value="${p.name}" maxlength="60" />
+          <input class="input mb-1" id="edit-prod-name" value="${esc(p.name)}" maxlength="60" />
           <div class="flex gap-1 mb-1">
             <div style="flex:1">
               <label class="label">Preço (R$)</label>
@@ -2593,7 +3083,7 @@
       localMapInstance = L.map(el, { attributionControl: false }).setView([lat, lng], 15);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(localMapInstance);
       localMapMarker = L.marker([lat, lng], { draggable: true }).addTo(localMapInstance);
-      localMapCircle = L.circle([lat, lng], { radius: 150, color: '#6B9A3E', fillColor: '#6B9A3E', fillOpacity: 0.15 }).addTo(localMapInstance);
+      localMapCircle = L.circle([lat, lng], { radius: 150, color: '#2E7D32', fillColor: '#2E7D32', fillOpacity: 0.15 }).addTo(localMapInstance);
       localMapMarker.on('drag', (e) => {
         const p = e.target.getLatLng();
         localMapCircle.setLatLng(p);
@@ -2653,12 +3143,12 @@
         <div class="local-row ${l.active ? '' : 'inactive'}">
           <div class="prod-icon-fallback">${icon('pin','icon icon-sm')}</div>
           <div class="info">
-            <strong>${l.name}</strong>
+            <strong>${esc(l.name)}</strong>
             <span>Raio de ${l.radiusMeters}m${l.active ? '' : ' · inativo'}</span>
             <a class="find-link" style="border:none;padding:0.2rem 0;font-size:0.78rem" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}" target="_blank" rel="noopener">${icon('map','icon icon-sm')} Abrir no Google Maps</a>
           </div>
           <div class="row-actions">
-            <button class="icon-btn" onclick='toggleLocalActive(${JSON.stringify(l)})' title="${l.active ? 'Desativar' : 'Ativar'}">${icon(l.active ? 'minus' : 'plus', 'icon')}</button>
+            <button class="icon-btn" onclick="toggleLocalActive('${l._id}')" title="${l.active ? 'Desativar' : 'Ativar'}">${icon(l.active ? 'minus' : 'plus', 'icon')}</button>
             <button class="icon-btn danger" onclick="deleteLocal('${l._id}')">${icon('trash','icon')}</button>
           </div>
         </div>
@@ -2680,7 +3170,8 @@
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
-    window.toggleLocalActive = async (l) => {
+    window.toggleLocalActive = async (id) => {
+      const l = locaisCache.find(x => x._id === id); if (!l) return;
       try { await api.put(`/api/admin/locais/${l._id}`, { active: !l.active }); loadLocais(); }
       catch (e) { toast.show(e.message, 'error'); }
     };
@@ -2711,7 +3202,7 @@
     async function loadVendas() {
       try {
         const data = await api.get('/api/admin/vendas?limit=100');
-        vendasCache = data.vendas || [];
+        vendasCache = data.vendas;
         renderVendasList();
       } catch (e) { toast.show(e.message, 'error'); }
     }
@@ -2721,10 +3212,8 @@
       if (!box) return;
       if (!vendasCache.length) { box.innerHTML = `<div class="empty-state"><p>Nenhuma venda registrada ainda.</p></div>`; return; }
       box.innerHTML = vendasCache.map(v => {
-        const items = v.items || [];
-        const itemsLabel = items.length ? items.map(it => `${it.quantity}× ${it.name}`).join(', ') : '—';
-        const totalValue = v.totalValue || 0;
-        const liquido = totalValue - (v.totalCost || 0);
+        const itemsLabel = v.items.map(it => `${it.quantity}× ${esc(it.name)}`).join(', ');
+        const liquido = v.totalValue - (v.totalCost || 0);
         const isAvulsa = !v.clientId;
         const badge = v.localId
           ? `<span class="venda-badge ok">${icon('pin','icon icon-sm')} ${v.localName}</span>`
@@ -2736,7 +3225,7 @@
                 <div class="client">${isAvulsa ? '🧾 Venda avulsa' : (v.clientId?.fullName || 'Cliente')}</div>
                 <div class="meta">${formatDate(v.createdAt)}${isAvulsa ? '' : ` · ${v.stampsGiven} selo(s)${v.completedCardOnThisSale ? ' · fechou cartão 🎉' : ''}`}</div>
               </div>
-              <div class="value">R$ ${totalValue.toFixed(2).replace('.', ',')}<span class="liquido">líquido R$ ${liquido.toFixed(2).replace('.', ',')}</span></div>
+              <div class="value">R$ ${v.totalValue.toFixed(2).replace('.', ',')}<span class="liquido">líquido R$ ${liquido.toFixed(2).replace('.', ',')}</span></div>
             </div>
             <div class="items">${itemsLabel}</div>
             ${badge}
@@ -2770,7 +3259,7 @@
           <h3 class="surface-title">${icon('map','icon icon-sm')} Vincular local a esta venda</h3>
           ${locaisCache.length ? locaisCache.map(l => `
             <div class="cleanup-row">
-              <div><strong>${l.name}</strong></div>
+              <div><strong>${esc(l.name)}</strong></div>
               <button class="btn btn-primary" onclick="confirmAssignLocal('${vendaId}', '${l._id}')">Usar</button>
             </div>
           `).join('') : `<p class="text-sm muted">Nenhum local cadastrado ainda.</p>`}
@@ -2848,7 +3337,7 @@
       const title = $('#sales-hub-title');
       if (title) title.innerHTML = salesAvulsa
         ? `${icon('cart','icon icon-sm')} Venda avulsa`
-        : `${icon('cart','icon icon-sm')} Venda para ${salesCartClient.fullName.split(' ')[0]}`;
+        : `${icon('cart','icon icon-sm')} Venda para ${esc(salesCartClient.fullName.split(' ')[0])}`;
       const btn = $('#sales-hub-confirm-btn');
       if (btn) btn.innerHTML = `${icon('check','icon icon-sm')} ${salesAvulsa ? 'Registrar venda avulsa' : 'Confirmar venda'}`;
       const localBox = $('#sales-avulsa-local');
@@ -2859,7 +3348,7 @@
             <label class="label">Local da venda</label>
             <select class="input mb-1" id="sales-avulsa-local-select" onchange="salesAvulsaLocalId = this.value">
               <option value="">Selecione um local cadastrado…</option>
-              ${locaisCache.filter(l => l.active).map(l => `<option value="${l._id}" ${salesAvulsaLocalId === l._id ? 'selected' : ''}>${l.name}</option>`).join('')}
+              ${locaisCache.filter(l => l.active).map(l => `<option value="${l._id}" ${salesAvulsaLocalId === l._id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}
             </select>
             <button class="btn btn-outline" onclick="useMyLocationForSalesAvulsa()">${icon('pin','icon icon-sm')} Usar GPS</button>
             ${salesAvulsaCoords ? `<p class="text-xs muted mt-1">${icon('check','icon icon-sm')} Localização GPS capturada.</p>` : ''}
@@ -2885,7 +3374,7 @@
       if (!activeProdutos.length) return `<p class="text-sm muted text-center">Nenhum produto ativo cadastrado. Cadastre em Produtos.</p>`;
       return activeProdutos.map(p => `
         <div class="cart-row">
-          <div class="info"><strong>${p.name}</strong><span>R$ ${p.price.toFixed(2).replace('.', ',')}</span></div>
+          <div class="info"><strong>${esc(p.name)}</strong><span>R$ ${p.price.toFixed(2).replace('.', ',')}</span></div>
           <div class="qty-stepper">
             <button onclick="changeCartQty('${p._id}', -1)">${icon('minus','icon')}</button>
             <span class="qty-val" id="cart-qty-${p._id}">${salesCart[p._id] || 0}</span>
@@ -2967,7 +3456,7 @@
       const nearestHTML = nearest && nearest.length
         ? `<p class="text-xs muted mb-1">Locais cadastrados mais próximos — toque para usar um deles:</p>` + nearest.map(n => `
             <div class="cleanup-row">
-              <div><strong>${n.name}</strong><span>${Math.round(n.distanceMeters)}m de distância</span></div>
+              <div><strong>${esc(n.name)}</strong><span>${Math.round(n.distanceMeters)}m de distância</span></div>
               <button class="btn btn-primary" onclick='confirmAssignLocal("${vendaId}", "${n.localId}"); closeLocationPicker()'>Usar</button>
             </div>
           `).join('')
@@ -3137,14 +3626,11 @@
         </div>
 
         <div class="surface section-gap">
-          <div class="chart-head">
-            <h3 class="surface-title" style="margin-bottom:0">${icon('star','icon icon-sm')} Avaliações</h3>
-            ${sat.totalAvaliacoes ? `<button class="btn btn-outline" style="width:auto;padding:0.4rem 0.8rem;font-size:0.76rem" onclick="toggleSatChartType()">${icon('refresh','icon icon-sm')} <span id="sat-chart-toggle-label">Ver em barras</span></button>` : ''}
-          </div>
+          <h3 class="surface-title">${icon('star','icon icon-sm')} Avaliações</h3>
           ${!sat.totalAvaliacoes ? `<p class="text-sm muted">Nenhuma avaliação ainda.</p>` : `
-            <div class="pizza-wrap" id="pizza-wrap">
+            <div class="pizza-wrap">
               <div style="position:relative;flex-shrink:0"><canvas id="pizza-canvas" width="140" height="140"></canvas>
-                <div class="pizza-center" id="pizza-center"><strong>${sat.percentualSatisfeitos ?? 0}%</strong><span>satisfeitos</span></div>
+                <div class="pizza-center"><strong>${sat.percentualSatisfeitos ?? 0}%</strong><span>satisfeitos</span></div>
               </div>
               <div class="chart-legend" id="pizza-legend"></div>
             </div>
@@ -3156,7 +3642,7 @@
                     <div style="flex:1"><div class="name">${a.nome || a.userId?.fullName || 'Cliente'}</div><div class="text-xs muted">${formatDate(a.createdAt)}</div></div>
                     ${rateMiniHTML(a.nota ?? a.average ?? 0)}
                   </div>
-                  ${a.comment ? `<p class="fb-comment">"${a.comment}"</p>` : ''}
+                  ${a.comment ? `<p class="fb-comment">"${esc(a.comment)}"</p>` : ''}
                   <button class="link-btn mt-1" style="color:var(--danger)" onclick="deleteFeedback('${a._id}')">${icon('trash', 'icon icon-sm')} Excluir avaliação</button>
                 </div>
               `).join('')}
@@ -3206,8 +3692,8 @@
           labels,
           datasets: [
             { label: 'Bruto', data: brutoData, backgroundColor: 'rgba(46,125,50,0.28)', borderRadius: 4, barPercentage: 0.9, categoryPercentage: 0.85 },
-            { label: 'Custo', data: custoData, backgroundColor: '#B23A22', borderRadius: 4, barPercentage: 0.5, categoryPercentage: 0.85 },
-            { label: 'Líquido', data: liquidoData, backgroundColor: '#E0A215', borderRadius: 4, barPercentage: 0.32, categoryPercentage: 0.85 },
+            { label: 'Custo', data: custoData, backgroundColor: '#C62828', borderRadius: 4, barPercentage: 0.5, categoryPercentage: 0.85 },
+            { label: 'Líquido', data: liquidoData, backgroundColor: '#F9A825', borderRadius: 4, barPercentage: 0.32, categoryPercentage: 0.85 },
           ]
         },
         options: {
@@ -3244,20 +3730,7 @@
     }
 
     // -- Pizza de satisfação: sempre 5 fatias (notas 1 a 5), degradê âmbar→verde --
-    // -- Pizza de satisfação: sempre 5 fatias (notas 1 a 5), degradê âmbar→verde --
-    // Mantém o alternador pizza/barra do painel anterior — o admin escolhe o formato que preferir.
-    let satChartType = 'pie';
-    let lastSatData = null;
-
-    window.toggleSatChartType = () => {
-      satChartType = satChartType === 'pie' ? 'bar' : 'pie';
-      const lbl = $('#sat-chart-toggle-label');
-      if (lbl) lbl.textContent = satChartType === 'pie' ? 'Ver em barras' : 'Ver em pizza';
-      if (lastSatData) drawPizzaChart(lastSatData);
-    };
-
     function drawPizzaChart(sat) {
-      lastSatData = sat;
       const canvas = $('#pizza-canvas');
       if (!canvas || typeof Chart === 'undefined') return;
       if (pizzaChart) { pizzaChart.destroy(); pizzaChart = null; }
@@ -3265,38 +3738,16 @@
         const found = (sat.distribuicaoPorNota || []).find(d => d.nota === n);
         return found ? found.quantidade : 0;
       });
-      const colors = ['#B23A22', '#A2653A', '#E0A215', '#8FB863', '#4F7A2E'];
-      const labels = RATE_LEVELS.map(r => r.lbl);
-      const wrap = $('#pizza-wrap');
-      const center = $('#pizza-center');
-
-      if (satChartType === 'bar') {
-        if (wrap) wrap.classList.add('is-bar');
-        if (center) center.style.display = 'none';
-        canvas.width = 280; canvas.height = 170;
-        pizzaChart = new Chart(canvas, {
-          type: 'bar',
-          data: { labels, datasets: [{ data: dist, backgroundColor: colors, borderRadius: 4 }] },
-          options: {
-            responsive: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (item) => `${item.label}: ${item.raw}` } } },
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { size: 9 } } } },
-          }
-        });
-      } else {
-        if (wrap) wrap.classList.remove('is-bar');
-        if (center) center.style.display = '';
-        canvas.width = 140; canvas.height = 140;
-        pizzaChart = new Chart(canvas, {
-          type: 'pie',
-          data: { labels, datasets: [{ data: dist, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
-          options: { responsive: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (item) => `${item.label}: ${item.raw}` } } } }
-        });
-      }
-
+      const colors = ['#E65100', '#F9A825', '#FDD835', '#7CB342', '#2E7D32'];
+      pizzaChart = new Chart(canvas, {
+        type: 'pie',
+        data: { labels: ['1 estrela','2 estrelas','3 estrelas','4 estrelas','5 estrelas'], datasets: [{ data: dist, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+        options: { responsive: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (item) => `${item.label}: ${item.raw}` } } } }
+      });
       const legend = $('#pizza-legend');
       if (legend) {
-        legend.innerHTML = labels.map((lbl, i) => `
-          <div class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${lbl}<strong>${dist[i]}</strong></div>
+        legend.innerHTML = ['1','2','3','4','5'].map((n, i) => `
+          <div class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${n} estrela${n==='1'?'':'s'}<strong>${dist[i]}</strong></div>
         `).join('');
       }
     }
