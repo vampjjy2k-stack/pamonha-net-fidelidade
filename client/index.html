@@ -637,175 +637,204 @@
       *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     }
     :focus-visible { outline: 2px solid var(--gold-700); outline-offset: 2px; }
-    /* ==================== RASPADINHA DE BOAS-VINDAS (v3 blindada) ==================== */
+    /* ==================== RASPADINHA DE BOAS-VINDAS (v4) ==================== */
     .scratch-overlay {
-      position: fixed !important;
-      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-      z-index: 500 !important;
-      background: #FFE14D !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      padding: 1.5rem !important;
-      overflow-y: auto !important;
+      position: fixed; inset: 0; z-index: 500;
+      background: #FFE14D;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1rem;
+      overflow-y: auto;
     }
     .scratch-container {
-      max-width: 380px !important;
-      width: 100% !important;
+      max-width: 400px; width: 100%;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 1rem;
     }
-    .scratch-card {
-      position: relative !important;
-      width: 100% !important;
-      /* ALTURA FIXA — funciona em qualquer navegador Android */
-      height: 220px !important;
+    .scratch-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.35rem;
+      color: var(--husk-900);
+      text-align: center;
+      line-height: 1.25;
     }
-    .scratch-face {
-      position: absolute !important;
-      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-      border-radius: 18px !important;
-      overflow: hidden !important;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.35) !important;
-      transition: opacity 0.7s ease, transform 0.7s ease !important;
+    .scratch-subtitle {
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+      text-align: center;
+      margin-top: -0.4rem;
+      max-width: 300px;
     }
-    .scratch-front {
-      background: #fff !important;
-      opacity: 1 !important;
-      transform: rotateY(0deg) !important;
+    /* O cartão tem tamanho REAL — grande, fácil de raspar */
+    .scratch-card-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      height: 240px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.35);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .scratch-front img {
-      width: 100% !important; height: 100% !important;
-      object-fit: cover !important; display: block !important;
+    /* Frente (arte do cartão) */
+    .scratch-front-layer {
+      position: absolute; inset: 0;
+      background: #fff;
+      transition: opacity 0.6s ease;
+      z-index: 1;
     }
-    .scratch-back {
-      background: #5D4037 !important;
-      opacity: 0 !important;
-      transform: rotateY(180deg) !important;
-      pointer-events: none !important;
+    .scratch-front-layer img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
     }
-    .scratch-card.flipped .scratch-front {
-      opacity: 0 !important;
-      transform: rotateY(-180deg) !important;
+    .scratch-front-layer.is-hidden {
+      opacity: 0;
+      pointer-events: none;
     }
-    .scratch-card.flipped .scratch-back {
-      opacity: 1 !important;
-      transform: rotateY(0deg) !important;
-      pointer-events: auto !important;
+    /* Verso: fundo creme + canvas de raspagem */
+    .scratch-peek-layer {
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, #FFF8E1 0%, #FFE9A8 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 1rem; text-align: center;
+      z-index: 0;
     }
-    .scratch-peek {
-      position: absolute !important;
-      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-      background: linear-gradient(135deg, #FFF8E1 0%, #FFE9A8 100%) !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
-      padding: 1rem !important;
-      text-align: center !important;
-      z-index: 0 !important;
-    }
-    .scratch-peek-icon { font-size: 2.8rem !important; line-height: 1 !important; }
+    .scratch-peek-icon { font-size: 3rem; line-height: 1; margin-bottom: 0.3rem; }
     .scratch-peek-text {
-      font-family: var(--font-display) !important;
-      font-size: 1.05rem !important; font-weight: 700 !important;
-      color: #5D4037 !important; margin-top: 0.4rem !important;
+      font-family: var(--font-display);
+      font-size: 1.1rem; font-weight: 700;
+      color: #5D4037;
+      line-height: 1.3;
     }
-    .scratch-back canvas {
-      position: absolute !important;
-      top: 0 !important; left: 0 !important;
-      width: 100% !important; height: 100% !important;
-      cursor: crosshair !important;
-      touch-action: none !important;
-      z-index: 1 !important;
+    .scratch-canvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+      z-index: 2;
     }
-    .scratch-hint {
-      position: absolute !important;
-      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
-      color: #fff !important;
-      text-align: center !important;
-      padding: 1rem !important;
-      font-family: var(--font-display) !important;
-      pointer-events: none !important;
-      z-index: 2 !important;
+    /* Hint flutuante "Raspe aqui!" — fora do cartão, em cima da tela */
+    .scratch-hint-float {
+      position: fixed;
+      top: 3rem; left: 50%;
+      transform: translateX(-50%);
+      z-index: 510;
+      pointer-events: none;
+      animation: scratchHintBounce 1.4s ease-in-out infinite;
     }
-    .scratch-hint strong {
-      font-size: 1.2rem !important; display: block !important; margin-bottom: 0.3rem !important;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.55) !important;
+    .scratch-hint-float .arrow {
+      font-size: 2.6rem;
+      text-align: center;
+      line-height: 1;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
     }
-    .scratch-hint span {
-      font-size: 0.85rem !important; opacity: 0.95 !important; max-width: 220px !important;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.55) !important;
+    .scratch-hint-float .txt {
+      background: var(--husk-900);
+      color: #fff;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      white-space: nowrap;
     }
-    .scratch-hint-icon {
-      font-size: 2.4rem !important; margin-bottom: 0.4rem !important;
-      animation: scratchWiggle 1.6s ease-in-out infinite !important;
+    @keyframes scratchHintBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
     }
-    @keyframes scratchWiggle {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-12px); }
-      75% { transform: translateX(12px); }
+    /* Barra de progresso da raspagem */
+    .scratch-progress-wrap {
+      width: 100%; max-width: 340px;
+      display: flex; align-items: center; gap: 0.6rem;
     }
+    .scratch-progress-bar {
+      flex: 1;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.12);
+      overflow: hidden;
+    }
+    .scratch-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--gold-600), var(--gold-700));
+      border-radius: 999px;
+      transition: width 0.15s ease;
+    }
+    .scratch-progress-label {
+      font-size: 0.78rem; font-weight: 700;
+      color: var(--husk-900);
+      min-width: 38px; text-align: right;
+    }
+    /* Botão grande de "Raspar" (para quem não entende o gesto) */
+    .scratch-manual-btn {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: var(--husk-900);
+      color: var(--gold-300);
+      border: none; border-radius: 14px;
+      padding: 0.9rem 1.4rem;
+      font-family: var(--font-display);
+      font-size: 1.05rem; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(27,94,32,0.35);
+    }
+    .scratch-manual-btn:active { transform: scale(0.97); }
+    /* Tela de resultado do prêmio */
     .scratch-reveal {
-      text-align: center !important; color: var(--husk-900) !important;
-      animation: fadeIn 0.6s ease both !important;
-      padding: 1rem 0 !important;
+      text-align: center;
+      color: var(--husk-900);
+      padding: 1rem 0;
+      animation: fadeIn 0.6s ease both;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0.4rem;
+      max-width: 340px;
     }
-    .scratch-reveal .big { font-size: 3.5rem !important; margin-bottom: 0.3rem !important; line-height: 1 !important; }
+    .scratch-reveal .big { font-size: 3.5rem; line-height: 1; }
     .scratch-reveal h2 {
-      font-family: var(--font-display) !important;
-      font-size: 1.8rem !important; margin-bottom: 0.5rem !important;
-      color: var(--husk-900) !important;
+      font-family: var(--font-display); font-size: 1.8rem;
+      font-weight: 700; color: var(--husk-900); margin: 0;
     }
     .scratch-reveal .discount {
-      font-family: var(--font-display) !important;
-      font-size: 4.5rem !important; font-weight: 900 !important;
-      color: var(--gold-700) !important; line-height: 1 !important;
-      margin: 0.6rem 0 !important;
+      font-family: var(--font-display); font-size: 4.5rem;
+      font-weight: 900; color: var(--gold-700);
+      line-height: 1; margin: 0.3rem 0;
     }
-    .scratch-reveal .sub {
-      font-size: 1rem !important; color: var(--ink-soft) !important; margin-bottom: 1rem !important;
-    }
+    .scratch-reveal .sub { font-size: 1rem; color: var(--ink-soft); }
     .scratch-reveal .code-box {
-      display: inline-block !important;
-      background: #fff !important;
-      border: 2px dashed var(--gold-600) !important;
-      border-radius: 12px !important;
-      padding: 0.75rem 1.1rem !important;
-      margin: 1rem 0 !important;
-      font-family: monospace !important;
-      font-size: 1.35rem !important;
-      font-weight: 700 !important;
-      letter-spacing: 0.14em !important;
-      color: var(--husk-900) !important;
+      display: inline-block;
+      background: #fff;
+      border: 2px dashed var(--gold-600);
+      border-radius: 12px;
+      padding: 0.75rem 1.1rem;
+      margin: 0.6rem 0;
+      font-family: monospace;
+      font-size: 1.4rem; font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--husk-900);
     }
     .scratch-reveal .instructions {
-      font-size: 0.92rem !important; color: var(--ink-soft) !important;
-      margin-bottom: 1.5rem !important; line-height: 1.5 !important;
-      max-width: 300px !important; margin-left: auto !important; margin-right: auto !important;
+      font-size: 0.92rem; color: var(--ink-soft);
+      line-height: 1.5; max-width: 300px;
     }
-    .scratch-reveal .btn { max-width: 320px !important; }
+    .scratch-reveal .btn { width: 100%; max-width: 320px; margin-top: 0.5rem; }
     .scratch-skip {
-      position: fixed !important;
-      bottom: 1.5rem !important; right: 1.5rem !important;
-      background: var(--husk-900) !important;
-      color: var(--gold-300) !important;
-      border: none !important;
-      border-radius: 999px !important;
-      padding: 0.55rem 1rem !important;
-      font-size: 0.78rem !important;
-      font-weight: 700 !important;
-      cursor: pointer !important;
-      font-family: inherit !important;
-      z-index: 510 !important;
+      position: fixed; bottom: 1.2rem; right: 1.2rem;
+      background: rgba(27,94,32,0.85); color: #fff;
+      border: none; border-radius: 999px;
+      padding: 0.55rem 1rem;
+      font-size: 0.78rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+      z-index: 511;
     }
     .scratch-confetti {
-      position: fixed !important;
-      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-      pointer-events: none !important;
-      z-index: 600 !important;
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 600;
     }
 
     /* ==================== LANDING PAGE ==================== */
@@ -1917,33 +1946,53 @@ window.sendFeedback = async () => {
       overlay.className = 'scratch-overlay';
       overlay.id = 'scratch-overlay';
       overlay.innerHTML = `
-        <div class="scratch-container">
-          <div class="scratch-card" id="scratch-card">
-            <div class="scratch-face scratch-front">
-              <img src="/card.jpg" alt="Cartão Pamonha Net" />
-            </div>
-            <div class="scratch-face scratch-back">
-              <canvas id="scratch-canvas"></canvas>
-              <div class="scratch-hint" id="scratch-hint">
-                <div class="scratch-hint-icon">👆</div>
-                <strong>Raspe aqui!</strong>
-                <span>Passe o dedo para revelar seu presente de boas-vindas</span>
-              </div>
-            </div>
-          </div>
-          <div id="scratch-result"></div>
+        <div class="scratch-title">Sua surpresa de boas-vindas</div>
+        <div class="scratch-subtitle">Raspe o cartão para revelar seu presente 🎁</div>
+
+        <div class="scratch-hint-float" id="scratch-hint-float">
+          <div class="arrow">👇</div>
+          <div class="txt">Raspe aqui com o dedo</div>
         </div>
+
+        <div class="scratch-card-wrap" id="scratch-card-wrap">
+          <div class="scratch-peek-layer">
+            <div class="scratch-peek-icon">🎁</div>
+            <div class="scratch-peek-text">Sua surpresa está aqui!</div>
+          </div>
+          <canvas class="scratch-canvas" id="scratch-canvas"></canvas>
+          <div class="scratch-front-layer" id="scratch-front-layer">
+            <img src="/card.jpg" alt="Cartão Pamonha Net" />
+          </div>
+        </div>
+
+        <div class="scratch-progress-wrap">
+          <div class="scratch-progress-bar">
+            <div class="scratch-progress-fill" id="scratch-progress-fill"></div>
+          </div>
+          <div class="scratch-progress-label" id="scratch-progress-label">0%</div>
+        </div>
+
+        <button class="scratch-manual-btn" id="scratch-manual-btn" onclick="rasparAutomatico()">
+          👆 Ou toque aqui para raspar
+        </button>
       `;
       document.body.appendChild(overlay);
 
-      // Espera um instante e vira o cartão
+      // Fade in: espera 900ms mostrando a frente do cartão, depois troca para o verso raspável
       setTimeout(() => {
-        const card = $('#scratch-card');
-        if (card) card.classList.add('flipped');
-        setTimeout(() => iniciarCanvasRaspadinha(), 950);
-      }, 1300);
+        const front = $('#scratch-front-layer');
+        if (front) front.classList.add('is-hidden');
+        setTimeout(() => {
+          iniciarCanvasRaspadinha();
+          // Esconde o hint depois de 4s para não atrapalhar
+          setTimeout(() => {
+            const hint = $('#scratch-hint-float');
+            if (hint) { hint.style.transition = 'opacity 0.5s ease'; hint.style.opacity = '0'; }
+          }, 4000);
+        }, 600);
+      }, 1000);
 
-      // Botão "Raspar depois" aparece em 20s (saída de emergência)
+      // Botão "Raspar depois" depois de 20s
       setTimeout(() => {
         if (scratchState.revealed) return;
         if (!$('#scratch-overlay')) return;
@@ -1963,28 +2012,29 @@ window.sendFeedback = async () => {
     function iniciarCanvasRaspadinha() {
       const canvas = $('#scratch-canvas');
       if (!canvas) return;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (!w || !h) { setTimeout(iniciarCanvasRaspadinha, 150); return; }
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
-      // Cor base marrom + granulado
-      ctx.fillStyle = '#8D6E63';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      // Granulado aleatório (manchas escuras)
-      for (let i = 0; i < 900; i++) {
-        const r = Math.random() * 40 + 60;
-        const g = Math.random() * 30 + 40;
-        const b = Math.random() * 20 + 25;
-        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${Math.random() * 0.5 + 0.15})`;
+      // Fundo marrom com granulado
+      ctx.fillStyle = '#5D4037';
+      ctx.fillRect(0, 0, w, h);
+      for (let i = 0; i < 2000; i++) {
+        const r = Math.floor(Math.random() * 70) + 40;
+        const g = Math.floor(Math.random() * 50) + 20;
+        const b = Math.floor(Math.random() * 40) + 15;
+        ctx.fillStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + (Math.random() * 0.55 + 0.15) + ')';
         ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 2 + 0.4, 0, Math.PI * 2);
+        ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 2.2 + 0.4, 0, Math.PI * 2);
         ctx.fill();
       }
-      // Granulado claro (pequenos brilhos)
-      for (let i = 0; i < 300; i++) {
-        ctx.fillStyle = `rgba(220, 200, 180, ${Math.random() * 0.4 + 0.1})`;
+      // Brilhos claros
+      for (let i = 0; i < 600; i++) {
+        ctx.fillStyle = 'rgba(220, 200, 180, ' + (Math.random() * 0.45 + 0.1) + ')';
         ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.4 + 0.3, 0, Math.PI * 2);
+        ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 1.6 + 0.3, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -1992,14 +2042,21 @@ window.sendFeedback = async () => {
       scratchState.ctx = ctx;
       scratchState.revealed = false;
       scratchState.touchStart = null;
+      scratchState.initiated = true;
 
-      canvas.addEventListener('touchstart', onScratchStart, { passive: false });
-      canvas.addEventListener('touchmove', onScratchMove, { passive: false });
-      canvas.addEventListener('touchend', onScratchEnd);
-      canvas.addEventListener('mousedown', onScratchStart);
-      canvas.addEventListener('mousemove', onScratchMove);
-      canvas.addEventListener('mouseup', onScratchEnd);
-      canvas.addEventListener('mouseleave', onScratchEnd);
+      // Limpa listeners antigos (evita duplicar se voltar)
+      const handlerTouchStart = onScratchStart;
+      const handlerTouchMove = onScratchMove;
+      const handlerTouchEnd = onScratchEnd;
+
+      canvas.addEventListener('touchstart', handlerTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handlerTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handlerTouchEnd);
+      canvas.addEventListener('touchcancel', handlerTouchEnd);
+      canvas.addEventListener('mousedown', handlerTouchStart);
+      canvas.addEventListener('mousemove', handlerTouchMove);
+      canvas.addEventListener('mouseup', handlerTouchEnd);
+      canvas.addEventListener('mouseleave', handlerTouchEnd);
     }
 
     function onScratchStart(e) {
@@ -2025,7 +2082,7 @@ window.sendFeedback = async () => {
       const y = pt.clientY - rect.top;
       const prev = scratchState.touchStart;
       const dist = Math.hypot(x - prev.x, y - prev.y);
-      const steps = Math.max(1, Math.ceil(dist / 6));
+      const steps = Math.max(1, Math.ceil(dist / 5));
       for (let i = 1; i <= steps; i++) {
         const t = i / steps;
         rasparPonto(prev.x + (x - prev.x) * t, prev.y + (y - prev.y) * t);
@@ -2043,25 +2100,50 @@ window.sendFeedback = async () => {
       if (!ctx) return;
       ctx.globalCompositeOperation = 'destination-out';
       ctx.beginPath();
-      ctx.arc(x, y, 24, 0, Math.PI * 2);
+      ctx.arc(x, y, 30, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Modo "raspar automático": quando o cliente toca no botão, raspa o cartão inteiro
+    window.rasparAutomatico = function() {
+      const canvas = scratchState.canvas;
+      const ctx = scratchState.ctx;
+      if (!canvas || !ctx) return;
+      // Raspa em círculos por toda a extensão
+      ctx.globalCompositeOperation = 'destination-out';
+      const step = 24;
+      for (let y = 0; y < canvas.height; y += step) {
+        for (let x = 0; x < canvas.width; x += step) {
+          ctx.beginPath();
+          ctx.arc(x, y, 34, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      setTimeout(() => revelarRaspadinha(), 400);
+    };
 
     function checarProgressoRaspadinha() {
       if (scratchState.revealed) return;
       const canvas = scratchState.canvas;
       if (!canvas) return;
       const ctx = scratchState.ctx;
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let data;
+      try { data = ctx.getImageData(0, 0, canvas.width, canvas.height).data; }
+      catch (e) { return; }
       let transparentes = 0;
       let amostras = 0;
-      // Amostra a cada 16 pixels (performance em celular fraco)
       for (let i = 3; i < data.length; i += 4 * 16) {
         amostras++;
         if (data[i] < 128) transparentes++;
       }
       const percent = amostras > 0 ? transparentes / amostras : 0;
-      if (percent > 0.55) {
+      // Atualiza barra
+      const fill = $('#scratch-progress-fill');
+      const label = $('#scratch-progress-label');
+      const pct = Math.round(percent * 100);
+      if (fill) fill.style.width = Math.min(pct * 2, 100) + '%';
+      if (label) label.textContent = pct + '%';
+      if (percent > 0.5) {
         scratchState.revealed = true;
         revelarRaspadinha();
       }
@@ -2071,16 +2153,16 @@ window.sendFeedback = async () => {
       try {
         const data = await api.post('/api/client/raspadinha/raspar', {});
         const rasp = data.raspadinha;
-        // Atualiza o user local
         if (api.user) {
           api.user.raspadinhaDisponivel = false;
           localStorage.setItem('pnf_user', JSON.stringify(api.user));
         }
-        // Fade out do canvas e da dica
         const canvas = scratchState.canvas;
-        const hint = $('#scratch-hint');
-        if (canvas) { canvas.style.transition = 'opacity 0.4s ease'; canvas.style.opacity = '0'; }
-        if (hint) { hint.style.transition = 'opacity 0.3s ease'; hint.style.opacity = '0'; }
+        const front = $('#scratch-front-layer');
+        if (canvas) { canvas.style.transition = 'opacity 0.5s ease'; canvas.style.opacity = '0'; }
+        if (front) front.style.display = 'none';
+        const hintFloat = $('#scratch-hint-float');
+        if (hintFloat) hintFloat.style.display = 'none';
         setTimeout(() => mostrarResultadoRaspadinha(rasp), 500);
       } catch (e) {
         toast.show(e.message || 'Erro ao gerar sua raspadinha.', 'error');
@@ -2091,15 +2173,14 @@ window.sendFeedback = async () => {
     function mostrarResultadoRaspadinha(rasp) {
       const overlay = $('#scratch-overlay');
       if (!overlay) return;
-      const container = overlay.querySelector('.scratch-container');
-      if (!container) return;
+      const container = overlay.querySelector('.scratch-container') || overlay;
       container.innerHTML = `
         <div class="scratch-reveal">
           <div class="big">🎉</div>
           <h2>Parabéns!</h2>
-          <p style="font-size:1.05rem;color:rgba(255,255,255,0.95);margin-bottom:0.4rem">Você ganhou</p>
+          <p class="sub">Você ganhou</p>
           <div class="discount">${rasp.discountPercent}% OFF</div>
-          <p style="font-size:1rem;color:rgba(255,255,255,0.9);margin-bottom:1rem">na sua próxima compra</p>
+          <p class="sub">na sua próxima compra</p>
           <div class="code-box">${esc(rasp.code)}</div>
           <p class="instructions">Mostre este código no balcão da Pamonha Net.<br>Ele também fica salvo na aba <strong>Avisos</strong>.</p>
           <button class="btn btn-primary" onclick="fecharOverlayRaspadinha(true)">Começar a usar o app</button>
@@ -2111,8 +2192,8 @@ window.sendFeedback = async () => {
     function mostrarConfeteRaspadinha() {
       const el = document.createElement('div');
       el.className = 'scratch-confetti';
-      const colors = ['#FFD54F', '#F9A825', '#FFFFFF', '#E8F5E9'];
-      for (let i = 0; i < 40; i++) {
+      const colors = ['#FFD54F', '#F9A825', '#2E7D32', '#FFFFFF', '#E8F5E9'];
+      for (let i = 0; i < 50; i++) {
         const p = document.createElement('div');
         p.style.position = 'absolute';
         p.style.left = Math.random() * 100 + '%';
@@ -2120,10 +2201,7 @@ window.sendFeedback = async () => {
         p.style.width = p.style.height = (6 + Math.random() * 8) + 'px';
         p.style.background = colors[Math.floor(Math.random() * colors.length)];
         p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-        p.style.opacity = '1';
-        p.style.transform = `rotate(${Math.random() * 360}deg)`;
-        p.style.transition = `transform ${2 + Math.random() * 1.5}s ease-in, opacity ${2 + Math.random() * 1.5}s ease-in`;
-        p.style.animation = `confettiFall ${2.2 + Math.random() * 1.2}s ease-out forwards`;
+        p.style.animation = 'confettiFall ' + (2.2 + Math.random() * 1.2) + 's ease-out forwards';
         p.style.animationDelay = (Math.random() * 0.6) + 's';
         el.appendChild(p);
       }
@@ -2137,6 +2215,8 @@ window.sendFeedback = async () => {
       scratchState.active = false;
       scratchState.canvas = null;
       scratchState.ctx = null;
+      scratchState.initiated = false;
+      scratchState.revealed = false;
       if (reload) {
         router.render();
         refreshUnreadBadge();
