@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#1B5E20" />
+  <meta name="theme-color" content="#FFE14D" />
   <meta name="description" content="Cartão fidelidade digital da Pamonha Net. Junte selos a cada compra e troque por prêmios." />
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -15,8 +15,8 @@
   <style>
     :root {
       /* -- Paleta: milho vivo, palha e terra (ajustada para amarelo e verde mais claros) -- */
-      --paper: #FFFDF5;
-      --paper-deep: #FFF8E1;
+      --paper: #FFE14D;
+      --paper-deep: #FFD400;
       --cream-card: #FFFFFF;
       --husk-900: #1B5E20;
       --husk-700: #2E7D32;
@@ -684,6 +684,18 @@
     .carro-kv { display:grid; grid-template-columns:auto 1fr; gap:0.3rem 0.8rem; font-size:0.84rem; margin:0.7rem 0; }
     .carro-kv dt { color:var(--ink-soft); } .carro-kv dd { margin:0; font-weight:600; color:var(--ink); word-break:break-word; }
     .textarea { width:100%; min-height:70px; resize:vertical; font-family:inherit; }
+      /* -- Aviso do carro: barra de status + painel de planejamento -- */
+    .aviso-status-bar {
+      display: block; padding: 0.55rem 0.8rem; border-radius: 10px;
+      font-size: 0.85rem; font-weight: 600; margin-bottom: 0.8rem;
+    }
+    .aviso-status-bar.ativo { background: #E8F5E9; color: #1B5E20; border-left: 4px solid #2E7D32; }
+    .aviso-status-bar.agendado { background: #FFF8E1; color: #8A5A00; border-left: 4px solid #F9A825; }
+    .aviso-status-bar.encerrado { background: #EEEEEE; color: #607D8B; border-left: 4px solid #90A4AE; }
+    .aviso-planejar-box {
+      background: var(--paper); border: 1.5px dashed var(--husk-500);
+      border-radius: 12px; padding: 0.75rem; margin-bottom: 0.75rem;
+    }
   </style>
 </head>
 <body>
@@ -693,10 +705,12 @@
         <path d="M12 4.2c1.5 0 2.7 1.6 2.7 4.3v7c0 2.1-1.2 4.3-2.7 4.3s-2.7-2.2-2.7-4.3v-7c0-2.7 1.2-4.3 2.7-4.3Z"/>
         <path d="M12 8.4v0M12 12v0M12 15.6v0" stroke-width="2.6"/>
       </symbol>
-      <symbol id="i-van" viewBox="0 0 24 24">
-        <path d="M2.5 16V9.5a1.5 1.5 0 0 1 1.5-1.5h9l4.3 3.6h2.2a1.5 1.5 0 0 1 1.5 1.5V16"/>
-        <path d="M2.5 16h2M8 16h6.5M19.5 16h2"/>
-        <circle cx="6.5" cy="16.8" r="1.8"/><circle cx="17" cy="16.8" r="1.8"/>
+      <symbol id="i-carro" viewBox="0 0 24 24">
+        <path d="M3 15.5V13l2.2-4.5a1 1 0 0 1 .9-.5h11.8a1 1 0 0 1 .9.5L21 13v2.5"/>
+        <path d="M5 13h14"/>
+        <path d="M7.5 12.8l1.3-2.6h6.4l1.3 2.6"/>
+        <circle cx="7.5" cy="16.5" r="1.5"/>
+        <circle cx="16.5" cy="16.5" r="1.5"/>
       </symbol>
       <symbol id="i-pin" viewBox="0 0 24 24">
         <path d="M12 21.5s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/>
@@ -862,8 +876,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-  <script>
+    <script>
     const API_URL = '';
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -961,7 +974,6 @@
         this.render();
       },
       render() {
-        if (typeof stopScanner === 'function') stopScanner();
         if (typeof stopCardAutoRefresh === 'function') stopCardAutoRefresh();
         if (typeof destroyCarroMap === 'function') destroyCarroMap();
         const hash = location.hash.replace('#','') || 'card';
@@ -1164,9 +1176,11 @@
 
         // Só redesenha o cartão se o número de selos realmente mudou — evita "piscar" a tela
         // a cada atualização automática.
+        const cardSlot = $('#card-slot');
+        if (!cardSlot) return;
         if (data.stamps !== lastKnownStamps) {
           const wasHigher = lastKnownStamps !== null && data.stamps > lastKnownStamps;
-          $('#card-slot').innerHTML = officialCardHTML(data.stamps);
+          cardSlot.innerHTML = officialCardHTML(data.stamps);
           lastKnownStamps = data.stamps;
           if (wasHigher) toast.show('Novo selo no seu cartão! 🌽');
           if (data.stamps >= 10) showConfetti();
@@ -1258,6 +1272,7 @@
       try {
         const data = await api.get('/api/client/notifications');
         const list = $('#notif-list');
+        if (!list) return;
         if (!data.notifications.length) {
           list.innerHTML = `<div class="empty-state">${icon('mail', 'icon')}<p>Nenhum aviso por enquanto. Avisaremos quando houver novidade para você.</p></div>`;
         } else {
@@ -1393,6 +1408,7 @@
       try {
         const data = await api.get('/api/client/leaderboard');
         const list = $('#ranking-list');
+        if (!list) return;
         if (!data.leaderboard.length) {
           list.innerHTML = `<div class="empty-state">${icon('trophy','icon')}<p>Ninguém fechou um cartão ainda. O primeiro lugar está livre!</p></div>`;
           return;
@@ -1617,7 +1633,7 @@
     async function renderAdminHub(container) {
       container.innerHTML = `
         <button class="hub-card" onclick="setAdminTab('carro')" style="border:2px solid var(--husk-500)">
-          <span class="hub-card-icon" style="background:var(--husk-700);color:#fff">${icon('van','icon')}</span>
+          <span class="hub-card-icon" style="background:var(--husk-700);color:#fff">${icon('carro','icon')}</span>
           <span class="hub-card-body"><strong>Carro da Pamonha</strong><span>Entrar no carro, compartilhar localização e avisos</span></span>
           <span id="hub-carro-badge"></span>
           ${icon('send','icon icon-sm hub-card-arrow')}
@@ -1644,23 +1660,17 @@
 
     function renderAdminOperacao(container) {
       container.innerHTML = `
-          <div class="surface section-gap">
-            <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Escanear QR Code</h3>
-            <div id="scanner-idle">
-              <p class="text-sm muted mb-1">Aponte a câmera para o QR Code do cliente. O selo é adicionado automaticamente, sem precisar tocar em nada.</p>
-              <button class="btn btn-success" onclick="startScanner()">${icon('qr', 'icon icon-sm')} Ativar câmera</button>
-            </div>
-            <div id="scanner-active" class="hidden">
-              <div class="scan-frame">
-                <video id="scan-video" playsinline muted></video>
-                <div class="scan-reticle"></div>
-                <div class="scan-flash" id="scan-flash"></div>
-              </div>
-              <p class="text-xs text-center mt-1" id="scan-status">Procurando QR Code…</p>
-              <button class="btn btn-outline mt-1" onclick="stopScanner()">Parar câmera</button>
-            </div>
-            <details class="mt-1">
-              <summary class="text-xs muted" style="cursor:pointer">Sem câmera? Colar código manualmente</summary>
+          <div class="surface section-gap" style="border:2px solid var(--husk-500)">
+            <h3 class="surface-title">${icon('qr', 'icon icon-sm')} Ler o QR Code do cliente</h3>
+            <p class="text-sm mb-1">Peça ao cliente para abrir o QR Code dele no celular. Depois:</p>
+            <ol style="margin:0 0 0.8rem 1.1rem; padding:0; font-size:0.92rem; line-height:1.6; color:var(--ink)">
+              <li>Abra a <strong>câmera normal do celular</strong> (a mesma de tirar foto).</li>
+              <li>Aponte para o QR Code do cliente.</li>
+              <li>Vai aparecer um link na tela — <strong>toque nele</strong>.</li>
+              <li>O app abre sozinho já com o cartão do cliente carregado. 🎉</li>
+            </ol>
+            <details>
+              <summary class="text-xs muted" style="cursor:pointer">Sem câmera funcionando? Colar código manualmente</summary>
               <input class="input mt-1 mb-1" id="qr-scan-input" placeholder="Cole o conteúdo do QR Code aqui" />
               <button class="btn btn-outline" onclick="scanQr()">Adicionar selo com o código colado</button>
             </details>
@@ -1725,6 +1735,7 @@
       try {
         const data = await api.get('/api/admin/clients?limit=50');
         adminClientCache = data.clients;
+        if (!$('#admin-clients')) return;
         renderAdminClients(data.clients);
       } catch (e) { toast.show(e.message, 'error'); }
     }
@@ -1905,126 +1916,15 @@
     // Usa a BarcodeDetector nativa do navegador quando disponível (mesmo decodificador
     // que a câmera do celular usa — reconhece na hora). Se o navegador não tiver isso
     // (ex: iPhone em versões mais antigas), cai para a biblioteca jsQR em resolução reduzida.
-    let scannerStream = null;
-    let scannerRAF = null;
-    let scannerTimeout = null;
-    let scannerCooldownUntil = 0;
-    let scanCanvas = null;
-    let nativeDetector = null;
-    let nativeDetectorChecked = false;
-
-    async function getNativeDetector() {
-      if (nativeDetectorChecked) return nativeDetector;
-      nativeDetectorChecked = true;
-      if ('BarcodeDetector' in window) {
-        try {
-          const formats = await window.BarcodeDetector.getSupportedFormats();
-          if (formats.includes('qr_code')) {
-            nativeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
-          }
-        } catch (e) { nativeDetector = null; }
-      }
-      return nativeDetector;
-    }
-
-    async function startScanner() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            // Resolução menor = cada frame processa muito mais rápido (a câmera nativa
-            // usa hardware dedicado; no navegador precisamos limitar o tamanho da imagem
-            // pra não travar a leitura).
-            width: { ideal: 720 },
-            height: { ideal: 720 },
-          },
-        });
-        scannerStream = stream;
-        const video = $('#scan-video');
-        video.srcObject = stream;
-        await video.play();
-        $('#scanner-idle').classList.add('hidden');
-        $('#scanner-active').classList.remove('hidden');
-        await getNativeDetector();
-        scanLoop();
-      } catch (e) {
-        toast.show('Não foi possível acessar a câmera. Use o código colado abaixo.', 'error');
-      }
-    }
-
-    function stopScanner() {
-      if (scannerRAF) cancelAnimationFrame(scannerRAF);
-      if (scannerTimeout) clearTimeout(scannerTimeout);
-      scannerRAF = null; scannerTimeout = null;
-      if (scannerStream) {
-        scannerStream.getTracks().forEach(t => t.stop());
-        scannerStream = null;
-      }
-      const idle = $('#scanner-idle');
-      const active = $('#scanner-active');
-      if (idle) idle.classList.remove('hidden');
-      if (active) active.classList.add('hidden');
-    }
-
-    async function scanLoop() {
-      const video = $('#scan-video');
-      if (!video || !scannerStream) return;
-
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        try {
-          if (nativeDetector) {
-            // Caminho rápido: decodificador nativo do navegador, direto no frame de vídeo.
-            const codes = await nativeDetector.detect(video);
-            if (codes.length && Date.now() > scannerCooldownUntil) {
-              handleScanResult(codes[0].rawValue);
-            }
-          } else if (window.jsQR) {
-            // Caminho alternativo: reduzimos a imagem antes de decodificar — processar
-            // em tamanho grande é o principal motivo da leitura ficar lenta no navegador.
-            const maxDim = 480;
-            const scale = Math.min(1, maxDim / Math.max(video.videoWidth, video.videoHeight));
-            scanCanvas = scanCanvas || document.createElement('canvas');
-            scanCanvas.width = Math.round(video.videoWidth * scale);
-            scanCanvas.height = Math.round(video.videoHeight * scale);
-            const ctx = scanCanvas.getContext('2d', { willReadFrequently: true });
-            ctx.drawImage(video, 0, 0, scanCanvas.width, scanCanvas.height);
-            const imageData = ctx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-            const code = window.jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-            if (code && code.data && Date.now() > scannerCooldownUntil) {
-              handleScanResult(code.data);
-            }
-          }
-        } catch (e) { /* frame ruim, tenta o próximo */ }
-      }
-
-      // BarcodeDetector é leve o bastante pra rodar a cada frame; jsQR roda ~12x/seg
-      // (rápido pra sentir instantâneo, mas sem sobrecarregar o celular do atendente).
-      if (nativeDetector) {
-        scannerRAF = requestAnimationFrame(scanLoop);
-      } else {
-        scannerTimeout = setTimeout(scanLoop, 80);
-      }
-    }
-
     async function handleScanResult(data) {
-      scannerCooldownUntil = Date.now() + 4000;
-      const flash = $('#scan-flash');
-      const status = $('#scan-status');
       if (navigator.vibrate) navigator.vibrate(60);
-      if (flash) { flash.classList.add('hit'); setTimeout(() => flash.classList.remove('hit'), 220); }
-      if (status) status.textContent = 'Abrindo cartão…';
       try {
         const res = await api.post('/api/admin/scan-qr', { qrToken: data });
-        if (status) status.textContent = 'Procurando QR Code…';
         openStampHub(res.client);
       } catch (e) {
         toast.show(e.message, 'error');
-        if (status) status.textContent = 'Procurando QR Code…';
       }
     }
-
-    window.startScanner = startScanner;
-    window.stopScanner = stopScanner;
 
     // -- Hub de carimbo: abre com o cartão do cliente (via QR ou pela lista), toca no selo que
     // quer deixar marcado — carimba/desfaz tudo até ali de uma vez — e confirma. Substitui o
@@ -2151,6 +2051,7 @@
         const data = await api.get('/api/admin/feedbacks');
         adminFeedbacksCache = data.feedbacks;
         const box = $('#admin-feedbacks');
+        if (!box) return;
         if (!data.feedbacks.length) {
           box.innerHTML = `<div class="empty-state"><p>Nenhuma avaliação recebida ainda.</p></div>`;
           return;
@@ -2463,7 +2364,7 @@
       if (s && s.live && s.position) {
         carroFollow = true;
         body.innerHTML = `
-          <div class="carro-title">🚐 Carro da Pamonha <span class="carro-badge">ao vivo</span></div>
+          <div class="carro-title">🚗 Carro da Pamonha <span class="carro-badge">ao vivo</span></div>
           <div class="carro-place" id="carro-place"></div>
           <div class="carro-meta" id="carro-meta"></div>
           <div class="carro-map" id="carro-map"><button class="carro-recenter hidden" id="carro-recenter" onclick="carroRecenter()">Recentralizar</button></div>
@@ -2478,7 +2379,7 @@
         if (typeof L !== 'undefined') {
           carroMap = L.map('carro-map', { zoomControl: true, attributionControl: false }).setView([p.lat, p.lng], 17);
           L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(carroMap);
-          carroMarker = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: '<div class="carro-pin">🚐</div>', iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(carroMap);
+          carroMarker = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: '<div class="carro-pin">🚗</div>', iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(carroMap);
           carroAccCircle = L.circle([p.lat, p.lng], { radius: p.accuracy || 20, color: '#2E7D32', weight: 1, fillColor: '#2E7D32', fillOpacity: 0.12 }).addTo(carroMap);
           carroMap.on('dragstart', () => { carroFollow = false; $('#carro-recenter')?.classList.remove('hidden'); });
         }
@@ -2487,7 +2388,7 @@
       } else {
         body.innerHTML = `
           <div class="carro-hero"><img src="/carro-hero.jpg" alt="Carro da Pamonha" /></div>
-          <div class="carro-title">🚐 Carro da Pamonha</div>
+          <div class="carro-title">🚗 Carro da Pamonha</div>
           <p class="text-sm muted" style="margin:0.3rem 0 0.8rem">O carro não está compartilhando a localização agora. Quando sair para as ruas, esta tela mostra o caminho em tempo real.</p>
           ${s && s.aviso ? `<div class="carro-aviso" style="cursor:default; margin-bottom:0.8rem">${icon('pin', 'icon')}<span><strong>${esc(s.aviso.message)}</strong><span>${s.aviso.place ? esc(s.aviso.place) + ' · ' : ''}${esc(avisoQuando(s.aviso))}</span></span></div>` : ''}
           <div class="surface">
@@ -2702,11 +2603,11 @@
       if (editing) return; // não atrapalha quem está digitando
       if (!live) {
         box.innerHTML = `
-          <h3 class="surface-title">🚐 Carro da Pamonha</h3>
+          <h3 class="surface-title">🚗 Carro da Pamonha</h3>
           <p class="text-sm muted mb-1">Ao entrar no carro, o GPS deste celular é compartilhado com todos os clientes e o botão <strong>Acompanhar</strong> aparece no app deles.</p>
           <label class="label">Nome do lugar (opcional)</label>
           <input class="input mb-1" id="carro-place-input" maxlength="80" placeholder="Deixe vazio: o site descobre sozinho" />
-          <button class="carro-big-btn on" id="carro-toggle" onclick="carroEntrar()">🚐 Entrar no carro</button>
+          <button class="carro-big-btn on" id="carro-toggle" onclick="carroEntrar()">🚗 Entrar no carro</button>
           <p class="text-xs muted mt-1">Dica: o nome sai automático da feira cadastrada em <strong>Locais</strong> ou, fora delas, da rua/bairro.</p>
         `;
         return;
@@ -2714,7 +2615,7 @@
       const age = carroAgeSec();
       const transmitindo = carroTx.active;
       box.innerHTML = `
-        <h3 class="surface-title">🚐 Carro da Pamonha <span class="carro-badge" style="margin-left:auto">no ar</span></h3>
+        <h3 class="surface-title">🚗 Carro da Pamonha <span class="carro-badge" style="margin-left:auto">no ar</span></h3>
         ${transmitindo ? '' : `<div class="carro-chip warn" style="display:block;margin-bottom:0.7rem;border-radius:12px;padding:0.6rem 0.8rem">Este celular não está transmitindo (a página foi recarregada). Toque em <strong>Retomar</strong> para voltar a enviar o GPS.</div>`}
         ${carroTx.error ? `<div class="carro-chip warn" style="display:block;margin-bottom:0.7rem;border-radius:12px;padding:0.6rem 0.8rem">${esc(carroTx.error)}</div>` : ''}
         <dl class="carro-kv">
@@ -2744,32 +2645,128 @@
       const box = $('#carro-admin-aviso');
       if (!box) return;
       const a = carroAdminAviso;
-      const statusTxt = a ? ({ agendado: 'Agendado — ainda não apareceu para os clientes', ativo: 'No ar — os clientes estão vendo', encerrado: 'Encerrado — os clientes não veem mais' }[a.status]) : '';
-      box.innerHTML = `
-        <h3 class="surface-title">${icon('bell', 'icon icon-sm')} Aviso do carro</h3>
-        <p class="text-sm muted mb-1">Avise quando o carro estará na rua. O aviso aparece na tela inicial dos clientes no horário de início e some sozinho no de término (se o carro ainda estiver transmitindo, ele também é encerrado nessa hora).</p>
-        ${a ? `<div class="carro-chip ${a.status === 'encerrado' ? 'warn' : ''}" style="display:block;border-radius:12px;padding:0.5rem 0.8rem;margin-bottom:0.7rem">${esc(statusTxt)}</div>` : ''}
-        <label class="label">Mensagem</label>
-        <textarea class="input mb-1" id="aviso-msg" rows="2" maxlength="200" placeholder="Ex: Sábado o carro estará na Feira da Figueira">${esc(a?.message || '')}</textarea>
-        <label class="label">Onde (opcional)</label>
-        <input class="input mb-1" id="aviso-place" maxlength="80" placeholder="Ex: Feira da Figueira" value="${esc(a?.place || '')}" />
-        <label class="label">Aparece para os clientes em</label>
-        <input class="input mb-1" type="datetime-local" id="aviso-show" style="min-width:0" value="${localInputValue(a?.showAt)}" />
-        <label class="label">Some sozinho em</label>
-        <input class="input mb-1" type="datetime-local" id="aviso-hide" style="min-width:0" value="${localInputValue(a?.hideAt)}" />
-        <p class="text-xs muted mb-1">Deixe "Aparece em" vazio para mostrar agora.</p>
-        <button class="btn btn-primary" onclick="carroSalvarAviso()">${icon('save', 'icon icon-sm')} Salvar aviso</button>
-        ${a ? `<button class="btn btn-danger mt-1" onclick="carroRemoverAviso()">Remover aviso</button>` : ''}
-      `;
+      const status = a ? a.status : null;
+    
+      let statusBar = '';
+      if (status === 'ativo') {
+        statusBar = '<div class="aviso-status-bar ativo">● No ar agora' + (a.hideAt ? ' · termina ' + fmtDiaHora(a.hideAt) : '') + '</div>';
+      } else if (status === 'agendado') {
+        statusBar = '<div class="aviso-status-bar agendado">◐ Agendado · começa ' + fmtDiaHora(a.showAt) + (a.hideAt ? ' · termina ' + fmtDiaHora(a.hideAt) : '') + '</div>';
+      } else if (status === 'encerrado') {
+        statusBar = '<div class="aviso-status-bar encerrado">○ Encerrado' + (a.hideAt ? ' em ' + fmtDiaHora(a.hideAt) : '') + '</div>';
+      }
+    
+      let actionsHTML = '';
+      if (status === 'ativo') {
+        actionsHTML =
+          '<div class="flex gap-1 mb-1">' +
+            '<button class="btn btn-secondary" style="flex:1" onclick="carroAvisoTerminarAgora()">Terminar agora</button>' +
+            '<button class="btn btn-outline" style="flex:1" onclick="toggleAvisoPlanejar(\'hide\')">Planejar término</button>' +
+          '</div>';
+      } else if (status === 'agendado') {
+        actionsHTML =
+          '<div class="flex gap-1 mb-1">' +
+            '<button class="btn btn-primary" style="flex:1" onclick="carroAvisoPublicarAgora()">Publicar agora</button>' +
+            '<button class="btn btn-outline" style="flex:1" onclick="carroRemoverAviso()">Cancelar agendamento</button>' +
+          '</div>';
+      } else {
+        actionsHTML =
+          '<div class="flex gap-1 mb-1">' +
+            '<button class="btn btn-primary" style="flex:1" onclick="carroAvisoPublicarAgora()">Publicar agora</button>' +
+            '<button class="btn btn-outline" style="flex:1" onclick="toggleAvisoPlanejar(\'show\')">Planejar início</button>' +
+          '</div>';
+      }
+    
+      box.innerHTML =
+        '<h3 class="surface-title">' + icon('bell', 'icon icon-sm') + ' Aviso do carro</h3>' +
+        '<p class="text-sm muted mb-1">Avise quando o carro estará na rua. O aviso aparece na tela dos clientes e some sozinho no horário que você escolher.</p>' +
+        statusBar +
+        '<label class="label">Mensagem</label>' +
+        '<textarea class="input mb-1" id="aviso-msg" rows="2" maxlength="200" placeholder="Ex: Sábado o carro estará na Feira da Figueira">' + esc(a ? a.message : '') + '</textarea>' +
+        '<label class="label">Onde (opcional)</label>' +
+        '<input class="input mb-1" id="aviso-place" maxlength="80" placeholder="Ex: Feira da Figueira" value="' + esc(a ? (a.place || '') : '') + '" />' +
+        '<div id="aviso-planejar" class="hidden"><div class="aviso-planejar-box">' +
+          '<label class="label" id="aviso-planejar-label">Quando?</label>' +
+          '<input class="input mb-1" type="datetime-local" id="aviso-datetime" />' +
+          '<div class="flex gap-1">' +
+            '<button class="btn btn-outline" style="flex:1" onclick="cancelarPlanejar()">Cancelar</button>' +
+            '<button class="btn btn-primary" style="flex:1" onclick="carroConfirmarPlanejar()">Confirmar</button>' +
+          '</div>' +
+        '</div></div>' +
+        actionsHTML +
+        (a ? '<button class="btn btn-danger mt-1" onclick="carroRemoverAviso()">' + icon('trash', 'icon icon-sm') + ' Remover aviso</button>' : '');
     }
-    window.carroSalvarAviso = async () => {
-      const toIso = (v) => v ? new Date(v).toISOString() : null;
+
+    window.toggleAvisoPlanejar = function(modo) {
+      avisoPlanejarModo = modo;
+      const box = $('#aviso-planejar');
+      const label = $('#aviso-planejar-label');
+      const input = $('#aviso-datetime');
+      if (!box || !label || !input) return;
+      box.classList.remove('hidden');
+      label.textContent = modo === 'show' ? 'Aparecer em:' : 'Terminar em:';
+      const d = new Date(Date.now() + 60 * 60 * 1000);
+      const p = function(n){ return String(n).padStart(2, '0'); };
+      input.value = d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+    };
+    
+    window.cancelarPlanejar = function() {
+      avisoPlanejarModo = null;
+      const box = $('#aviso-planejar');
+      if (box) box.classList.add('hidden');
+    };
+    
+    window.carroAvisoPublicarAgora = async function() {
+      const message = (($('#aviso-msg') || {}).value || '').trim();
+      const place = (($('#aviso-place') || {}).value || '').trim();
+      if (!message) return toast.show('Escreva uma mensagem para os clientes.', 'error');
       try {
-        const st = await api.put('/api/carro/aviso', { message: $('#aviso-msg').value, place: $('#aviso-place').value, showAt: toIso($('#aviso-show').value), hideAt: toIso($('#aviso-hide').value) });
-        carroAdminAviso = st.avisoAdmin; carroApply(st); renderCarroAdminAviso();
-        toast.show('Aviso salvo.');
+        const st = await api.put('/api/carro/aviso', { message: message, place: place, showAt: null, hideAt: null });
+        carroAdminAviso = st.avisoAdmin;
+        carroApply(st);
+        renderCarroAdminAviso();
+        toast.show('Aviso publicado.');
       } catch (e) { toast.show(e.message, 'error'); }
     };
+    
+    window.carroConfirmarPlanejar = async function() {
+      if (!avisoPlanejarModo) return;
+      const message = (($('#aviso-msg') || {}).value || '').trim();
+      const place = (($('#aviso-place') || {}).value || '').trim();
+      const dtStr = ($('#aviso-datetime') || {}).value;
+      if (!message) return toast.show('Escreva uma mensagem para os clientes.', 'error');
+      if (!dtStr) return toast.show('Escolha a data e a hora.', 'error');
+      const iso = new Date(dtStr).toISOString();
+      const current = carroAdminAviso || {};
+      const body = { message: message, place: place };
+      if (avisoPlanejarModo === 'show') {
+        body.showAt = iso;
+        if (current.hideAt && new Date(current.hideAt) > new Date(iso)) body.hideAt = current.hideAt;
+      } else {
+        body.hideAt = iso;
+        if (current.showAt) body.showAt = current.showAt;
+      }
+      try {
+        const st = await api.put('/api/carro/aviso', body);
+        carroAdminAviso = st.avisoAdmin;
+        carroApply(st);
+        avisoPlanejarModo = null;
+        renderCarroAdminAviso();
+        toast.show('Agendamento salvo.');
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    
+    window.carroAvisoTerminarAgora = async function() {
+      if (!confirm('Encerrar o aviso agora? Os clientes deixam de ver imediatamente.')) return;
+      try {
+        const st = await api.del('/api/carro/aviso');
+        carroAdminAviso = null;
+        carroApply(st);
+        renderCarroAdminAviso();
+        toast.show('Aviso encerrado.');
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
     window.carroRemoverAviso = async () => {
       try { const st = await api.del('/api/carro/aviso'); carroAdminAviso = null; carroApply(st); renderCarroAdminAviso(); toast.show('Aviso removido.'); }
       catch (e) { toast.show(e.message, 'error'); }
@@ -3621,7 +3618,7 @@
             <h3 class="surface-title">${icon('chart','icon icon-sm')} Faturamento</h3>
             <div class="breadcrumb">${breadcrumb}</div>
           </div>
-          <div class="waterfall-wrap"><canvas id="waterfall-canvas" height="220"></canvas></div>
+          <div class="waterfall-wrap">${renderWaterfallSVG(posicoes, isMesView)}</div>
           <p class="text-xs muted text-center mt-1">${isMesView ? 'Semanas do mês — toque em uma barra para ver detalhes no tooltip.' : 'Toque em um mês para abrir as semanas.'}</p>
         </div>
 
@@ -3629,10 +3626,18 @@
           <h3 class="surface-title">${icon('star','icon icon-sm')} Avaliações</h3>
           ${!sat.totalAvaliacoes ? `<p class="text-sm muted">Nenhuma avaliação ainda.</p>` : `
             <div class="pizza-wrap">
-              <div style="position:relative;flex-shrink:0"><canvas id="pizza-canvas" width="140" height="140"></canvas>
+              <div style="position:relative;flex-shrink:0">
+                ${renderPizzaSVG(sat)}
                 <div class="pizza-center"><strong>${sat.percentualSatisfeitos ?? 0}%</strong><span>satisfeitos</span></div>
               </div>
-              <div class="chart-legend" id="pizza-legend"></div>
+              <div class="chart-legend">
+                ${[1,2,3,4,5].map(function(n, i){
+                  const found = (sat.distribuicaoPorNota || []).find(function(d){ return d.nota === n; });
+                  const qty = found ? found.quantidade : 0;
+                  const colors = ['#E65100','#F9A825','#FDD835','#7CB342','#2E7D32'];
+                  return '<div class="legend-item"><span class="legend-dot" style="background:' + colors[i] + '"></span>' + n + ' estrela' + (n===1?'':'s') + '<strong>' + qty + '</strong></div>';
+                }).join('')}
+              </div>
             </div>
             <div class="mt-2" id="avaliacoes-recentes">
               ${(sat.avaliacoesRecentes || []).slice(0, 8).map(a => `
@@ -3673,8 +3678,6 @@
         </div>
       `;
 
-      drawWaterfallChart(posicoes);
-      if (sat.totalAvaliacoes) drawPizzaChart(sat);
     }
 
     // -- Gráfico cascata (waterfall): 3 barras flutuantes por posição — Bruto, Custo, Líquido --
@@ -3752,6 +3755,172 @@
       }
     }
 
+    // ==========================================================================
+    // LIMPAR DADOS — apagar vendas/avaliações selecionadas, zerar cartões, ou
+    // apagar tudo (zona vermelha, exige digitar "APAGAR TUDO").
+    // ==========================================================================
+    async function renderLimpeza(container) {
+      container.innerHTML = `<div class="loader"></div>`;
+      try {
+        if (!vendasCache.length) { const v = await api.get('/api/admin/vendas?limit=100'); vendasCache = v.vendas; }
+        if (!adminFeedbacksCache.length) { const f = await api.get('/api/admin/feedbacks'); adminFeedbacksCache = f.feedbacks; }
+      } catch (e) { /* segue com o que tiver em cache */ }
+
+      container.innerHTML = `
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('box','icon icon-sm')} Apagar vendas selecionadas</h3>
+          <div class="limpeza-list">
+            ${vendasCache.slice(0, 30).map(v => `
+              <label class="limpeza-item"><input type="checkbox" class="limpeza-venda-chk" value="${v._id}" />
+                <span>${v.clientId?.fullName || 'Venda avulsa'} · R$ ${v.totalValue.toFixed(2).replace('.', ',')} · ${formatDateShort(v.createdAt)}</span>
+              </label>
+            `).join('') || '<p class="text-sm muted">Nenhuma venda.</p>'}
+          </div>
+          <button class="btn btn-danger mt-1" onclick="limparEscopo('vendas')">${icon('trash','icon icon-sm')} Apagar selecionadas</button>
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('star','icon icon-sm')} Apagar avaliações selecionadas</h3>
+          <div class="limpeza-list">
+            ${adminFeedbacksCache.slice(0, 30).map(f => `
+              <label class="limpeza-item"><input type="checkbox" class="limpeza-avaliacao-chk" value="${f._id}" />
+                <span>${f.userId?.fullName || 'Cliente'} · média ${f.average ?? '-'} · ${formatDateShort(f.createdAt)}</span>
+              </label>
+            `).join('') || '<p class="text-sm muted">Nenhuma avaliação.</p>'}
+          </div>
+          <button class="btn btn-danger mt-1" onclick="limparEscopo('avaliacoes')">${icon('trash','icon icon-sm')} Apagar selecionadas</button>
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('broom','icon icon-sm')} Período visualizado</h3>
+          <p class="text-xs muted mb-1">Apaga vendas e avaliações de ${graficosMes ? MESES_PT_LONG[graficosMes-1] + '/' : ''}${graficosAno || 'todo o período'}.</p>
+          <button class="btn btn-danger" onclick="limparEscopo('periodo')">Apagar dados do período visualizado</button>
+        </div>
+
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('reset','icon icon-sm')} Cartões</h3>
+          <button class="btn btn-danger" onclick="limparEscopo('cartoes')">Zerar contagem de cartões</button>
+        </div>
+
+        <div class="surface" style="border-color:rgba(198,40,40,0.5);background:rgba(198,40,40,0.05)">
+          <h3 class="surface-title" style="color:var(--danger)">${icon('trash','icon icon-sm')} Zona vermelha</h3>
+          <p class="text-sm mb-1">Apaga <strong>todos</strong> os dados: vendas, avaliações, produtos, locais e contagem de cartões. Não pode ser desfeito.</p>
+          <label class="label">Digite APAGAR TUDO para confirmar</label>
+          <input class="input mb-1" id="limpeza-confirm-word" placeholder="APAGAR TUDO" />
+          <button class="btn btn-danger" onclick="limparEscopo('tudo')">Apagar TUDO</button>
+        </div>
+      `;
+    }
+
+    window.limparEscopo = async (escopo) => {
+      const body = { escopo };
+      if (escopo === 'vendas') {
+        body.vendaIds = $$('.limpeza-venda-chk:checked').map(el => el.value);
+        if (!body.vendaIds.length) return toast.show('Selecione ao menos uma venda.', 'error');
+      } else if (escopo === 'avaliacoes') {
+        body.avaliacaoIds = $$('.limpeza-avaliacao-chk:checked').map(el => el.value);
+        if (!body.avaliacaoIds.length) return toast.show('Selecione ao menos uma avaliação.', 'error');
+      } else if (escopo === 'periodo') {
+        body.ano = graficosAno; if (graficosMes) body.mes = graficosMes;
+      } else if (escopo === 'tudo') {
+        const word = $('#limpeza-confirm-word').value.trim();
+        if (word !== 'APAGAR TUDO') return toast.show('Digite APAGAR TUDO para confirmar.', 'error');
+        body.confirmCode = word;
+      }
+      if (!confirm('Tem certeza? Esta ação não pode ser desfeita.')) return;
+      try {
+        const data = await api.post('/api/admin/limpeza', body);
+        toast.show(`Removido(s): ${data.removidos ?? 'concluído'}.`);
+        vendasCache = []; adminFeedbacksCache = [];
+        renderLimpeza($('#admin-sub') || $('#admin-tab-body'));
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>    // -- Gráficos em SVG, sem dependência externa. --
+      const W = 340, H = 250;
+      const padL = 44, padR = 10, padT = 30, padB = 36;
+      const chartW = W - padL - padR;
+      const chartH = H - padT - padB;
+      const maxVal = Math.max(1, ...posicoes.map(p => p.bruto));
+    
+      let grid = '';
+      const steps = 4;
+      for (let i = 0; i <= steps; i++) {
+        const y = padT + (chartH * i / steps);
+        const val = maxVal * (1 - i / steps);
+        grid += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y + '" stroke="rgba(0,0,0,0.08)" stroke-width="1"/>';
+        grid += '<text x="' + (padL - 6) + '" y="' + (y + 3) + '" text-anchor="end" font-size="9" fill="#607D8B">' + Math.round(val) + '</text>';
+      }
+    
+      const n = posicoes.length;
+      const barSlot = chartW / n;
+      const barW = Math.max(6, Math.min(barSlot * 0.62, 28));
+    
+      let bars = '';
+      posicoes.forEach((p, i) => {
+        const x = padL + i * barSlot + (barSlot - barW) / 2;
+        const liquidoH = (p.liquido / maxVal) * chartH;
+        const custoH = (p.custo / maxVal) * chartH;
+        const baseY = padT + chartH;
+    
+        if (liquidoH > 0.5) {
+          bars += '<rect x="' + x + '" y="' + (baseY - liquidoH) + '" width="' + barW + '" height="' + liquidoH + '" fill="#F9A825" rx="3"/>';
+        }
+        if (custoH > 0.5) {
+          bars += '<rect x="' + x + '" y="' + (baseY - liquidoH - custoH) + '" width="' + barW + '" height="' + custoH + '" fill="#C62828" rx="3"/>';
+        }
+    
+        const clickable = !isMesView && p.vendas > 0;
+        bars += '<rect x="' + (x - 3) + '" y="' + padT + '" width="' + (barW + 6) + '" height="' + chartH + '" fill="transparent" style="cursor:' + (clickable ? 'pointer' : 'default') + '"' + (clickable ? ' onclick="drillGraficosMes(' + (i + 1) + ')"' : '') + '/>';
+    
+        bars += '<text x="' + (x + barW / 2) + '" y="' + (H - padB + 15) + '" text-anchor="middle" font-size="9.5" fill="#263238">' + p.label + '</text>';
+    
+        const totalH = liquidoH + custoH;
+        if (totalH > 8) {
+          bars += '<text x="' + (x + barW / 2) + '" y="' + (baseY - totalH - 4) + '" text-anchor="middle" font-size="8.5" font-weight="700" fill="#1B5E20">' + (p.bruto > 0 ? 'R$' + Math.round(p.bruto) : '') + '</text>';
+        }
+      });
+    
+      const legendY = 12;
+      let legend = '<g transform="translate(' + (padL) + ',' + legendY + ')">';
+      legend += '<rect x="0" y="-7" width="9" height="9" fill="#F9A825" rx="2"/><text x="13" y="1" font-size="10" fill="#263238">Líquido</text>';
+      legend += '<rect x="66" y="-7" width="9" height="9" fill="#C62828" rx="2"/><text x="79" y="1" font-size="10" fill="#263238">Custo</text>';
+      legend += '</g>';
+    
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" xmlns="http://www.w3.org/2000/svg">' + grid + bars + legend + '</svg>';
+    }
+    
+    function renderPizzaSVG(sat) {
+      const dist = [1,2,3,4,5].map(function(n){
+        const found = (sat.distribuicaoPorNota || []).find(function(d){ return d.nota === n; });
+        return found ? found.quantidade : 0;
+      });
+      const total = dist.reduce(function(s,v){ return s+v; }, 0);
+      const size = 140, stroke = 22;
+      const radius = (size - stroke) / 2;
+      const cx = size / 2, cy = size / 2;
+      const circumference = 2 * Math.PI * radius;
+      const colors = ['#E65100', '#F9A825', '#FDD835', '#7CB342', '#2E7D32'];
+    
+      let slices = '';
+      if (total === 0) {
+        slices = '<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="none" stroke="#E8F5E9" stroke-width="' + stroke + '"/>';
+      } else {
+        let offset = 0;
+        dist.forEach(function(qty, i){
+          if (qty === 0) return;
+          const fraction = qty / total;
+          const dash = fraction * circumference;
+          const gap = circumference - dash;
+          slices += '<circle cx="' + cx + '" cy="' + cy + '" r="' + radius + '" fill="none" stroke="' + colors[i] + '" stroke-width="' + stroke + '" stroke-dasharray="' + dash + ' ' + gap + '" stroke-dashoffset="' + (-offset) + '" transform="rotate(-90 ' + cx + ' ' + cy + ')"/>';
+          offset += dash;
+        });
+      }
+      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg">' + slices + '</svg>';
+    }
     // ==========================================================================
     // LIMPAR DADOS — apagar vendas/avaliações selecionadas, zerar cartões, ou
     // apagar tudo (zona vermelha, exige digitar "APAGAR TUDO").
