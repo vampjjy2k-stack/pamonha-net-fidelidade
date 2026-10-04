@@ -1,6 +1,6 @@
-// server.js
-// Ponto de entrada da API — Pamonha Net Fidelidade v2.0
-// Responsabilidade: conexão MongoDB, middlewares globais, rotas e fallback SPA.
+
+// server.js — Pamonha Net Fidelidade v10
+// Novidade na v10: rotas do "Carro da Pamonha" montadas em /api/carro.
 
 require('dotenv').config();
 
@@ -8,29 +8,28 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 const authRoutes = require('./routes/auth');
 const clientRoutes = require('./routes/client');
 const adminRoutes = require('./routes/admin');
+const carroRoutes = require('./routes/carro');   // NOVO na v10
 const { ensureConfigured } = require('./utils/webPush');
-const jwt = require('jsonwebtoken');
 const liveEvents = require('./utils/events');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Necessário no Render/Heroku/etc para req.protocol refletir https corretamente atrás do proxy
-// (usado para montar os links de QR Code e de redefinição de senha).
+// Necessário no Render para req.protocol refletir https atrás do proxy.
 app.set('trust proxy', 1);
 
-// --- Validação de variáveis obrigatórias ---
 if (!MONGODB_URI) {
-  console.error('❌ MONGODB_URI não definida. Configure o arquivo .env antes de iniciar o servidor.');
+  console.error('❌ MONGODB_URI não definida. Configure o .env antes de iniciar.');
   process.exit(1);
 }
 if (!process.env.JWT_SECRET) {
-  console.error('❌ JWT_SECRET não definida. Configure o arquivo .env antes de iniciar o servidor.');
+  console.error('❌ JWT_SECRET não definida. Configure o .env antes de iniciar.');
   process.exit(1);
 }
 
@@ -41,14 +40,13 @@ app.use(
     credentials: true,
   })
 );
-// Limite maior que o padrão (100kb) porque as imagens de produto do hub de vendas
-// chegam como data URL em base64 dentro do próprio JSON (sem storage externo).
+// 8mb porque imagens de produto chegam em base64 dentro do JSON.
 app.use(express.json({ limit: '8mb' }));
 
-// Avisa no boot se as notificações push reais não estiverem configuradas (não impede o servidor de subir).
+// Avisa no log se push não estiver configurado — não impede o servidor de subir.
 ensureConfigured();
 
-// --- Servir o frontend estático (client/) ANTES do fallback ---
+// --- Frontend estático ---
 const clientDir = path.join(__dirname, '..', 'client');
 app.use(express.static(clientDir));
 
@@ -56,13 +54,14 @@ app.use(express.static(clientDir));
 app.use('/api/auth', authRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/carro', carroRoutes());   // NOVO na v10
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', version: 'v10', timestamp: new Date().toISOString() });
 });
 
-// Chave pública VAPID — não é secreta, o app do cliente precisa dela para se inscrever no push.
+// Chave pública VAPID (usada pelo app do cliente pra se inscrever no push).
 app.get('/api/push/vapid-public-key', (req, res) => {
   if (!process.env.VAPID_PUBLIC_KEY) {
     return res.status(503).json({ error: 'Notificações push não configuradas no servidor.' });
@@ -70,10 +69,7 @@ app.get('/api/push/vapid-public-key', (req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
 });
 
-// GET /api/events — canal ao vivo (Server-Sent Events). O app do cliente mantém isso aberto
-// enquanto está na tela; assim que um carimbo é adicionado, uma notificação é enviada, etc.,
-// o servidor escreve um evento aqui e a tela se atualiza sozinha, sem esperar o próximo "poll".
-// Vai o token como query string (?token=) porque o navegador não permite header customizado em EventSource.
+// Canal ao vivo (SSE) — o app mantém aberto enquanto está na tela.
 app.get('/api/events', (req, res) => {
   let payload;
   try {
@@ -85,15 +81,14 @@ app.get('/api/events', (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no', // evita que proxies (Render/nginx) segurem o buffer
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
   });
   res.write('retry: 3000\n\n');
 
   liveEvents.addClient(payload.id, res);
   if (payload.role === 'admin') liveEvents.addClient('admins', res);
 
-  // Ping periódico só para manter a conexão viva atrás de proxies que fecham conexões ociosas.
   const keepAlive = setInterval(() => res.write(': ping\n\n'), 25000);
 
   req.on('close', () => {
@@ -103,12 +98,12 @@ app.get('/api/events', (req, res) => {
   });
 });
 
-// 404 para rotas /api/* não encontradas
+// 404 para rotas /api/*
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Rota da API não encontrada.' });
 });
 
-// Fallback SPA: qualquer rota não-API cai no index.html
+// Fallback SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientDir, 'index.html'));
 });
@@ -119,13 +114,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erro interno do servidor.' });
 });
 
-// --- Conexão MongoDB + inicialização ---
+// --- Conexão MongoDB + start ---
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
     console.log('✅ Conectado ao MongoDB.');
     app.listen(PORT, () => {
-      console.log(`🌽 Pamonha Net Fidelidade rodando em http://localhost:${PORT}`);
+      console.log(`🌽 Pamonha Net Fidelidade v10 rodando em http://localhost:${PORT}`);
     });
   })
   .catch((err) => {

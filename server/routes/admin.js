@@ -1,6 +1,7 @@
-// routes/admin.js
-// Rotas administrativas. Todas protegidas por auth + adminOnly (dupla verificação).
-// Escopo: gestão de clientes, scan QR, notificações, feedbacks e exclusão de históricos.
+
+// routes/admin.js — v10
+// Admin completo: clientes, QR, notificações, feedbacks, produtos, locais, vendas,
+// gráficos (ano→mês→semana) e limpeza seletiva de dados.
 
 const express = require('express');
 const User = require('../models/User');
@@ -21,26 +22,21 @@ const { matchLocal } = require('../utils/geo');
 const router = express.Router();
 router.use(auth, adminOnly);
 
-// GET /api/admin/clients?search=&sort=name|stamps&page=1&limit=20
+// ============================================================================
+// CLIENTES
+// ============================================================================
+
 router.get('/clients', async (req, res) => {
   try {
     const { search = '', sort = 'name', page = 1, limit = 20 } = req.query;
-
     const query = { role: 'client' };
     if (search.trim()) {
       const digitsOnly = search.replace(/\D/g, '');
       query.$or = [{ fullName: { $regex: search.trim(), $options: 'i' } }];
-      if (digitsOnly) {
-        query.$or.push({ phone: { $regex: digitsOnly } });
-      }
+      if (digitsOnly) query.$or.push({ phone: { $regex: digitsOnly } });
     }
-
-    const sortMap = {
-      name: { fullName: 1 },
-      stamps: { stamps: -1 },
-    };
+    const sortMap = { name: { fullName: 1 }, stamps: { stamps: -1 } };
     const sortOption = sortMap[sort] || sortMap.name;
-
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
 
@@ -80,7 +76,6 @@ router.get('/clients', async (req, res) => {
   }
 });
 
-// GET /api/admin/clients/:id
 router.get('/clients/:id', async (req, res) => {
   try {
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
@@ -92,39 +87,25 @@ router.get('/clients/:id', async (req, res) => {
   }
 });
 
-// POST /api/admin/clients/:id/stamps { action: "add" | "remove" }
 router.post('/clients/:id/stamps', async (req, res) => {
   try {
     const { action } = req.body;
     if (!['add', 'remove'].includes(action)) {
       return res.status(400).json({ error: 'Ação inválida. Use "add" ou "remove".' });
     }
-
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
     if (action === 'add') {
-      if (client.stamps >= 10) {
-        return res.status(400).json({ error: 'O cartão deste cliente já está completo (10/10).' });
-      }
+      if (client.stamps >= 10) return res.status(400).json({ error: 'O cartão deste cliente já está completo (10/10).' });
       client.stamps += 1;
       client.lastStampAt = new Date();
       await client.save();
-      await StampHistory.create({
-        userId: client._id,
-        action: 'add',
-        adminId: req.user.id,
-        source: 'manual',
-      });
+      await StampHistory.create({ userId: client._id, action: 'add', adminId: req.user.id, source: 'manual' });
     } else {
-      if (client.stamps <= 0) {
-        return res.status(400).json({ error: 'Este cliente não possui carimbos para remover.' });
-      }
+      if (client.stamps <= 0) return res.status(400).json({ error: 'Este cliente não possui carimbos para remover.' });
       client.stamps -= 1;
       await client.save();
-      // Correção de engano: em vez de registrar uma "remoção" (que apareceria pro cliente como um
-      // aviso estranho), apagamos o carimbo mais recente do histórico. Fica como se nunca tivesse
-      // acontecido — sem gerar susto ou notificação para o cliente.
       const lastAdd = await StampHistory.findOne({ userId: client._id, action: 'add' }).sort({ createdAt: -1 });
       if (lastAdd) await StampHistory.deleteOne({ _id: lastAdd._id });
     }
@@ -136,17 +117,12 @@ router.post('/clients/:id/stamps', async (req, res) => {
   }
 });
 
-// POST /api/admin/clients/:id/stamps/set { target } — o "hub" de carimbo: define o número final
-// de selos de uma vez (0 a 10), em vez de precisar tocar +1/-1 várias vezes. Se o alvo for maior
-// que o atual, registra os carimbos novos; se for menor, desfaz os mais recentes (mesma lógica
-// silenciosa do endpoint acima — sem gerar aviso de "carimbo removido" pro cliente).
 router.post('/clients/:id/stamps/set', async (req, res) => {
   try {
     const target = Number(req.body.target);
     if (!Number.isInteger(target) || target < 0 || target > 10) {
       return res.status(400).json({ error: 'Valor inválido. Escolha de 0 a 10 selos.' });
     }
-
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
@@ -154,11 +130,8 @@ router.post('/clients/:id/stamps/set', async (req, res) => {
     if (delta > 0) {
       const now = Date.now();
       const entries = Array.from({ length: delta }, (_, i) => ({
-        userId: client._id,
-        action: 'add',
-        adminId: req.user.id,
-        source: 'manual',
-        createdAt: new Date(now + i), // ms distintos, só para manter a ordem estável no histórico
+        userId: client._id, action: 'add', adminId: req.user.id, source: 'manual',
+        createdAt: new Date(now + i),
       }));
       await StampHistory.insertMany(entries);
       client.lastStampAt = new Date();
@@ -171,7 +144,6 @@ router.post('/clients/:id/stamps/set', async (req, res) => {
 
     client.stamps = target;
     await client.save();
-
     res.json({ client });
     liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
   } catch (err) {
@@ -179,21 +151,14 @@ router.post('/clients/:id/stamps/set', async (req, res) => {
   }
 });
 
-// POST /api/admin/clients/:id/reset
 router.post('/clients/:id/reset', async (req, res) => {
   try {
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
-
-    // Reset a partir de um cartão completo conta como 1 cartão fechado no ranking.
-    if (client.stamps >= 10) {
-      client.completedCards = (client.completedCards || 0) + 1;
-    }
+    if (client.stamps >= 10) client.completedCards = (client.completedCards || 0) + 1;
     client.stamps = 0;
     await client.save();
-    // O histórico recente é por ciclo: ao resetar, limpa tudo para o próximo cartão começar do zero.
     await StampHistory.deleteMany({ userId: client._id });
-
     res.json({ client });
     liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
   } catch (err) {
@@ -201,7 +166,6 @@ router.post('/clients/:id/reset', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/clients/:id/history — Exclui histórico de selos do cliente
 router.delete('/clients/:id/history', async (req, res) => {
   try {
     const client = await User.findOne({ _id: req.params.id, role: 'client' });
@@ -213,9 +177,7 @@ router.delete('/clients/:id/history', async (req, res) => {
   }
 });
 
-// POST /api/admin/scan-qr { qrToken } — resolve o QR Code do cliente (sem carimbar ainda).
-// O carimbo em si acontece depois, quando o admin confirma no "hub" do cartão — assim dá pra
-// carimbar várias compras de uma vez, em vez de precisar escanear de novo a cada carimbo.
+// POST /api/admin/scan-qr — aceita token cru OU URL completa (?scan=)
 router.post('/scan-qr', async (req, res) => {
   try {
     const { qrToken } = req.body;
@@ -230,17 +192,16 @@ router.post('/scan-qr', async (req, res) => {
 
     const client = await User.findOne({ _id: userId, role: 'client' });
     if (!client) return res.status(404).json({ error: 'Cliente do QR Code não foi encontrado.' });
-
     res.json({ message: `Cartão de ${client.fullName} encontrado.`, client });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível processar o QR Code.' });
   }
 });
 
-// NOTIFICATIONS ADMIN
-// POST /api/admin/notifications { title, message, userId? }
-// Salva o aviso no app (aba "Avisos") E dispara uma notificação push real para o celular do cliente,
-// caso ele tenha ativado notificações no dispositivo.
+// ============================================================================
+// NOTIFICAÇÕES
+// ============================================================================
+
 router.post('/notifications', async (req, res) => {
   try {
     const { title, message, userId } = req.body;
@@ -251,26 +212,15 @@ router.post('/notifications', async (req, res) => {
       userId: userId || null,
       broadcast: !userId,
     });
-
-    const pushResult = await sendPushToUser({
-      userId: userId || null,
-      title: title.trim(),
-      body: message.trim(),
-    });
-
+    const pushResult = await sendPushToUser({ userId: userId || null, title: title.trim(), body: message.trim() });
     res.status(201).json({ notification: notif, push: pushResult });
-
-    if (notif.broadcast) {
-      liveEvents.broadcast('notification', { id: notif._id, title: notif.title });
-    } else {
-      liveEvents.sendToUser(notif.userId, 'notification', { id: notif._id, title: notif.title });
-    }
+    if (notif.broadcast) liveEvents.broadcast('notification', { id: notif._id, title: notif.title });
+    else liveEvents.sendToUser(notif.userId, 'notification', { id: notif._id, title: notif.title });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao criar notificação.' });
   }
 });
 
-// GET /api/admin/notifications
 router.get('/notifications', async (req, res) => {
   try {
     const list = await Notification.find().sort({ createdAt: -1 }).populate('userId', 'fullName phone');
@@ -280,30 +230,14 @@ router.get('/notifications', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/notifications/:id
-router.delete('/notifications/:id', async (req, res) => {
-  try {
-    await Notification.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Notificação removida.' });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao remover notificação.' });
-  }
-});
-
-// GET /api/admin/notifications/:id/views — quem já visualizou este aviso (sem precisar "marcar como lida")
 router.get('/notifications/:id/views', async (req, res) => {
   try {
     const notif = await Notification.findById(req.params.id);
     if (!notif) return res.status(404).json({ error: 'Notificação não encontrada.' });
-
-    const totalClients = notif.broadcast
-      ? await User.countDocuments({ role: 'client' })
-      : 1;
-
+    const totalClients = notif.broadcast ? await User.countDocuments({ role: 'client' }) : 1;
     const reads = await NotificationRead.find({ notificationId: notif._id })
       .populate('userId', 'fullName phone')
       .sort({ viewedAt: -1 });
-
     res.json({
       totalRecipients: totalClients,
       viewedCount: reads.length,
@@ -314,10 +248,9 @@ router.get('/notifications/:id/views', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/notifications — limpa notificações em massa
 router.delete('/notifications', async (req, res) => {
   try {
-    const { scope } = req.query; // 'all', 'broadcast', 'individual'
+    const { scope } = req.query;
     const filter = {};
     if (scope === 'broadcast') filter.broadcast = true;
     if (scope === 'individual') filter.broadcast = false;
@@ -328,7 +261,15 @@ router.delete('/notifications', async (req, res) => {
   }
 });
 
-// POST /api/admin/leaderboard/reset — zera a contagem de cartões completados de todos os clientes
+router.delete('/notifications/:id', async (req, res) => {
+  try {
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Notificação removida.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao remover notificação.' });
+  }
+});
+
 router.post('/leaderboard/reset', async (req, res) => {
   try {
     await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } });
@@ -338,8 +279,10 @@ router.post('/leaderboard/reset', async (req, res) => {
   }
 });
 
-// FEEDBACK ADMIN
-// GET /api/admin/feedbacks
+// ============================================================================
+// FEEDBACK
+// ============================================================================
+
 router.get('/feedbacks', async (req, res) => {
   try {
     const list = await Feedback.find().sort({ createdAt: -1 }).populate('userId', 'fullName phone');
@@ -349,7 +292,6 @@ router.get('/feedbacks', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/feedbacks/:id
 router.delete('/feedbacks/:id', async (req, res) => {
   try {
     await Feedback.findByIdAndDelete(req.params.id);
@@ -360,10 +302,9 @@ router.delete('/feedbacks/:id', async (req, res) => {
 });
 
 // ============================================================================
-// PRODUTOS — catálogo usado no hub de vendas (aberto ao escanear o QR do cliente)
+// PRODUTOS
 // ============================================================================
 
-// GET /api/admin/produtos?includeInactive=1
 router.get('/produtos', async (req, res) => {
   try {
     const { includeInactive } = req.query;
@@ -375,19 +316,14 @@ router.get('/produtos', async (req, res) => {
   }
 });
 
-// POST /api/admin/produtos { name, price, imageUrl? }
 router.post('/produtos', async (req, res) => {
   try {
     const { name, price, costPrice, imageUrl } = req.body;
     if (!name || !String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' });
     const numericPrice = Number(price);
-    if (!Number.isFinite(numericPrice) || numericPrice < 0) {
-      return res.status(400).json({ error: 'Informe um preço válido.' });
-    }
+    if (!Number.isFinite(numericPrice) || numericPrice < 0) return res.status(400).json({ error: 'Informe um preço válido.' });
     const numericCost = costPrice !== undefined ? Number(costPrice) : 0;
-    if (!Number.isFinite(numericCost) || numericCost < 0) {
-      return res.status(400).json({ error: 'Informe um custo de produção válido.' });
-    }
+    if (!Number.isFinite(numericCost) || numericCost < 0) return res.status(400).json({ error: 'Informe um custo válido.' });
     const produto = await Produto.create({
       name: String(name).trim(),
       price: numericPrice,
@@ -401,12 +337,10 @@ router.post('/produtos', async (req, res) => {
   }
 });
 
-// PUT /api/admin/produtos/:id { name?, price?, costPrice?, imageUrl?, active? }
 router.put('/produtos/:id', async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
     if (!produto) return res.status(404).json({ error: 'Produto não encontrado.' });
-
     const { name, price, costPrice, imageUrl, active } = req.body;
     if (name !== undefined) {
       if (!String(name).trim()) return res.status(400).json({ error: 'O nome do produto é obrigatório.' });
@@ -414,21 +348,16 @@ router.put('/produtos/:id', async (req, res) => {
     }
     if (price !== undefined) {
       const numericPrice = Number(price);
-      if (!Number.isFinite(numericPrice) || numericPrice < 0) {
-        return res.status(400).json({ error: 'Informe um preço válido.' });
-      }
+      if (!Number.isFinite(numericPrice) || numericPrice < 0) return res.status(400).json({ error: 'Informe um preço válido.' });
       produto.price = numericPrice;
     }
     if (costPrice !== undefined) {
       const numericCost = Number(costPrice);
-      if (!Number.isFinite(numericCost) || numericCost < 0) {
-        return res.status(400).json({ error: 'Informe um custo de produção válido.' });
-      }
+      if (!Number.isFinite(numericCost) || numericCost < 0) return res.status(400).json({ error: 'Informe um custo válido.' });
       produto.costPrice = numericCost;
     }
     if (imageUrl !== undefined) produto.imageUrl = imageUrl;
     if (active !== undefined) produto.active = Boolean(active);
-
     await produto.save();
     res.json({ produto });
   } catch (err) {
@@ -436,7 +365,6 @@ router.put('/produtos/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/produtos/:id
 router.delete('/produtos/:id', async (req, res) => {
   try {
     const produto = await Produto.findByIdAndDelete(req.params.id);
@@ -448,10 +376,9 @@ router.delete('/produtos/:id', async (req, res) => {
 });
 
 // ============================================================================
-// LOCAIS — feiras/pontos cadastrados pelo admin, usados para casar o GPS da venda
+// LOCAIS
 // ============================================================================
 
-// GET /api/admin/locais?includeInactive=1
 router.get('/locais', async (req, res) => {
   try {
     const { includeInactive } = req.query;
@@ -463,7 +390,6 @@ router.get('/locais', async (req, res) => {
   }
 });
 
-// POST /api/admin/locais { name, lat, lng, radiusMeters? }
 router.post('/locais', async (req, res) => {
   try {
     const { name, lat, lng, radiusMeters } = req.body;
@@ -486,12 +412,10 @@ router.post('/locais', async (req, res) => {
   }
 });
 
-// PUT /api/admin/locais/:id { name?, lat?, lng?, radiusMeters?, active? }
 router.put('/locais/:id', async (req, res) => {
   try {
     const local = await Local.findById(req.params.id);
     if (!local) return res.status(404).json({ error: 'Local não encontrado.' });
-
     const { name, lat, lng, radiusMeters, active } = req.body;
     if (name !== undefined) {
       if (!String(name).trim()) return res.status(400).json({ error: 'O nome do local é obrigatório.' });
@@ -501,7 +425,6 @@ router.put('/locais/:id', async (req, res) => {
     if (lng !== undefined) local.lng = Number(lng);
     if (radiusMeters !== undefined) local.radiusMeters = Number(radiusMeters);
     if (active !== undefined) local.active = Boolean(active);
-
     await local.save();
     res.json({ local });
   } catch (err) {
@@ -509,9 +432,6 @@ router.put('/locais/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/admin/locais/:id
-// Não apaga o histórico de vendas já associado a este local — as vendas antigas mantêm
-// o nome salvo em "localName" (snapshot), então os gráficos passados continuam corretos.
 router.delete('/locais/:id', async (req, res) => {
   try {
     const local = await Local.findByIdAndDelete(req.params.id);
@@ -523,31 +443,25 @@ router.delete('/locais/:id', async (req, res) => {
 });
 
 // ============================================================================
-// VENDAS — o "hub de vendas", aberto depois do /scan-qr. Registra a venda,
-// dá 1 selo por unidade de produto, e casa o GPS com um Local cadastrado.
+// VENDAS
 // ============================================================================
 
-// POST /api/admin/vendas
-// Body: { clientId, items: [{ produtoId, quantity }], lat?, lng?, localId? }
-// - Se "localId" for enviado, usa esse local direto (caso do admin escolher manualmente
-//   depois de um "local não identificado").
-// - Senão, tenta casar por GPS (lat/lng) com o Local mais próximo dentro do raio.
-// - Se não achar nenhum local nem receber localId, a venda é salva com localId null
-//   e a resposta traz "needsLocation: true" + os locais mais próximos, para o front
-//   perguntar ao admin se quer cadastrar um novo local ou escolher um existente.
+// v10: clientId agora é OPCIONAL. Sem clientId = venda avulsa (sem selos, só gráficos).
 router.post('/vendas', async (req, res) => {
   try {
     const { clientId, items, lat, lng, localId } = req.body;
 
-    if (!clientId) return res.status(400).json({ error: 'Cliente não informado.' });
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Selecione ao menos 1 produto.' });
     }
 
-    const client = await User.findOne({ _id: clientId, role: 'client' });
-    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    const isAvulsa = !clientId;
+    let client = null;
+    if (!isAvulsa) {
+      client = await User.findOne({ _id: clientId, role: 'client' });
+      if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    }
 
-    // Monta os itens com snapshot de nome/preço e valida quantidades.
     const produtoIds = items.map((i) => i.produtoId);
     const produtos = await Produto.find({ _id: { $in: produtoIds } });
     const produtoMap = new Map(produtos.map((p) => [String(p._id), p]));
@@ -576,7 +490,6 @@ router.post('/vendas', async (req, res) => {
       stampsGiven += quantity;
     }
 
-    // Resolve o local: escolha manual (localId) tem prioridade sobre o casamento automático por GPS.
     let resolvedLocal = null;
     let nearest = [];
     if (localId) {
@@ -592,24 +505,27 @@ router.post('/vendas', async (req, res) => {
       }));
     }
 
-    // Aplica os selos ao cliente, respeitando o teto de 10 do cartão.
-    const previousStamps = client.stamps;
-    const stampsToApply = Math.min(stampsGiven, Math.max(0, 10 - client.stamps));
-    if (stampsToApply > 0) {
-      client.stamps += stampsToApply;
-      client.lastStampAt = new Date();
-      await client.save();
+    let stampsToApply = 0;
+    let previousStamps = 0;
+    let completedCardOnThisSale = false;
+    if (client) {
+      previousStamps = client.stamps;
+      stampsToApply = Math.min(stampsGiven, Math.max(0, 10 - client.stamps));
+      if (stampsToApply > 0) {
+        client.stamps += stampsToApply;
+        client.lastStampAt = new Date();
+        await client.save();
+      }
+      completedCardOnThisSale = previousStamps < 10 && client.stamps === 10;
     }
-    // Esta venda "fechou o cartão" se o cliente cruzou de <10 para exatamente 10 agora.
-    const completedCardOnThisSale = previousStamps < 10 && client.stamps === 10;
 
     const venda = await Venda.create({
-      clientId: client._id,
+      clientId: client ? client._id : null,
       adminId: req.user.id,
       items: vendaItems,
       totalValue,
       totalCost,
-      stampsGiven,
+      stampsGiven: client ? stampsGiven : 0,
       gps: {
         lat: Number.isFinite(Number(lat)) ? Number(lat) : null,
         lng: Number.isFinite(Number(lng)) ? Number(lng) : null,
@@ -619,7 +535,7 @@ router.post('/vendas', async (req, res) => {
       completedCardOnThisSale,
     });
 
-    if (stampsToApply > 0) {
+    if (stampsToApply > 0 && client) {
       const now = Date.now();
       const entries = Array.from({ length: stampsToApply }, (_, i) => ({
         userId: client._id,
@@ -632,22 +548,24 @@ router.post('/vendas', async (req, res) => {
       await StampHistory.insertMany(entries);
     }
 
-    const overflow = stampsGiven - stampsToApply; // selos "perdidos" por já ter batido 10/10
+    const overflow = client ? stampsGiven - stampsToApply : 0;
     res.status(201).json({
       venda,
-      client,
+      client: client || null,
       overflowStamps: overflow,
       needsLocation: !resolvedLocal,
       nearestLocais: !resolvedLocal ? nearest : [],
     });
 
-    liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
+    if (client) {
+      liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
+    }
   } catch (err) {
+    console.error('Erro ao registrar venda:', err);
     res.status(500).json({ error: 'Não foi possível registrar a venda.' });
   }
 });
 
-// GET /api/admin/vendas?localId=&from=&to= — listagem simples para auditoria/depuração
 router.get('/vendas', async (req, res) => {
   try {
     const { localId, from, to, limit = 50 } = req.query;
@@ -668,69 +586,55 @@ router.get('/vendas', async (req, res) => {
   }
 });
 
-// PATCH /api/admin/vendas/:id/local { localId }
-// Usado quando uma venda ficou como "local não identificado": o admin escolhe, depois,
-// um dos locais cadastrados mais próximos para associar a venda a ele.
 router.patch('/vendas/:id/local', async (req, res) => {
   try {
     const { localId } = req.body;
     if (!localId) return res.status(400).json({ error: 'Informe o local.' });
     const local = await Local.findById(localId);
     if (!local) return res.status(404).json({ error: 'Local não encontrado.' });
-
     const venda = await Venda.findById(req.params.id);
     if (!venda) return res.status(404).json({ error: 'Venda não encontrada.' });
-
     venda.localId = local._id;
     venda.localName = local.name;
     await venda.save();
-
     res.json({ venda });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível vincular o local a esta venda.' });
   }
 });
 
-// DELETE /api/admin/vendas/:id
-// Apaga uma venda lançada por engano: reverte os selos que ela deu (sem deixar o cliente
-// com saldo negativo) e remove o rastro dela no histórico de selos.
 router.delete('/vendas/:id', async (req, res) => {
   try {
     const venda = await Venda.findById(req.params.id);
     if (!venda) return res.status(404).json({ error: 'Venda não encontrada.' });
-
-    const client = await User.findById(venda.clientId);
-    if (client) {
-      client.stamps = Math.max(0, client.stamps - venda.stampsGiven);
-      await client.save();
+    if (venda.clientId) {
+      const client = await User.findById(venda.clientId);
+      if (client) {
+        client.stamps = Math.max(0, client.stamps - venda.stampsGiven);
+        await client.save();
+      }
     }
     await StampHistory.deleteMany({ vendaId: venda._id });
     await venda.deleteOne();
-
-    res.json({ message: 'Venda removida e selos revertidos.', client });
+    res.json({ message: 'Venda removida e selos revertidos.' });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível remover a venda.' });
   }
 });
 
 // ============================================================================
-// GRÁFICOS — dados agregados para o painel do admin
+// GRÁFICOS
 // ============================================================================
 
-// GET /api/admin/graficos/satisfacao
-// "Satisfeito" = média das 3 notas (experiência/sabor/atendimento) >= 4.
 router.get('/graficos/satisfacao', async (req, res) => {
   try {
     const total = await Feedback.countDocuments();
     const satisfeitos = await Feedback.countDocuments({ average: { $gte: 4 } });
     const percentualSatisfeitos = total > 0 ? Math.round((satisfeitos / total) * 1000) / 10 : null;
-
-    // Distribuição por nota média arredondada (1 a 5), útil pra gráfico de barras.
     const distribuicao = await Feedback.aggregate([
       { $group: { _id: { $round: ['$average', 0] }, count: { $sum: 1 } } },
       { $sort: { _id: 1 } },
     ]);
-
     res.json({
       totalAvaliacoes: total,
       satisfeitos,
@@ -742,26 +646,105 @@ router.get('/graficos/satisfacao', async (req, res) => {
   }
 });
 
-// GET /api/admin/graficos/cartoes-por-local?from=&to=
-// Conta, por local, quantas vendas foram a que completou o cartão do cliente (10º selo).
-router.get('/graficos/cartoes-por-local', async (req, res) => {
+// NOVO na v10: anos que têm vendas.
+router.get('/graficos/anos', async (req, res) => {
   try {
-    const { from, to, ano, mes } = req.query;
-    const match = { completedCardOnThisSale: true };
-    if (ano) {
-      const year = Number(ano);
-      const month = mes ? Number(mes) : null;
-      if (Number.isInteger(year)) {
-        const start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
-        const end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
-        match.createdAt = { $gte: start, $lt: end };
-      }
-    } else if (from || to) {
-      match.createdAt = {};
-      if (from) match.createdAt.$gte = new Date(from);
-      if (to) match.createdAt.$lte = new Date(to);
+    const result = await Venda.aggregate([
+      { $group: { _id: { $year: '$createdAt' }, count: { $sum: 1 } } },
+      { $sort: { _id: -1 } },
+    ]);
+    res.json({ anos: result.map((r) => r._id).filter(Boolean) });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os anos.' });
+  }
+});
+
+// NOVO na v10: faturamento ano→mês→semana.
+// Sem "mes": 12 posições (uma por mês do ano).
+// Com "mes": 5 posições (uma por semana do mês).
+router.get('/graficos/faturamento', async (req, res) => {
+  try {
+    const ano = Number(req.query.ano);
+    const mes = Number(req.query.mes) || null;
+    if (!Number.isFinite(ano)) return res.status(400).json({ error: 'Ano inválido.' });
+
+    let start, end;
+    if (mes) {
+      start = new Date(ano, mes - 1, 1);
+      end = new Date(ano, mes, 1);
+    } else {
+      start = new Date(ano, 0, 1);
+      end = new Date(ano + 1, 0, 1);
     }
 
+    const vendas = await Venda.find({ createdAt: { $gte: start, $lt: end } }).lean();
+
+    const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const N = mes ? 5 : 12;
+    const posicoes = Array.from({ length: N }, (_, i) => ({
+      label: mes ? `Sem ${i + 1}` : MESES[i],
+      bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0,
+    }));
+
+    for (const v of vendas) {
+      const d = new Date(v.createdAt);
+      let idx;
+      if (mes) {
+        idx = Math.min(4, Math.floor((d.getDate() - 1) / 7));
+      } else {
+        idx = d.getMonth();
+      }
+      posicoes[idx].bruto += v.totalValue;
+      posicoes[idx].custo += v.totalCost || 0;
+      posicoes[idx].vendas += 1;
+      if (v.completedCardOnThisSale) posicoes[idx].cartoesFechados += 1;
+    }
+    for (const p of posicoes) {
+      p.bruto = Math.round(p.bruto * 100) / 100;
+      p.custo = Math.round(p.custo * 100) / 100;
+      p.liquido = Math.round((p.bruto - p.custo) * 100) / 100;
+    }
+
+    const totais = posicoes.reduce((acc, p) => ({
+      bruto: acc.bruto + p.bruto,
+      custo: acc.custo + p.custo,
+      liquido: acc.liquido + p.liquido,
+      vendas: acc.vendas + p.vendas,
+      cartoesFechados: acc.cartoesFechados + p.cartoesFechados,
+    }), { bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
+
+    const comVenda = posicoes.filter((p) => p.vendas > 0).length;
+    const media = comVenda > 0 ? Math.round((totais.bruto / comVenda) * 100) / 100 : 0;
+
+    res.json({
+      ano, mes,
+      posicoes,
+      totais,
+      medias: {
+        porMes: mes ? 0 : media,
+        porSemana: mes ? media : 0,
+        media,
+      },
+    });
+  } catch (err) {
+    console.error('Erro no faturamento:', err);
+    res.status(500).json({ error: 'Não foi possível calcular o faturamento.' });
+  }
+});
+
+router.get('/graficos/cartoes-por-local', async (req, res) => {
+  try {
+    const { ano, mes } = req.query;
+    const match = { completedCardOnThisSale: true };
+    if (ano) {
+      const y = Number(ano);
+      if (mes) {
+        const m = Number(mes);
+        match.createdAt = { $gte: new Date(y, m - 1, 1), $lt: new Date(y, m, 1) };
+      } else {
+        match.createdAt = { $gte: new Date(y, 0, 1), $lt: new Date(y + 1, 0, 1) };
+      }
+    }
     const resultado = await Venda.aggregate([
       { $match: match },
       {
@@ -772,39 +755,28 @@ router.get('/graficos/cartoes-por-local', async (req, res) => {
       },
       { $sort: { cartoesFechados: -1 } },
     ]);
-
     res.json({ porLocal: resultado.map((r) => ({ local: r._id, cartoesFechados: r.cartoesFechados })) });
   } catch (err) {
     res.status(500).json({ error: 'Não foi possível calcular os cartões fechados por local.' });
   }
 });
 
-// GET /api/admin/graficos/faturamento-por-local?period=day|month|year&date=YYYY-MM-DD
 router.get('/graficos/faturamento-por-local', async (req, res) => {
   try {
-    const { period = 'month', date, ano, mes } = req.query;
-    const ref = date ? new Date(date) : new Date();
-
-    let start;
-    let end;
+    const { ano, mes } = req.query;
+    const match = {};
     if (ano) {
-      const year = Number(ano);
-      const month = mes ? Number(mes) : null;
-      start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
-      end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
-    } else if (period === 'day') {
-      start = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
-      end = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + 1);
-    } else if (period === 'year') {
-      start = new Date(ref.getFullYear(), 0, 1);
-      end = new Date(ref.getFullYear() + 1, 0, 1);
-    } else {
-      start = new Date(ref.getFullYear(), ref.getMonth(), 1);
-      end = new Date(ref.getFullYear(), ref.getMonth() + 1, 1);
+      const y = Number(ano);
+      if (mes) {
+        const m = Number(mes);
+        match.createdAt = { $gte: new Date(y, m - 1, 1), $lt: new Date(y, m, 1) };
+      } else {
+        match.createdAt = { $gte: new Date(y, 0, 1), $lt: new Date(y + 1, 0, 1) };
+      }
     }
 
     const resultado = await Venda.aggregate([
-      { $match: { createdAt: { $gte: start, $lt: end } } },
+      { $match: match },
       {
         $group: {
           _id: { $ifNull: ['$localName', 'Local não identificado'] },
@@ -821,7 +793,7 @@ router.get('/graficos/faturamento-por-local', async (req, res) => {
       const custo = Math.round((r.custo || 0) * 100) / 100;
       return {
         local: r._id,
-        faturamento: bruto, // mantido por compatibilidade com quem já consome "faturamento" = bruto
+        faturamento: bruto,
         faturamentoBruto: bruto,
         custo,
         faturamentoLiquido: Math.round((bruto - custo) * 100) / 100,
@@ -840,9 +812,6 @@ router.get('/graficos/faturamento-por-local', async (req, res) => {
     );
 
     res.json({
-      period,
-      start,
-      end,
       porLocal,
       totais: {
         faturamentoBruto: Math.round(totais.bruto * 100) / 100,
@@ -856,95 +825,72 @@ router.get('/graficos/faturamento-por-local', async (req, res) => {
   }
 });
 
+// ============================================================================
+// LIMPEZA — NOVO na v10
+// ============================================================================
 
-// V8 — anos disponíveis para o relatório anual/mensal.
-router.get('/graficos/anos', async (req, res) => {
-  try {
-    const rows = await Venda.aggregate([
-      { $group: { _id: { $year: '$createdAt' } } },
-      { $sort: { _id: -1 } },
-    ]);
-    res.json({ anos: rows.map((r) => r._id).filter(Boolean) });
-  } catch (err) {
-    res.status(500).json({ error: 'Não foi possível carregar os anos dos relatórios.' });
-  }
-});
-
-// V8 — faturamento agrupado por mês ou por semana dentro de um mês.
-router.get('/graficos/faturamento', async (req, res) => {
-  try {
-    const year = Number(req.query.ano);
-    const month = req.query.mes ? Number(req.query.mes) : null;
-    if (!Number.isInteger(year)) return res.status(400).json({ error: 'Ano inválido.' });
-    const start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
-    const end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
-    const vendas = await Venda.find({ createdAt: { $gte: start, $lt: end } }).lean();
-    const buckets = [];
-    if (month) {
-      const days = new Date(year, month, 0).getDate();
-      const count = Math.ceil(days / 7);
-      for (let i = 0; i < count; i++) buckets.push({ label: `Semana ${i + 1}`, bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
-      vendas.forEach((v) => {
-        const day = new Date(v.createdAt).getDate();
-        const b = buckets[Math.min(count - 1, Math.floor((day - 1) / 7))];
-        b.bruto += Number(v.totalValue || 0); b.custo += Number(v.totalCost || 0); b.vendas += 1;
-        if (v.completedCardOnThisSale) b.cartoesFechados += 1;
-      });
-    } else {
-      for (let i = 0; i < 12; i++) buckets.push({ label: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][i], bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
-      vendas.forEach((v) => {
-        const b = buckets[new Date(v.createdAt).getMonth()];
-        b.bruto += Number(v.totalValue || 0); b.custo += Number(v.totalCost || 0); b.vendas += 1;
-        if (v.completedCardOnThisSale) b.cartoesFechados += 1;
-      });
-    }
-    buckets.forEach((b) => { b.bruto = Math.round(b.bruto * 100) / 100; b.custo = Math.round(b.custo * 100) / 100; b.liquido = Math.round((b.bruto - b.custo) * 100) / 100; });
-    const totals = buckets.reduce((a, b) => ({ bruto: a.bruto + b.bruto, custo: a.custo + b.custo, liquido: a.liquido + b.liquido, vendas: a.vendas + b.vendas, cartoesFechados: a.cartoesFechados + b.cartoesFechados }), { bruto: 0, custo: 0, liquido: 0, vendas: 0, cartoesFechados: 0 });
-    const divisor = month ? Math.max(1, buckets.length) : 12;
-    res.json({ ano: year, mes: month, posicoes: buckets, totais, medias: { media: totals.bruto / divisor, porMes: totals.bruto / 12, porSemana: totals.bruto / Math.max(1, buckets.length) } });
-  } catch (err) {
-    res.status(500).json({ error: 'Não foi possível calcular o faturamento.' });
-  }
-});
-
-// V8 — limpeza administrativa, com confirmação feita pela interface.
 router.post('/limpeza', async (req, res) => {
   try {
-    const { escopo, vendaIds = [], avaliacaoIds = [], ano, mes, confirmCode } = req.body || {};
+    const { escopo, vendaIds, avaliacaoIds, ano, mes, confirmCode } = req.body;
     let removidos = 0;
-    const removeVendas = async (query) => {
-      const vendas = await Venda.find(query).select('_id clientId stampsGiven');
-      for (const venda of vendas) {
-        const client = await User.findById(venda.clientId);
-        if (client) { client.stamps = Math.max(0, client.stamps - Number(venda.stampsGiven || 0)); await client.save(); }
-        await StampHistory.deleteMany({ vendaId: venda._id });
-      }
-      const result = await Venda.deleteMany(query);
-      removidos += result.deletedCount || 0;
-    };
+
     if (escopo === 'vendas') {
-      if (!vendaIds.length) return res.status(400).json({ error: 'Nenhuma venda selecionada.' });
-      await removeVendas({ _id: { $in: vendaIds } });
+      if (!Array.isArray(vendaIds) || !vendaIds.length) return res.status(400).json({ error: 'Nenhuma venda selecionada.' });
+      const vendas = await Venda.find({ _id: { $in: vendaIds } });
+      for (const v of vendas) {
+        if (v.clientId) {
+          const c = await User.findById(v.clientId);
+          if (c) { c.stamps = Math.max(0, c.stamps - v.stampsGiven); await c.save(); }
+        }
+        await StampHistory.deleteMany({ vendaId: v._id });
+        await v.deleteOne();
+        removidos++;
+      }
     } else if (escopo === 'avaliacoes') {
-      const result = await Feedback.deleteMany({ _id: { $in: avaliacaoIds } }); removidos = result.deletedCount || 0;
+      if (!Array.isArray(avaliacaoIds) || !avaliacaoIds.length) return res.status(400).json({ error: 'Nenhuma avaliação selecionada.' });
+      const r = await Feedback.deleteMany({ _id: { $in: avaliacaoIds } });
+      removidos = r.deletedCount || 0;
     } else if (escopo === 'periodo') {
-      const year = Number(ano); const month = mes ? Number(mes) : null;
-      if (!Number.isInteger(year)) return res.status(400).json({ error: 'Período inválido.' });
-      const start = month ? new Date(year, month - 1, 1) : new Date(year, 0, 1);
-      const end = month ? new Date(year, month, 1) : new Date(year + 1, 0, 1);
-      await removeVendas({ createdAt: { $gte: start, $lt: end } });
-      const result = await Feedback.deleteMany({ createdAt: { $gte: start, $lt: end } }); removidos += result.deletedCount || 0;
+      const y = Number(ano);
+      if (!Number.isFinite(y)) return res.status(400).json({ error: 'Ano inválido para o período.' });
+      let start, end;
+      if (mes) {
+        const m = Number(mes);
+        start = new Date(y, m - 1, 1);
+        end = new Date(y, m, 1);
+      } else {
+        start = new Date(y, 0, 1);
+        end = new Date(y + 1, 0, 1);
+      }
+      const vendas = await Venda.find({ createdAt: { $gte: start, $lt: end } });
+      for (const v of vendas) {
+        if (v.clientId) {
+          const c = await User.findById(v.clientId);
+          if (c) { c.stamps = Math.max(0, c.stamps - v.stampsGiven); await c.save(); }
+        }
+      }
+      const rv = await Venda.deleteMany({ createdAt: { $gte: start, $lt: end } });
+      const rf = await Feedback.deleteMany({ createdAt: { $gte: start, $lt: end } });
+      removidos = (rv.deletedCount || 0) + (rf.deletedCount || 0);
     } else if (escopo === 'cartoes') {
-      await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } });
-      res.json({ message: 'Contagem de cartões zerada.', removidos: 0 }); return;
+      const r = await User.updateMany({ role: 'client' }, { $set: { completedCards: 0 } });
+      removidos = r.modifiedCount || 0;
     } else if (escopo === 'tudo') {
-      if (confirmCode !== 'APAGAR TUDO') return res.status(400).json({ error: 'Confirmação inválida.' });
-      await Venda.deleteMany({}); await Feedback.deleteMany({}); await Produto.deleteMany({}); await Local.deleteMany({}); await StampHistory.deleteMany({});
-      await User.updateMany({ role: 'client' }, { $set: { stamps: 0, completedCards: 0 } });
-      removidos = -1;
-    } else return res.status(400).json({ error: 'Tipo de limpeza inválido.' });
-    res.json({ message: 'Limpeza concluída.', removidos });
+      if (confirmCode !== 'APAGAR TUDO') return res.status(400).json({ error: 'Confirmação incorreta. Digite APAGAR TUDO.' });
+      const rv = await Venda.deleteMany({});
+      const rf = await Feedback.deleteMany({});
+      const rp = await Produto.deleteMany({});
+      const rl = await Local.deleteMany({});
+      await StampHistory.deleteMany({});
+      await User.updateMany({ role: 'client' }, { $set: { completedCards: 0, stamps: 0 } });
+      removidos = (rv.deletedCount || 0) + (rf.deletedCount || 0) + (rp.deletedCount || 0) + (rl.deletedCount || 0);
+    } else {
+      return res.status(400).json({ error: 'Escopo inválido.' });
+    }
+
+    res.json({ removidos });
   } catch (err) {
+    console.error('Erro na limpeza:', err);
     res.status(500).json({ error: 'Não foi possível limpar os dados.' });
   }
 });

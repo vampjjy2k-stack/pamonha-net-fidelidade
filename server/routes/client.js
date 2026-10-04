@@ -1,6 +1,6 @@
-// routes/client.js
-// Rotas do cliente logado. Todas protegidas pelo middleware "auth".
-// Escopo enxuto: cartão fidelidade, QR Code, notificações, feedback e histórico.
+
+// routes/client.js — v10
+// Escopo: cartão fidelidade, QR Code, notificações, feedback, histórico e pontos fixos.
 
 const express = require('express');
 const User = require('../models/User');
@@ -9,6 +9,7 @@ const Notification = require('../models/Notification');
 const NotificationRead = require('../models/NotificationRead');
 const Feedback = require('../models/Feedback');
 const PushSubscription = require('../models/PushSubscription');
+const Local = require('../models/Local');   // NOVO na v10
 const auth = require('../middleware/auth');
 const { generateQrToken, generateQrImage, QR_TOKEN_TTL_SECONDS } = require('./qr');
 
@@ -21,8 +22,6 @@ router.get('/dashboard', async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
-    // Só os últimos 10 selos do ciclo atual, e só adições — remoções feitas por engano pelo admin
-    // já cancelam a própria entrada (ver rota de admin), então não sobra rastro nenhum aqui.
     const history = await StampHistory.find({ userId: user._id, action: 'add' })
       .sort({ createdAt: -1 })
       .limit(10);
@@ -30,6 +29,7 @@ router.get('/dashboard', async (req, res) => {
     res.json({
       fullName: user.fullName,
       phone: user.phone,
+      email: user.email || null,
       stamps: user.stamps,
       completedCards: user.completedCards || 0,
       lastStampAt: user.lastStampAt,
@@ -42,13 +42,9 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // POST /api/client/generate-qr
-// Gera um QR Code único, válido por 5 minutos, que o admin escaneia para adicionar 1 carimbo.
 router.post('/generate-qr', async (req, res) => {
   try {
     const token = generateQrToken(req.user.id);
-    // O QR Code visual carrega um LINK completo (não só o token cru), para que QUALQUER câmera —
-    // a nativa do Android, a do iPhone, a do WhatsApp — consiga ler e abrir direto, sem precisar
-    // do scanner dentro do app. Ao abrir, a própria página processa o carimbo automaticamente.
     const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host')}`;
     const scanUrl = `${baseUrl}/?scan=${token}`;
     const qrImageBase64 = await generateQrImage(scanUrl);
@@ -74,9 +70,7 @@ router.get('/history', async (req, res) => {
   }
 });
 
-// GET /api/client/leaderboard — ranking de clientes por cartões completados.
-// Regra de exibição de nome: mostra só o primeiro nome quando ele é único entre os exibidos;
-// se dois ou mais clientes dividem o mesmo primeiro nome, todos eles passam a mostrar nome + sobrenome.
+// GET /api/client/leaderboard
 router.get('/leaderboard', async (req, res) => {
   try {
     const clients = await User.find({ role: 'client', completedCards: { $gt: 0 } })
@@ -107,9 +101,7 @@ router.get('/leaderboard', async (req, res) => {
   }
 });
 
-// NOTIFICATIONS
-// GET /api/client/notifications — ao carregar, já marca tudo como visto por ESTE cliente
-// (cada um tem seu próprio status; um aviso geral não vira "lido" pra todo mundo de uma vez).
+// GET /api/client/notifications
 router.get('/notifications', async (req, res) => {
   try {
     const list = await Notification.find({
@@ -127,13 +119,11 @@ router.get('/notifications', async (req, res) => {
       await NotificationRead.insertMany(
         unseen.map((n) => ({ notificationId: n._id, userId: req.user.id })),
         { ordered: false }
-      ).catch(() => {}); // corrida rara com índice único: ignora duplicata
+      ).catch(() => {});
     }
 
     const notifications = list.map((n) => ({
       ...n.toObject(),
-      // Reflete o status ANTES desta visita: assim o cliente ainda vê "novo" nos avisos que
-      // acabou de abrir agora; na próxima vez que entrar, aí sim aparecem como lidos.
       read: readSet.has(String(n._id)),
     }));
 
@@ -143,7 +133,7 @@ router.get('/notifications', async (req, res) => {
   }
 });
 
-// GET /api/client/notifications/unread-count — pro sininho da barra inferior
+// GET /api/client/notifications/unread-count
 router.get('/notifications/unread-count', async (req, res) => {
   try {
     const list = await Notification.find({
@@ -161,8 +151,7 @@ router.get('/notifications/unread-count', async (req, res) => {
   }
 });
 
-// FEEDBACK
-// POST /api/client/feedback { experienceRating, tasteRating, serviceRating, comment }
+// POST /api/client/feedback
 router.post('/feedback', async (req, res) => {
   try {
     const { experienceRating, tasteRating, serviceRating, comment } = req.body;
@@ -185,8 +174,7 @@ router.post('/feedback', async (req, res) => {
   }
 });
 
-// PUSH NOTIFICATIONS (Web Push)
-// POST /api/client/push-subscribe — registra este dispositivo para receber notificações reais
+// POST /api/client/push-subscribe
 router.post('/push-subscribe', async (req, res) => {
   try {
     const { endpoint, keys, userAgent } = req.body;
@@ -204,7 +192,7 @@ router.post('/push-subscribe', async (req, res) => {
   }
 });
 
-// DELETE /api/client/push-subscribe — desativa notificações neste dispositivo
+// DELETE /api/client/push-subscribe
 router.delete('/push-subscribe', async (req, res) => {
   try {
     const { endpoint } = req.body;
@@ -212,6 +200,23 @@ router.delete('/push-subscribe', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Erro ao desativar notificações.' });
+  }
+});
+
+// NOVO na v10: pontos fixos visíveis ao cliente.
+router.get('/locais', async (req, res) => {
+  try {
+    const locais = await Local.find({ active: true })
+      .select('name lat lng radiusMeters')
+      .sort({ name: 1 })
+      .lean();
+    const withUrl = locais.map((l) => ({
+      ...l,
+      mapsUrl: `https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}`,
+    }));
+    res.json({ locais: withUrl });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível carregar os locais.' });
   }
 });
 
