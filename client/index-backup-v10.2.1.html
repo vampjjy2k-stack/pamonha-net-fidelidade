@@ -638,120 +638,6 @@
     }
     :focus-visible { outline: 2px solid var(--gold-700); outline-offset: 2px; }
 
-    /* ==================== LANDING PAGE ==================== */
-    .landing {
-      min-height: 100vh;
-      background: var(--paper);
-      padding-bottom: 2rem;
-    }
-    .landing-hero {
-      background: linear-gradient(160deg, #FFE14D 0%, #FFD400 100%);
-      padding: 1rem 1.2rem 2rem;
-      text-align: center;
-      border-bottom: 4px solid var(--husk-900);
-    }
-    .landing-topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 1.5rem;
-    }
-    .landing-brand {
-      display: flex; align-items: center; gap: 0.6rem;
-      font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--husk-900);
-    }
-    .landing-brand img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-    .landing-enter {
-      background: var(--husk-900); color: var(--gold-300);
-      border: none; padding: 0.55rem 1rem; border-radius: 999px;
-      font-weight: 700; font-size: 0.82rem; cursor: pointer;
-      font-family: inherit;
-    }
-    .landing-enter:active { transform: scale(0.96); }
-    .landing-seal {
-      width: 110px; height: 110px; border-radius: 50%; object-fit: cover;
-      border: 4px solid #fff; box-shadow: 0 10px 24px -8px rgba(27,94,32,0.5);
-      margin: 0 auto 1rem; display: block;
-    }
-    .landing-h1 {
-      font-family: var(--font-display); font-weight: 700;
-      font-size: 1.7rem; line-height: 1.2; color: var(--husk-900);
-      margin-bottom: 0.6rem;
-    }
-    .landing-h1 em { font-style: normal; color: var(--husk-700); }
-    .landing-sub {
-      font-size: 1rem; color: var(--ink-soft);
-      margin-bottom: 1.5rem; max-width: 320px; margin-left: auto; margin-right: auto;
-    }
-    .landing-cta-main {
-      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
-      background: linear-gradient(135deg, #2E7D32, #4C9A3A); color: #fff;
-      padding: 1rem 1.6rem; border-radius: 14px; border: 2px solid #1B5E20;
-      font-family: var(--font-display); font-size: 1.1rem; font-weight: 700;
-      cursor: pointer; box-shadow: 0 6px 16px rgba(46,125,50,0.4);
-      width: 100%; max-width: 340px;
-    }
-    .landing-cta-main:active { transform: scale(0.97); }
-    .landing-login-link {
-      display: block; text-align: center; margin-top: 0.9rem;
-      font-size: 0.88rem; color: var(--husk-700); font-weight: 600;
-      background: none; border: none; cursor: pointer; font-family: inherit;
-      text-decoration: underline; text-underline-offset: 3px;
-    }
-    .landing-section {
-      padding: 2rem 1.2rem;
-      max-width: 460px; margin: 0 auto;
-    }
-    .landing-section h2 {
-      font-family: var(--font-display); font-weight: 700;
-      font-size: 1.35rem; color: var(--husk-900);
-      margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.5rem;
-    }
-    .landing-section > p { font-size: 0.9rem; color: var(--ink-soft); margin-bottom: 1.2rem; }
-    .landing-step {
-      display: flex; gap: 0.9rem; align-items: flex-start;
-      background: #fff; border: 1px solid var(--line); border-radius: 14px;
-      padding: 0.9rem 1rem; margin-bottom: 0.6rem;
-      box-shadow: 0 2px 8px rgba(27,94,32,0.08);
-    }
-    .landing-step-num {
-      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-      background: var(--gold-600); color: var(--husk-900);
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-display); font-weight: 700; font-size: 1.15rem;
-    }
-    .landing-step-body strong { display: block; font-size: 0.96rem; color: var(--husk-900); margin-bottom: 0.15rem; }
-    .landing-step-body span { font-size: 0.82rem; color: var(--ink-soft); line-height: 1.4; }
-    .landing-locais-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    .landing-local-item {
-      display: flex; align-items: center; gap: 0.7rem;
-      background: #fff; border: 1px solid var(--line); border-radius: 12px;
-      padding: 0.7rem 0.9rem; text-decoration: none; color: inherit;
-    }
-    .landing-local-item:active { background: var(--gold-100); }
-    .landing-local-item .info { flex: 1; min-width: 0; }
-    .landing-local-item strong { display: block; font-size: 0.92rem; color: var(--husk-900); }
-    .landing-local-item span { font-size: 0.75rem; color: var(--ink-soft); }
-    .landing-contact {
-      display: flex; flex-direction: column; gap: 0.5rem;
-    }
-    .landing-contact-btn {
-      display: flex; align-items: center; gap: 0.7rem;
-      padding: 0.8rem 1rem; border-radius: 12px; border: none;
-      font-family: inherit; font-weight: 600; font-size: 0.94rem;
-      text-decoration: none; cursor: pointer;
-    }
-    .landing-contact-btn.whats { background: #25D366; color: #fff; }
-    .landing-contact-btn.insta { background: linear-gradient(135deg, #F58529, #DD2A7B, #8134AF); color: #fff; }
-    .landing-footer {
-      text-align: center; padding: 1.5rem 1rem;
-      font-size: 0.78rem; color: var(--ink-soft);
-      border-top: 1px solid var(--line);
-      max-width: 460px; margin: 1rem auto 0;
-    }
-
-    /* Botão compartilhar cartão */
-    .share-row { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
-    .share-row .btn { flex: 1; }
-
     /* ==================== CARRO DA PAMONHA ==================== */
     .carro-banner-img { display:block; width:100%; border:none; padding:0; background:none; border-radius:16px; overflow:hidden; cursor:pointer; box-shadow:0 3px 10px rgba(27,94,32,0.25); }
     .carro-banner-img img { display:block; width:100%; height:auto; }
@@ -1103,18 +989,8 @@
         const container = $('#main-container');
         if (!container) return;
         container.innerHTML = '';
-
-        // Landing esconde header e bottom nav (tem layout próprio).
-        const isLanding = (hash === 'landing');
-        const header = document.querySelector('.app-header');
-        const nav = $('#bottom-nav');
-        if (header) header.classList.toggle('hidden', isLanding);
-        if (nav && isLanding) nav.classList.add('hidden');
-
         fn(container);
-        if (!isLanding) {
-          $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === hash));
-        }
+        $$('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === hash));
         window.scrollTo(0,0);
       }
     };
@@ -1122,107 +998,6 @@
     window.addEventListener('popstate', () => router.render());
 
     // ---------- LOGIN ----------
-    // ---------- LANDING PAGE (pública, antes do login) ----------
-    router.register('landing', (container) => {
-      container.innerHTML = `
-        <div class="landing">
-          <section class="landing-hero">
-            <div class="landing-topbar">
-              <div class="landing-brand">
-                <img src="/logo.png" alt="Pamonha Net" />
-                <span>Pamonha Net</span>
-              </div>
-              <button class="landing-enter" onclick="router.go('login')">Entrar</button>
-            </div>
-            <img class="landing-seal" src="/logo.png" alt="Pamonha Net" />
-            <h1 class="landing-h1">Seu cartão fidelidade<br><em>direto no celular</em></h1>
-            <p class="landing-sub">A cada compra, um selo. A cada 10 selos, um prêmio da Pamonha Net. Sem papel. Sem app. Funciona no navegador.</p>
-            <button class="landing-cta-main" onclick="router.go('register')">
-              ${icon('trophy','icon')} Quero meu cartão
-            </button>
-            <button class="landing-login-link" onclick="router.go('login')">Já tenho cartão — entrar</button>
-          </section>
-
-          <section class="landing-section">
-            <h2>${icon('star','icon')} Como funciona</h2>
-            <p>É simples assim:</p>
-            <div class="landing-step">
-              <div class="landing-step-num">1</div>
-              <div class="landing-step-body">
-                <strong>Você se cadastra</strong>
-                <span>Leva menos de 1 minuto. Só nome, telefone e uma senha.</span>
-              </div>
-            </div>
-            <div class="landing-step">
-              <div class="landing-step-num">2</div>
-              <div class="landing-step-body">
-                <strong>Cada compra vira um selo</strong>
-                <span>Mostre seu QR Code no balcão ou na feira. O selo entra na hora.</span>
-              </div>
-            </div>
-            <div class="landing-step">
-              <div class="landing-step-num">3</div>
-              <div class="landing-step-body">
-                <strong>10 selos = 1 prêmio</strong>
-                <span>Complete o cartão e escolha seu prêmio. Fale com a equipe pra resgatar.</span>
-              </div>
-            </div>
-            <button class="landing-cta-main mt-2" onclick="router.go('register')" style="margin-top:1rem">
-              ${icon('trophy','icon')} Criar minha conta
-            </button>
-          </section>
-
-          <section class="landing-section" id="onde-encontrar">
-            <h2>${icon('pin','icon')} Onde encontrar</h2>
-            <p>Pontos fixos e o carro da Pamonha circulando:</p>
-            <div id="landing-locais" class="landing-locais-list">
-              <div class="loader"></div>
-            </div>
-          </section>
-
-          <section class="landing-section">
-            <h2>${icon('whatsapp','icon')} Fale com a gente</h2>
-            <p>Tire dúvidas, encomende ou acompanhe a Pamonha Net:</p>
-            <div class="landing-contact">
-              <a class="landing-contact-btn whats" href="https://wa.me/5521994469676" target="_blank" rel="noopener">
-                ${icon('whatsapp','icon')} WhatsApp — (21) 99446-9676
-              </a>
-              <a class="landing-contact-btn insta" href="https://instagram.com/pamonhanet" target="_blank" rel="noopener">
-                ${icon('camera','icon')} Instagram — @pamonhanet
-              </a>
-            </div>
-          </section>
-
-          <footer class="landing-footer">
-            🌽 Feito com carinho pela Pamonha Net.
-          </footer>
-        </div>
-      `;
-      loadLandingLocais();
-    });
-
-    async function loadLandingLocais() {
-      const box = $('#landing-locais');
-      if (!box) return;
-      try {
-        const data = await api.get('/api/public/locais');
-        const locais = data.locais || [];
-        if (!locais.length) {
-          box.innerHTML = `<p class="text-sm muted">Em breve divulgaremos os pontos. Fale com a gente pelo WhatsApp!</p>`;
-          return;
-        }
-        box.innerHTML = locais.map(l => `
-          <a class="landing-local-item" href="${esc(l.mapsUrl || ('https://www.google.com/maps/search/?api=1&query=' + l.lat + ',' + l.lng))}" target="_blank" rel="noopener">
-            <span style="color:var(--gold-700);flex-shrink:0">${icon('pin','icon')}</span>
-            <span class="info"><strong>${esc(l.name)}</strong><span>Toque para abrir no mapa</span></span>
-            <span style="color:var(--ink-faint)">${icon('send','icon icon-sm')}</span>
-          </a>
-        `).join('');
-      } catch (e) {
-        box.innerHTML = `<p class="text-sm muted">Não foi possível carregar os pontos agora.</p>`;
-      }
-    }
-
     router.register('login', (container) => {
       container.innerHTML = `
         <div class="page auth-wrap">
@@ -1381,7 +1156,6 @@ router.register('card', (container) => {
         <button class="btn btn-outline" onclick="generateQr()">${icon('refresh', 'icon icon-sm')} Gerar novo QR Code</button>
       </div>
       <button class="btn btn-qr-green mt-2" id="btn-qr" onclick="generateQr()">${icon('qr', 'icon icon-sm')} Gerar QR Code</button>
-      <button class="btn btn-outline mt-1" onclick="compartilharMeuCartao()">${icon('camera', 'icon icon-sm')} Compartilhar meu cartão</button>
 
       <div class="mt-2" id="carro-slot"></div>
 
@@ -1493,41 +1267,6 @@ async function generateQr() {
   } catch (e) { toast.show(e.message, 'error'); }
 }
 
-    window.compartilharMeuCartao = async () => {
-      try {
-        toast.show('Gerando cartão…');
-        const temp = document.createElement('div');
-        temp.style.cssText = 'position:fixed;left:-9999px;top:0;width:400px;padding:10px;background:#FFE14D';
-        temp.innerHTML = officialCardHTML(lastKnownStamps || 0) +
-          `<div class="card-status">${cardStatusMessage(lastKnownStamps || 0).text}</div>`;
-        document.body.appendChild(temp);
-        await Promise.all(Array.from(temp.querySelectorAll('img')).map(img => img.complete ? null : new Promise(r => { img.onload = img.onerror = r; })));
-        const canvas = await html2canvas(temp, { backgroundColor: '#FFE14D', scale: 2 });
-        document.body.removeChild(temp);
-
-        const firstName = (api.user && api.user.fullName) ? api.user.fullName.split(' ')[0] : 'amigo';
-        const stamps = lastKnownStamps || 0;
-        const message = stamps >= 10
-          ? `${firstName}, completei meu cartão da Pamonha Net! 🌽`
-          : `Olha meu cartão da Pamonha Net, ${firstName}! Já tenho ${stamps} de 10 selos. 🌽`;
-
-        canvas.toBlob(async (blob) => {
-          const file = new File([blob], 'meu-cartao-pamonha-net.png', { type: 'image/png' });
-          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], text: message, title: 'Pamonha Net' });
-          } else {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'meu-cartao-pamonha-net.png';
-            document.body.appendChild(a); a.click(); a.remove();
-            URL.revokeObjectURL(url);
-            toast.show('Imagem baixada. Compartilhe no WhatsApp!');
-          }
-        }, 'image/png');
-      } catch (e) {
-        toast.show('Não foi possível gerar a imagem.', 'error');
-      }
-    };
 function showConfetti() {
   const el = document.createElement('div'); el.className = 'confetti';
   const colors = ['#C99A2E', '#5F7440', '#A2653A'];
@@ -4348,7 +4087,7 @@ function renderTxPill() {
       }
 
       if (!api.token) {
-        router.go('landing', true);
+        router.go('login', true);
         return;
       }
 
