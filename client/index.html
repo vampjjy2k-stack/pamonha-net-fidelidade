@@ -1505,11 +1505,10 @@ async function generateQr() {
         const canvas = await html2canvas(temp, { backgroundColor: '#FFE14D', scale: 2 });
         document.body.removeChild(temp);
 
-        const firstName = (api.user && api.user.fullName) ? api.user.fullName.split(' ')[0] : 'amigo';
         const stamps = lastKnownStamps || 0;
         const message = stamps >= 10
-          ? `${firstName}, completei meu cartão da Pamonha Net! 🌽`
-          : `Olha meu cartão da Pamonha Net, ${firstName}! Já tenho ${stamps} de 10 selos. 🌽`;
+          ? `Completei meu cartão da Pamonha Net! 🌽 Agora é resgatar o prêmio.`
+          : `Olha meu cartão da Pamonha Net! Já tenho ${stamps} de 10 selos. 🌽`;
 
         canvas.toBlob(async (blob) => {
           const file = new File([blob], 'meu-cartao-pamonha-net.png', { type: 'image/png' });
