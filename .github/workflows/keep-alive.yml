@@ -3,9 +3,10 @@ name: Manter Render Ativo
 on:
   # Brasil (BRT) = UTC-3.
   # 7-22 UTC corresponde a 4:00-19:59 no Brasil.
-  # Executa a cada 5 minutos, começando no minuto 2, somente nesse período.
+  # Executa a cada 5 minutos, nos minutos 3, 8, 13, ..., 58 UTC.
+  # Isso equivale aproximadamente a 4:03-18:58 no horário de Brasília.
   schedule:
-    - cron: '2-59/5 7-22 * * *'
+    - cron: '3,8,13,18,23,28,33,38,43,48,53,58 7-22 * * *'
   workflow_dispatch:
 
 permissions: {}
