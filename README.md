@@ -1,85 +1,114 @@
-# 🌽 Pamonha Net Fidelidade v2.0
+# 🌽 Pamonha Net Fidelidade — v10.6.1
 
-Sistema de cartão fidelidade digital para a Pamonha Net.
-Refatorado, enxuto e 100% funcional — pronto para produção.
+Sistema de cartão fidelidade digital da Pamonha Net, com frontend mobile-first e backend Node.js/Express/MongoDB.
 
-## 📁 Estrutura de Arquivos
+> **Versão publicada:** v10.6.1 — segurança de senhas, sessões e interface.
+> **Branch de produção:** `main`
 
-```
+## O que está publicado
+
+- Cartão fidelidade com carimbos e histórico;
+- QR Code para registrar vendas;
+- Notificações no celular via Web Push;
+- Rastreamento do **Carro da Pamonha**;
+- Relatórios e gráficos em SVG;
+- Raspadinhas com cancelamento, resgate e exclusão protegida;
+- Busca de locais por nome e mapa para o administrador;
+- Landing page pública e compartilhamento do cartão;
+- Recuperação de senha por e-mail via **Brevo HTTP API**;
+- Diagnóstico administrativo para testar o envio de e-mail;
+- Troca de senha com confirmação da senha atual;
+- Confirmação dupla ao redefinir a senha;
+- Desconexão automática de outros aparelhos após troca ou redefinição de senha;
+- Endereço da Feira: `Estr. Velha do Pilar, 408 - Chácaras Rio-Petrópolis, Duque de Caxias - RJ, 25230-610`.
+
+## Estrutura
+
+```text
 pamonha-net-fidelidade/
 ├── client/
-│   ├── index.html          ← SPA completo (Vanilla JS, mobile-first, identidade rural)
-│   └── assets/             ← Pasta reservada para imagens e fontes futuras
+│   └── index.html          # SPA Vanilla JS, CSS e interface mobile
 ├── server/
-│   ├── server.js           ← Ponto de entrada Express + MongoDB + fallback SPA
-│   ├── package.json        ← Dependências Node.js
-│   ├── .env.example        ← Template de variáveis de ambiente
-│   ├── middleware/
-│   │   ├── auth.js         ← Verificação JWT (protege rotas autenticadas)
-│   │   └── admin.js        ← Verificação de role=admin (protege rotas administrativas)
-│   ├── models/
-│   │   ├── User.js         ← Schema de usuários (cliente/admin)
-│   │   ├── StampHistory.js ← Schema de auditoria de carimbos
-│   │   ├── Notification.js ← Schema de avisos/notificações
-│   │   └── Feedback.js     ← Schema de avaliações dos clientes
-│   └── routes/
-│       ├── auth.js         ← Cadastro, login, perfil (/api/auth)
-│       ├── client.js       ← Dashboard, QR Code, notificações, feedback (/api/client)
-│       ├── admin.js        ← Gestão de clientes, notificações, avaliações (/api/admin)
-│       └── qr.js           ← Geração e verificação segura de QR Code (módulo utilitário)
+│   ├── server.js           # Express, MongoDB e servidor do frontend
+│   ├── package.json        # Dependências e versão do servidor
+│   ├── .env.example        # Exemplo de configuração
+│   ├── middleware/         # Autenticação e permissões administrativas
+│   ├── models/             # Modelos MongoDB
+│   ├── routes/             # Rotas de autenticação, cliente, admin e carro
+│   └── utils/              # E-mail Brevo, Web Push e eventos em tempo real
+└── README.md
 ```
 
-## 🚀 Como rodar
+## Deploy no Render
 
-### 1. Configurar ambiente
+O serviço usa a raiz do repositório e executa:
+
+```bash
+npm install --prefix server
+npm start --prefix server
+```
+
+O serviço deve apontar para a branch `main`.
+
+## Variáveis obrigatórias
+
+Configure no Render:
+
+```text
+MONGODB_URI=...
+JWT_SECRET=...
+CLIENT_URL=https://SEU-ENDERECO.onrender.com
+```
+
+Para recuperação de senha por e-mail via Brevo:
+
+```text
+BREVO_API_KEY=...
+EMAIL_FROM=seu-remetente-verificado@dominio.com
+EMAIL_FROM_NAME=Pamonha Net
+```
+
+O endereço de `EMAIL_FROM` precisa estar autorizado no Brevo. As antigas variáveis SMTP do Gmail (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER` e `EMAIL_PASS`) não são mais usadas pelo sistema atual.
+
+Para notificações push, mantenha as três variáveis VAPID já configuradas:
+
+```text
+VAPID_PUBLIC_KEY=...
+VAPID_PRIVATE_KEY=...
+VAPID_SUBJECT=mailto:...
+```
+
+## Desenvolvimento local
+
 ```bash
 cd server
 cp .env.example .env
-# Edite .env com suas credenciais MongoDB e JWT_SECRET
-```
-
-### 2. Instalar dependências
-```bash
 npm install
+npm start
 ```
 
-### 3. Criar o primeiro admin
-No MongoDB, altere o role de um usuário existente para `"admin"`:
-```js
-db.users.updateOne({ phone: "21999999999" }, { $set: { role: "admin" } })
-```
+O servidor fica disponível em `http://localhost:5000` e serve o frontend automaticamente.
 
-### 4. Iniciar
-```bash
-npm start        # produção
-npm run dev      # desenvolvimento (nodemon)
-```
+## Testes principais
 
-O servidor sobe em `http://localhost:5000` e serve o frontend automaticamente.
+1. **Diagnóstico de e-mail:** Administração → Mais opções → Diagnóstico.
+2. **Recuperação:** solicitar link, abrir o e-mail e confirmar a nova senha duas vezes.
+3. **Segurança:** trocar a senha no Perfil e confirmar que outros tokens deixam de funcionar.
+4. **Raspadinhas:** uma raspadinha ativa só pode ser cancelada; usadas/canceladas podem ser excluídas após confirmação dupla.
 
-## 🔧 Tecnologias
-- **Backend:** Node.js 18+, Express 4, Mongoose 8, JWT, bcryptjs, QRCode
-- **Frontend:** SPA Vanilla JS (zero build tools), CSS3 com variáveis, mobile-first
-- **Banco:** MongoDB (Atlas ou local)
+## Histórico e backups
 
-## 🎨 Identidade Visual
-- **Amarelo Vivo:** `#FFD700` (primária — botões, selos, header)
-- **Marrom Rústico:** `#5D4037` (texto, cards, QR Code)
-- **Verde Palha:** `#7CB342` (sucesso, selo completo)
-- **Creme:** `#FFFDE7` (fundo do cartão)
+Backups não ficam dentro da árvore de produção. As versões anteriores estão preservadas no histórico do Git e nas branches de backup do repositório, incluindo:
 
-## ✅ Funcionalidades
-| Módulo | Descrição |
-|--------|-----------|
-| Cartão Fidelidade | Grid 5×2 de selos com animação e confetti ao completar 10 |
-| QR Code | Geração de token JWT temporário (5 min) para acúmulo na loja |
-| Notificações | Avisos individuais ou broadcast, com marcação de lida |
-| Feedback | Avaliação 1-5 estrelas + comentário opcional |
-| Perfil | Edição de nome, telefone e senha |
-| Painel Admin | Scan QR, +/- selos, zerar cartão, excluir histórico de selos, enviar notificações, limpar notificações em massa, gerenciar avaliações |
+- `versao-antes-v10-2026-10-04`
+- `versao-antes-v9-carro-2026-10-04`
+- outras branches `versao-*` existentes no GitHub.
 
-## 📝 Notas Técnicas
-- O middleware `admin.js` foi **criado do zero** para corrigir importação quebrada no projeto original.
-- O sistema de reservas e catálogo de produtos pós-compra foi **completamente removido**.
-- O fallback SPA (`app.get('*')`) está no final do pipeline, após `express.static` e rotas `/api`.
-- O frontend é um único arquivo HTML autocontido — sem Webpack, Vite ou dependências de build.
+## Tecnologias
+
+- **Backend:** Node.js, Express, Mongoose, MongoDB Atlas, JWT, bcryptjs, Helmet;
+- **Frontend:** Vanilla JavaScript, HTML e CSS, sem etapa de build;
+- **E-mail:** Brevo HTTP API;
+- **Notificações:** Web Push/VAPID;
+- **Tempo real:** Server-Sent Events (SSE);
+- **Mapas:** OpenStreetMap/Leaflet e links diretos do Google Maps.
