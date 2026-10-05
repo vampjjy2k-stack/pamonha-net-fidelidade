@@ -707,17 +707,35 @@ router.get('/email-status', async (req, res) => {
 });
 router.post('/test-email', async (req, res) => {
   try {
-    const destino = (req.body.to && String(req.body.to).trim()) || process.env.EMAIL_USER;
+    const { to } = req.body;
+    const destino = (to && String(to).trim()) || process.env.EMAIL_USER;
     if (!destino) return res.status(400).json({ error: 'Informe o e-mail de destino.' });
-    const nodemailer = require('nodemailer'), host=process.env.EMAIL_HOST, port=Number(process.env.EMAIL_PORT)||587, user=process.env.EMAIL_USER, pass=process.env.EMAIL_PASS;
+    const nodemailer = require('nodemailer');
+    const host = process.env.EMAIL_HOST;
+    const port = Number(process.env.EMAIL_PORT) || 587;
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
+    const from = process.env.EMAIL_FROM || user;
     if (!host || !user || !pass) return res.status(503).json({ error: 'E-mail não está configurado no servidor.' });
-    await nodemailer.createTransport({host,port,secure:port===465,auth:{user,pass}}).sendMail({from:`"Pamonha Net" <${process.env.EMAIL_FROM||user}>`,to:destino,subject:'Teste de e-mail — Pamonha Net',text:'Este é um teste. Se você recebeu este e-mail, a recuperação de senha está funcionando.',html:'<p>Este é um teste. Se você recebeu este e-mail, a recuperação de senha está funcionando. 🌽</p>'});
-    res.json({ok:true,to:destino});
-  } catch(err) {
-    console.error('Erro no teste de e-mail:',err); let msg=err.message;
-    if(/Invalid login|Username and Password not accepted/i.test(err.message)) msg='A senha do app (EMAIL_PASS) está incorreta ou expirou. Gere uma nova em https://myaccount.google.com/apppasswords';
-    else if(/ECONNREFUSED|ETIMEDOUT/i.test(err.message)) msg='Não consegui conectar ao servidor de e-mail. Verifique EMAIL_HOST e EMAIL_PORT.';
-    res.status(500).json({error:msg});
+    const transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass }, logger: false, debug: false });
+    try {
+      await transporter.verify();
+    } catch (verifyErr) {
+      return res.status(500).json({ error: 'Falha na conexão com o servidor de e-mail', detalhe: verifyErr.message, dica: 'Verifique EMAIL_USER, EMAIL_PASS (senha de app de 16 letras do Gmail) e EMAIL_PORT (587).' });
+    }
+    const info = await transporter.sendMail({
+      from: `"Pamonha Net" <${from}>`, to: destino,
+      subject: 'Teste de e-mail — Pamonha Net',
+      text: 'Este é um teste. Se você recebeu este e-mail, a recuperação de senha está funcionando.',
+      html: '<p>Este é um teste. Se você recebeu este e-mail, a recuperação de senha está funcionando. 🌽</p>',
+    });
+    res.json({ ok: true, to: destino, from, messageId: info.messageId, response: info.response, accepted: info.accepted, rejected: info.rejected });
+  } catch (err) {
+    console.error('Erro no teste de e-mail:', err);
+    let msg = err.message;
+    if (/Invalid login|Username and Password not accepted/i.test(err.message)) msg = 'A senha do app (EMAIL_PASS) está incorreta ou expirou. Gere uma nova em https://myaccount.google.com/apppasswords';
+    else if (/ECONNREFUSED|ETIMEDOUT|ENOTFOUND/i.test(err.message)) msg = 'Não consegui conectar ao servidor de e-mail. Verifique EMAIL_HOST e EMAIL_PORT.';
+    res.status(500).json({ error: msg, detalhe: err.message });
   }
 });
 module.exports = router
