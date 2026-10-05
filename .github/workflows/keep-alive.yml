@@ -1,10 +1,11 @@
 name: Manter Render Ativo
 
 on:
-  # Começa no minuto 2 para evitar o pico do minuto 0.
-  # Executa a cada 5 minutos: 02, 07, 12, ..., 57 de cada hora.
+  # Brasil (BRT) = UTC-3.
+  # 7-16 UTC corresponde a 4:00-13:59 no Brasil.
+  # Executa a cada 5 minutos, começando no minuto 2, somente nesse período.
   schedule:
-    - cron: '2-59/5 * * * *'
+    - cron: '2-59/5 7-16 * * *'
   workflow_dispatch:
 
 permissions: {}
