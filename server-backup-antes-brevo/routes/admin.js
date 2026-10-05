@@ -702,22 +702,40 @@ router.post('/limpeza', async (req, res) => {
 
 // v10.5.2: diagnóstico de e-mail.
 router.get('/email-status', async (req, res) => {
-  const key = process.env.BREVO_API_KEY || '';
-  res.json({ configurado: !!key, provedor: 'Brevo', from: process.env.EMAIL_FROM || 'pamonhanet@gmail.com', temChave: !!key });
+  const host = process.env.EMAIL_HOST || '', user = process.env.EMAIL_USER || '';
+  res.json({ configurado: !!(host && user && process.env.EMAIL_PASS), host, from: user, temSenha: !!process.env.EMAIL_PASS });
 });
 router.post('/test-email', async (req, res) => {
   try {
-    const destino = (req.body.to && String(req.body.to).trim()) || process.env.EMAIL_FROM;
+    const { to } = req.body;
+    const destino = (to && String(to).trim()) || process.env.EMAIL_USER;
     if (!destino) return res.status(400).json({ error: 'Informe o e-mail de destino.' });
-    const { sendTestEmail } = require('../utils/email');
-    const info = await sendTestEmail({ to: destino });
-    res.json({ ok: true, to: destino, messageId: info.messageId || null });
+    const nodemailer = require('nodemailer');
+    const host = process.env.EMAIL_HOST;
+    const port = Number(process.env.EMAIL_PORT) || 587;
+    const user = process.env.EMAIL_USER;
+    const pass = process.env.EMAIL_PASS;
+    const from = process.env.EMAIL_FROM || user;
+    if (!host || !user || !pass) return res.status(503).json({ error: 'E-mail não está configurado no servidor.' });
+    const transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass }, logger: false, debug: false });
+    try {
+      await transporter.verify();
+    } catch (verifyErr) {
+      return res.status(500).json({ error: 'Falha na conexão com o servidor de e-mail', detalhe: verifyErr.message, dica: 'Verifique EMAIL_USER, EMAIL_PASS (senha de app de 16 letras do Gmail) e EMAIL_PORT (587).' });
+    }
+    const info = await transporter.sendMail({
+      from: `"Pamonha Net" <${from}>`, to: destino,
+      subject: 'Teste de e-mail — Pamonha Net',
+      text: 'Este é um teste. Se você recebeu este e-mail, a recuperação de senha está funcionando.',
+      html: '<p>Este é um teste. Se você recebeu este e-mail, a recuperação de senha está funcionando. 🌽</p>',
+    });
+    res.json({ ok: true, to: destino, from, messageId: info.messageId, response: info.response, accepted: info.accepted, rejected: info.rejected });
   } catch (err) {
-    console.error('Erro no teste de e-mail (Brevo):', err);
+    console.error('Erro no teste de e-mail:', err);
     let msg = err.message;
-    if (/401|unauthorized|api-key/i.test(err.message)) msg = 'A API key do Brevo está inválida ou expirou.';
-    else if (/sender|not allowed/i.test(err.message)) msg = 'O remetente não está verificado no Brevo.';
-    res.status(500).json({ error: msg });
+    if (/Invalid login|Username and Password not accepted/i.test(err.message)) msg = 'A senha do app (EMAIL_PASS) está incorreta ou expirou. Gere uma nova em https://myaccount.google.com/apppasswords';
+    else if (/ECONNREFUSED|ETIMEDOUT|ENOTFOUND/i.test(err.message)) msg = 'Não consegui conectar ao servidor de e-mail. Verifique EMAIL_HOST e EMAIL_PORT.';
+    res.status(500).json({ error: msg, detalhe: err.message });
   }
 });
 module.exports = router
