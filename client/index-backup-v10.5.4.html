@@ -88,7 +88,7 @@
     .icon-sm { width: 16px; height: 16px; }
     .icon-lg { width: 28px; height: 28px; }
 
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes stampIn {
       0% { transform: scale(0.4) rotate(-14deg); opacity: 0; }
       55% { transform: scale(1.08) rotate(4deg); opacity: 1; }
@@ -99,7 +99,7 @@
       50% { box-shadow: 0 0 0 10px rgba(201, 154, 46, 0); }
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .page { animation: fadeIn 0.28s cubic-bezier(0.4, 0, 0.2, 1) both; }
+    .page { animation: fadeIn 0.4s ease both; }
 
     .container { max-width: 460px; margin: 0 auto; width: 100%; padding: 1.1rem 1.1rem 0; flex: 1; }
     .pb-nav { padding-bottom: 92px; }
@@ -174,7 +174,7 @@
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
       width: 100%; padding: 0.95rem 1rem; border: none; border-radius: var(--radius-sm);
-      font-size: 0.96rem; font-weight: 600; cursor: pointer; transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease, box-shadow 0.2s ease;
+      font-size: 0.96rem; font-weight: 600; cursor: pointer; transition: transform var(--ease), filter var(--ease);
       font-family: var(--font-body);
     }
     .btn:active { transform: scale(0.97); }
@@ -187,12 +187,6 @@
     .btn-success { background: var(--husk-700); color: #fff; }
     .btn-outline { background: transparent; border: 1.5px solid var(--line); color: var(--husk-900); }
     .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
-    .btn:not(:disabled):hover { box-shadow: 0 4px 12px rgba(27,94,32,0.15); }
-    .btn.is-loading { position:relative; color:transparent!important; pointer-events:none; }
-    .btn.is-loading::after { content:''; position:absolute; width:18px; height:18px; border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
-    .btn-primary.is-loading::after { border-color:rgba(27,94,32,.35); border-top-color:var(--husk-900); }
-    .skeleton { background:linear-gradient(90deg,rgba(27,94,32,.06),rgba(27,94,32,.12),rgba(27,94,32,.06)); background-size:200% 100%; animation:skeletonShine 1.4s ease-in-out infinite; border-radius:14px; }
-    @keyframes skeletonShine { 0% {background-position:200% 0} 100% {background-position:-200% 0} }
 
     /* -- Inputs -- */
     .input {
@@ -1484,7 +1478,6 @@
         const identifier = idEl.value.trim();
         const pass = passEl.value;
         if (!identifier || !pass) return toast.show('Preencha telefone/e-mail e senha.', 'error');
-        btn.classList.add('is-loading');
         try {
           const data = await api.post('/api/auth/login', { identifier, password: pass });
           api.setAuth(data.token, data.user);
@@ -1492,7 +1485,7 @@
           updateNav();
           connectLiveEvents();
           router.go('card', true);
-        } catch (e) { toast.show(e.message, 'error'); } finally { btn.classList.remove('is-loading'); }
+        } catch (e) { toast.show(e.message, 'error'); }
       };
     });
 
@@ -1529,7 +1522,6 @@
         const email = $('#reg-email').value.trim();
         const password = $('#reg-pass').value;
         if (!fullName || !phone || !email || !password) return toast.show('Preencha todos os campos.', 'error');
-        btn.classList.add('is-loading');
         try {
           const data = await api.post('/api/auth/register', { fullName, phone, email, password });
           api.setAuth(data.token, data.user);
@@ -1537,7 +1529,7 @@
           updateNav();
           connectLiveEvents();
           router.go('card', true);
-        } catch (e) { toast.show(e.message, 'error'); } finally { btn.classList.remove('is-loading'); }
+        } catch (e) { toast.show(e.message, 'error'); }
       };
     });
 
@@ -1562,18 +1554,44 @@
       btn.onclick = async () => {
         const identifier = $('#forgot-id').value.trim();
         if (!identifier) return toast.show('Informe telefone ou e-mail.', 'error');
-        btn.classList.add('is-loading');
         try {
           const data = await api.post('/api/auth/forgot-password', { identifier });
           toast.show(data.message);
           router.go('login');
-        } catch (e) { toast.show(e.message, 'error'); } finally { btn.classList.remove('is-loading'); }
+        } catch (e) { toast.show(e.message, 'error'); }
       };
     });
 
     // ---------- RESET DE SENHA ----------
-    router.register('reset',(container)=>{const token=new URLSearchParams(location.search).get('reset')||'';container.innerHTML=`<div class="page auth-wrap"><img class="auth-seal" src="/logo.png" alt="Pamonha Net"/><h1>Nova senha</h1><p class="sub">Escolha uma nova senha para sua conta</p><div class="surface auth-card"><label class="label">Nova senha</label><input class="input" id="reset-pass" placeholder="Mínimo 8 caracteres" type="password" autocomplete="new-password"/><div class="text-xs muted mt-1" id="reset-strength"></div><label class="label">Confirmar nova senha</label><input class="input" id="reset-pass-confirm" placeholder="Digite a mesma senha de novo" type="password" autocomplete="new-password"/><div class="text-xs mt-1 mb-2" id="reset-match" style="min-height:1em"></div><button class="btn btn-primary" id="btn-reset">Salvar nova senha</button></div><div class="switch-link"><button onclick="router.go('login')">Voltar para o login</button></div></div>`;const p=$('#reset-pass'),c=$('#reset-pass-confirm'),st=$('#reset-strength'),m=$('#reset-match'),b=$('#btn-reset');function v(){const x=p.value,y=c.value,pts=(x.length>=8)+(x.length>=12)+(/[a-z]/.test(x)&&/[A-Z]/.test(x))+(/\d/.test(x))+(/[^A-Za-z0-9]/.test(x));st.textContent=!x?'':pts<=2?'Senha fraca':pts===3?'Senha razoável':'Senha forte';st.style.color=!x?'':pts<=2?'var(--error)':pts===3?'var(--gold-700)':'var(--husk-700)';m.textContent=y?(x===y?'✓ As senhas coincidem':'✗ As senhas não são iguais'):'';m.style.color=x===y?'var(--husk-700)':'var(--error)';b.disabled=!(x.length>=8&&x===y);}p.addEventListener('input',v);c.addEventListener('input',v);v();b.onclick=async()=>{if(p.value.length<8)return toast.show('A senha precisa ter pelo menos 8 caracteres.','error');if(p.value!==c.value)return toast.show('As senhas não são iguais.','error');b.classList.add('is-loading');try{const d=await api.post('/api/auth/reset-password',{token,password:p.value});toast.show(d.message);history.replaceState(null,'',location.pathname);router.go('login');}catch(e){toast.show(e.message,'error');}finally{b.classList.remove('is-loading');}};});
-    // ---------- CARTÃO ----------
+    router.register('reset', (container) => {
+      const params = new URLSearchParams(location.search);
+      const token = params.get('reset') || '';
+      container.innerHTML = `
+        <div class="page auth-wrap">
+          <img class="auth-seal" src="/logo.png" alt="Pamonha Net" />
+          <h1>Nova senha</h1>
+          <p class="sub">Escolha uma nova senha para sua conta</p>
+          <div class="surface auth-card">
+            <div class="mb-2"><label class="label">Nova senha</label>
+              <input class="input" id="reset-pass" placeholder="Mínimo 6 caracteres" type="password" />
+            </div>
+            <button class="btn btn-primary" id="btn-reset">Salvar nova senha</button>
+          </div>
+        </div>
+      `;
+      const btn = $('#btn-reset');
+      if (!btn) return;
+      btn.onclick = async () => {
+        const password = $('#reset-pass').value;
+        if (!password || password.length < 6) return toast.show('A senha precisa ter pelo menos 6 caracteres.', 'error');
+        try {
+          const data = await api.post('/api/auth/reset-password', { token, password });
+          toast.show(data.message);
+          history.replaceState(null, '', location.pathname);
+          router.go('login');
+        } catch (e) { toast.show(e.message, 'error'); }
+      };
+    });// ---------- CARTÃO ----------
 router.register('card', (container) => {
   if (!api.token) return router.go('login');
   container.innerHTML = `
@@ -2298,8 +2316,57 @@ window.screenshotRanking = async () => {
 };
 
 // ---------- PERFIL ----------
-router.register('profile',(container)=>{if(!api.token)return router.go('login');container.innerHTML=`<div class="page"><h2 class="page-title">${icon('user')} Meus dados</h2><div class="surface mb-2"><h3 class="surface-title">${icon('user','icon icon-sm')} Dados básicos</h3><label class="label">Nome completo</label><input class="input mb-1" id="prof-name"/><label class="label">Telefone</label><input class="input mb-1" id="prof-phone" type="tel" inputmode="tel"/><label class="label">E-mail</label><input class="input mb-2" id="prof-email" type="email"/><button class="btn btn-primary" id="prof-save-btn" onclick="saveProfile()">${icon('save','icon icon-sm')} Salvar alterações</button><p class="text-xs muted mt-1">Ao alterar telefone ou e-mail, você precisará confirmar sua senha atual.</p></div><div class="surface mb-2"><h3 class="surface-title">${icon('shield','icon icon-sm')} Segurança</h3><p class="text-sm muted mb-1">Se trocar sua senha, os outros aparelhos serão desconectados automaticamente.</p><button class="btn btn-secondary" onclick="abrirTrocarSenha()">${icon('shield','icon icon-sm')} Trocar minha senha</button></div><div class="surface mb-2" id="push-card"><h3 class="surface-title">${icon('bell','icon icon-sm')} Notificações no celular</h3><p class="text-sm muted mb-1" id="push-desc">Verificando disponibilidade…</p><button class="btn btn-secondary" id="push-btn" onclick="togglePush()">Ativar notificações</button></div><div class="surface mb-2"><h3 class="surface-title">${icon('search','icon icon-sm')} Onde nos encontrar</h3><div id="profile-locais"><p class="text-sm muted">Carregando locais…</p></div><a class="find-link" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(FEIRA_ENDERECO)}" target="_blank" rel="noopener">${icon('pin','icon icon-sm')} ${FEIRA_ENDERECO}</a><p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px;margin-top:.9rem">Contato</p><a class="find-link" href="https://instagram.com/pamonhanet" target="_blank" rel="noopener">${icon('camera','icon icon-sm')} @pamonhanet</a><a class="find-link" href="https://wa.me/5521994469676" target="_blank" rel="noopener">${icon('whatsapp','icon icon-sm')} (21) 99446-9676</a></div><div class="surface mb-2"><button class="btn btn-outline" onclick="logout()">${icon('logout','icon icon-sm')} Sair da conta</button></div><div class="surface" style="border-color:rgba(198,40,40,.35)"><h3 class="surface-title" style="color:var(--danger)">${icon('trash','icon icon-sm')} Excluir conta</h3><p class="text-sm muted mb-1">Isso apaga sua conta, seus selos e seu histórico permanentemente. Não é possível desfazer.</p><button class="btn btn-danger" onclick="openDeleteAccount()">Excluir minha conta</button></div></div>`;$('#prof-name').value=api.user?.fullName||'';$('#prof-phone').value=api.user?.phone?formatPhone(api.user.phone):'';$('#prof-email').value=api.user?.email||'';refreshPushUi();loadProfileLocais();});
-window.abrirTrocarSenha=()=>{const o=document.createElement('div');o.className='modal-overlay';o.id='trocar-senha-overlay';o.innerHTML=`<div class="modal-card"><h3 class="surface-title">${icon('shield','icon icon-sm')} Trocar minha senha</h3><p class="text-xs muted mb-2">Os outros aparelhos serão desconectados.</p><label class="label">Senha atual</label><input class="input mb-1" id="cs-atual" type="password"/><label class="label">Nova senha</label><input class="input mb-1" id="cs-nova" type="password" placeholder="Mínimo 8 caracteres"/><label class="label">Confirmar nova senha</label><input class="input mb-2" id="cs-confirmar" type="password"/><div class="text-xs mb-1" id="cs-match"></div><button class="btn btn-primary mb-1" id="cs-btn">Trocar senha</button><button class="btn btn-outline" onclick="fecharTrocarSenha()">Cancelar</button></div>`;document.body.appendChild(o);const n=$('#cs-nova'),c=$('#cs-confirmar'),m=$('#cs-match'),b=$('#cs-btn');const v=()=>{m.textContent=c.value?(n.value===c.value?'✓ As senhas coincidem':'✗ As senhas não são iguais'):'';m.style.color=n.value===c.value?'var(--husk-700)':'var(--error)'};n.oninput=v;c.oninput=v;b.onclick=async()=>{const a=$('#cs-atual').value;if(!a)return toast.show('Digite sua senha atual.','error');if(n.value.length<8)return toast.show('A nova senha precisa ter pelo menos 8 caracteres.','error');if(n.value!==c.value)return toast.show('As senhas novas não são iguais.','error');if(n.value===a)return toast.show('A nova senha precisa ser diferente da atual.','error');b.classList.add('is-loading');try{const d=await api.put('/api/auth/change-password',{currentPassword:a,newPassword:n.value});if(d.token)api.setAuth(d.token,api.user);toast.show('Senha alterada com sucesso!');fecharTrocarSenha();}catch(e){toast.show(e.message,'error');}finally{b.classList.remove('is-loading');}};};window.fecharTrocarSenha=()=>$('#trocar-senha-overlay')?.remove();
+router.register('profile', (container) => {
+  if (!api.token) return router.go('login');
+  container.innerHTML = `
+    <div class="page">
+      <h2 class="page-title">${icon('user')} Meus dados</h2>
+      <div class="surface mb-2">
+        <div class="mb-1"><label class="label">Nome completo</label>
+          <input class="input" id="prof-name" />
+        </div>
+        <div class="mb-1"><label class="label">Telefone</label>
+          <input class="input" id="prof-phone" type="tel" inputmode="tel" />
+        </div>
+        <div class="mb-1"><label class="label">E-mail</label>
+          <input class="input" id="prof-email" type="email" />
+        </div>
+        <div class="mb-2"><label class="label">Nova senha (deixe em branco para manter)</label>
+          <input class="input" id="prof-pass" type="password" placeholder="Mínimo 6 caracteres" />
+        </div>
+        <button class="btn btn-primary" onclick="saveProfile()">${icon('save', 'icon icon-sm')} Salvar alterações</button>
+        <button class="btn btn-outline mt-1" onclick="logout()">${icon('logout', 'icon icon-sm')} Sair da conta</button>
+      </div>
+      <div class="surface mb-2" id="push-card">
+        <h3 class="surface-title">${icon('bell', 'icon icon-sm')} Notificações no celular</h3>
+        <p class="text-sm muted mb-1" id="push-desc">Verificando disponibilidade…</p>
+        <button class="btn btn-secondary" id="push-btn" onclick="togglePush()">Ativar notificações</button>
+      </div>
+      <div class="surface mb-2">
+        <h3 class="surface-title">${icon('search', 'icon icon-sm')} Onde nos encontrar</h3>
+        <div id="profile-locais"><p class="text-sm muted">Carregando locais…</p></div>
+        <a class="find-link" href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(FEIRA_ENDERECO)}" target="_blank" rel="noopener">${icon('pin', 'icon icon-sm')} ${FEIRA_ENDERECO}</a>
+        <p class="text-xs muted mb-1" style="text-transform:uppercase;font-weight:700;letter-spacing:.4px;margin-top:.9rem">Contato</p>
+        <a class="find-link" href="https://instagram.com/pamonhanet" target="_blank" rel="noopener">${icon('camera','icon icon-sm')} @pamonhanet</a>
+        <a class="find-link" href="https://wa.me/5521994469676" target="_blank" rel="noopener">${icon('whatsapp','icon icon-sm')} (21) 99446-9676</a>
+      </div>
+      <div class="surface" style="border-color:rgba(198,40,40,0.35)">
+        <h3 class="surface-title" style="color:var(--danger)">${icon('trash', 'icon icon-sm')} Excluir conta</h3>
+        <p class="text-sm muted mb-1">Isso apaga sua conta, seus selos e seu histórico permanentemente. Não é possível desfazer.</p>
+        <button class="btn btn-danger" onclick="openDeleteAccount()">Excluir minha conta</button>
+      </div>
+    </div>
+  `;
+  const nameEl = $('#prof-name');
+  const phoneEl = $('#prof-phone');
+  const emailEl = $('#prof-email');
+  if (nameEl) nameEl.value = api.user?.fullName || '';
+  if (phoneEl) phoneEl.value = api.user?.phone ? formatPhone(api.user.phone) : '';
+  if (emailEl) emailEl.value = api.user?.email || '';
+  refreshPushUi();
+  loadProfileLocais();
+});
+
 async function loadProfileLocais() {
   const box = $('#profile-locais');
   if (!box) return;
@@ -2315,7 +2382,22 @@ async function loadProfileLocais() {
   } catch (e) { box.innerHTML = `<p class="text-sm muted">Não foi possível carregar os locais.</p>`; }
 }
 
-window.saveProfile=async()=>{const name=$('#prof-name')?.value.trim()||'',phone=$('#prof-phone')?.value.trim()||'',email=$('#prof-email')?.value.trim()||'',btn=$('#prof-save-btn');const oldPhone=api.user?.phone?formatPhone(api.user.phone):'',oldEmail=api.user?.email||'',changing=(phone&&phone!==oldPhone)||(email&&email!==oldEmail);const body={};if(name)body.fullName=name;if(phone)body.phone=phone;if(email)body.email=email;if(changing){const pass=prompt('Para confirmar a alteração de telefone/e-mail, digite sua senha atual:');if(pass===null)return;if(!pass)return toast.show('Senha não informada.','error');body.currentPassword=pass;}btn?.classList.add('is-loading');try{const d=await api.put('/api/auth/profile',body);api.setAuth(api.token,d.user);toast.show('Perfil atualizado.');if(changing)router.render();}catch(e){toast.show(e.message,'error');}finally{btn?.classList.remove('is-loading');}};
+window.saveProfile = async () => {
+  const body = {};
+  const name = $('#prof-name') ? $('#prof-name').value.trim() : '';
+  const phone = $('#prof-phone') ? $('#prof-phone').value.trim() : '';
+  const email = $('#prof-email') ? $('#prof-email').value.trim() : '';
+  const pass = $('#prof-pass') ? $('#prof-pass').value : '';
+  if (name) body.fullName = name;
+  if (phone) body.phone = phone;
+  if (email) body.email = email;
+  if (pass) body.password = pass;
+  try {
+    const data = await api.put('/api/auth/profile', body);
+    api.setAuth(api.token, data.user);
+    toast.show('Perfil atualizado.');
+  } catch (e) { toast.show(e.message, 'error'); }
+};
 window.logout = () => { disconnectLiveEvents(); api.clearAuth(); updateNav(); router.go('login'); toast.show('Até logo!'); };
 
 window.openDeleteAccount = () => {

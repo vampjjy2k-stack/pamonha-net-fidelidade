@@ -1,28 +1,8 @@
-// middleware/auth.js
-// Verifica se a requisição possui um token JWT válido no header Authorization.
-// Se válido, anexa os dados do usuário em req.user e libera a requisição.
-
 const jwt = require('jsonwebtoken');
-
-function auth(req, res, next) {
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
-
-  if (!token) {
-    return res.status(401).json({ error: 'Token de autenticação não fornecido.' });
-  }
-
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    // payload: { id, role, iat, exp }
-    req.user = payload;
-    next();
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
-    }
-    return res.status(401).json({ error: 'Token inválido.' });
-  }
+const User = require('../models/User');
+async function auth(req, res, next) {
+  const h=req.headers.authorization||'', token=h.startsWith('Bearer ')?h.slice(7):null;
+  if(!token)return res.status(401).json({error:'Token de autenticação não fornecido.'});
+  try{const payload=jwt.verify(token,process.env.JWT_SECRET);const user=await User.findById(payload.id).select('sessionVersion role').lean();if(!user)return res.status(401).json({error:'Sessão expirada. Faça login novamente.'});if((user.sessionVersion||0)!==(payload.sv||0))return res.status(401).json({error:'Sua senha foi alterada. Faça login de novo.'});req.user={id:payload.id,role:user.role};next();}catch(e){return res.status(401).json({error:e.name==='TokenExpiredError'?'Sessão expirada. Faça login novamente.':'Token inválido.'});}
 }
-
-module.exports = auth;
+module.exports=auth;

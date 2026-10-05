@@ -34,7 +34,7 @@ function normalizePhone(phone) { return phone.replace(/\D/g, ''); }
 function sha256(value) { return crypto.createHash('sha256').update(String(value)).digest('hex'); }
 
 function signToken(user) {
-  return jwt.sign({ id: user._id.toString(), role: user.role, sv: user.sessionVersion || 0 }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign({ id: user._id.toString(), role: user.role }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
 function toPublicUser(user) {
@@ -131,8 +131,41 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-router.put('/profile', auth, async (req,res)=>{try{const {fullName,phone,email,currentPassword}=req.body;const user=await User.findById(req.user.id);if(!user)return res.status(404).json({error:'Usuário não encontrado.'});const changePhone=phone&&normalizePhone(phone)!==user.phone,changeEmail=email&&email.trim().toLowerCase()!==(user.email||'');if(changePhone||changeEmail){if(!currentPassword)return res.status(400).json({error:'Para alterar telefone ou e-mail, confirme sua senha atual.'});if(!await bcrypt.compare(currentPassword,user.password))return res.status(401).json({error:'Senha atual incorreta.'});}if(fullName){if(fullName.trim().length<3)return res.status(400).json({error:'Nome precisa ter pelo menos 3 caracteres.'});user.fullName=fullName.trim();}if(changePhone){const v=normalizePhone(phone);if(!isValidBrazilianPhone(phone))return res.status(400).json({error:'Telefone inválido.'});if(await User.findOne({phone:v,_id:{$ne:user._id}}))return res.status(409).json({error:'Telefone já cadastrado por outro usuário.'});user.phone=v;}if(changeEmail){const v=email.trim().toLowerCase();if(!isValidEmail(email))return res.status(400).json({error:'E-mail inválido.'});if(await User.findOne({email:v,_id:{$ne:user._id}}))return res.status(409).json({error:'E-mail já cadastrado por outro usuário.'});user.email=v;}await user.save();res.json({user:toPublicUser(user)});}catch(e){if(e.code===11000)return res.status(409).json({error:'Telefone ou e-mail já cadastrado por outro usuário.'});res.status(500).json({error:'Não foi possível atualizar o perfil.'});}});
-router.put('/change-password', auth, async (req,res)=>{try{const {currentPassword,newPassword}=req.body;if(!currentPassword||!newPassword)return res.status(400).json({error:'Informe a senha atual e a nova.'});if(newPassword.length<MIN_PASSWORD_LENGTH)return res.status(400).json({error:`A nova senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`});if(currentPassword===newPassword)return res.status(400).json({error:'A nova senha precisa ser diferente da atual.'});const user=await User.findById(req.user.id);if(!user)return res.status(404).json({error:'Usuário não encontrado.'});if(!await bcrypt.compare(currentPassword,user.password))return res.status(401).json({error:'Senha atual incorreta.'});user.password=await bcrypt.hash(newPassword,SALT_ROUNDS);user.sessionVersion=(user.sessionVersion||0)+1;await user.save();res.json({message:'Senha alterada com sucesso.',token:signToken(user)});}catch(e){console.error('Erro ao trocar senha:',e);res.status(500).json({error:'Não foi possível alterar a senha.'});}});
+router.put('/profile', auth, async (req, res) => {
+  try {
+    const { fullName, phone, email, password } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+    if (fullName) {
+      if (fullName.trim().length < 3) return res.status(400).json({ error: 'Nome precisa ter pelo menos 3 caracteres.' });
+      user.fullName = fullName.trim();
+    }
+    if (phone) {
+      const normalizedPhone = normalizePhone(phone);
+      if (!isValidBrazilianPhone(phone)) return res.status(400).json({ error: 'Telefone inválido.' });
+      const existing = await User.findOne({ phone: normalizedPhone, _id: { $ne: user._id } });
+      if (existing) return res.status(409).json({ error: 'Telefone já cadastrado por outro usuário.' });
+      user.phone = normalizedPhone;
+    }
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!isValidEmail(email)) return res.status(400).json({ error: 'E-mail inválido.' });
+      const existing = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+      if (existing) return res.status(409).json({ error: 'E-mail já cadastrado por outro usuário.' });
+      user.email = normalizedEmail;
+    }
+    if (password) {
+      if (password.length < MIN_PASSWORD_LENGTH) return res.status(400).json({ error: `Senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+      user.password = await bcrypt.hash(password, SALT_ROUNDS);
+    }
+    await user.save();
+    res.json({ user: toPublicUser(user) });
+  } catch (err) {
+    if (err.code === 11000) return res.status(409).json({ error: 'Telefone ou e-mail já cadastrado por outro usuário.' });
+    res.status(500).json({ error: 'Não foi possível atualizar o perfil.' });
+  }
+});
+
 // v10.4.8: ao excluir a conta, cancela raspadinhas ATIVAS (não usadas).
 router.delete('/account', auth, async (req, res) => {
   try {
@@ -193,6 +226,22 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
   }
 });
 
-router.post('/reset-password',async(req,res)=>{try{const {token,password}=req.body;if(!token||!password)return res.status(400).json({error:'Link inválido. Peça uma nova redefinição.'});if(password.length<MIN_PASSWORD_LENGTH)return res.status(400).json({error:`A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`});const hash=crypto.createHash('sha256').update(token).digest('hex');const user=await User.findOne({resetPasswordTokenHash:hash,resetPasswordExpires:{$gt:new Date()}});if(!user)return res.status(400).json({error:'Este link expirou ou já foi usado. Peça uma nova redefinição.'});user.password=await bcrypt.hash(password,SALT_ROUNDS);user.resetPasswordTokenHash=null;user.resetPasswordExpires=null;user.sessionVersion=(user.sessionVersion||0)+1;await user.save();res.json({message:'Senha redefinida com sucesso. Faça login com a nova senha.'});}catch(e){console.error('Erro ao redefinir senha:',e);res.status(500).json({error:'Não foi possível redefinir a senha. Tente novamente.'});}});;
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Link inválido. Peça uma nova redefinição.' });
+    if (password.length < MIN_PASSWORD_LENGTH) return res.status(400).json({ error: `A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.` });
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({ resetPasswordTokenHash: tokenHash, resetPasswordExpires: { $gt: new Date() } });
+    if (!user) return res.status(400).json({ error: 'Este link expirou ou já foi usado. Peça uma nova redefinição.' });
+    user.password = await bcrypt.hash(password, SALT_ROUNDS);
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+    res.json({ message: 'Senha redefinida com sucesso. Faça login com a nova senha.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível redefinir a senha. Tente novamente.' });
+  }
+});
 
 module.exports = router;
