@@ -192,6 +192,7 @@
     .btn.is-loading::after { content:''; position:absolute; width:18px; height:18px; border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
     .btn-primary.is-loading::after { border-color:rgba(27,94,32,.35); border-top-color:var(--husk-900); }
     .skeleton { background:linear-gradient(90deg,rgba(27,94,32,.06),rgba(27,94,32,.12),rgba(27,94,32,.06)); background-size:200% 100%; animation:skeletonShine 1.4s ease-in-out infinite; border-radius:14px; }
+    .skeleton-row { height:76px; margin-bottom:.6rem; border-radius:var(--radius-sm); background:linear-gradient(90deg,#FFFDF5 0%,#F5F5F0 50%,#FFFDF5 100%); background-size:200% 100%; animation:skeletonShine 1.4s ease-in-out infinite; border:1px solid var(--line); border-left:3px solid var(--line); }
     @keyframes skeletonShine { 0% {background-position:200% 0} 100% {background-position:-200% 0} }
 
     /* -- Inputs -- */
@@ -1768,38 +1769,31 @@ router.register('notifications', (container) => {
 });
 
 async function loadNotifications() {
+  const list = $('#notif-list');
+  if (!list) return;
+  list.innerHTML = '<div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div>';
   try {
     const data = await api.get('/api/client/notifications');
-    const list = $('#notif-list');
-    if (!list) return;
+    const listEl = $('#notif-list');
+    if (!listEl) return;
     if (!data.notifications.length) {
-      list.innerHTML = `<div class="empty-state">${icon('mail', 'icon')}<p>Nenhum aviso por enquanto. Avisaremos quando houver novidade para você.</p></div>`;
+      listEl.innerHTML = `<div class="empty-state">${icon('mail', 'icon')}<p>Nenhum aviso por enquanto. Avisaremos quando houver novidade para você.</p></div>`;
     } else {
-      list.innerHTML = data.notifications.map(n => {
+      listEl.innerHTML = data.notifications.map(n => {
         const isRasp = n.type === 'raspadinha';
         const rowStyle = isRasp ? 'border-left-color:#F9A825;background:linear-gradient(135deg,#FFF8E1,#FFFDF5)' : '';
-        const badge = isRasp
-          ? '<span class="new-tag" style="background:#F9A825;color:#1B5E20">🎁 prêmio</span>'
-          : (!n.read ? '<span class="new-tag">novo</span>' : '');
-        const codeHTML = (isRasp && n.code)
-          ? `<div style="display:inline-block;background:#fff;border:2px dashed #F9A825;border-radius:8px;padding:0.35rem 0.7rem;margin-top:0.4rem;font-family:monospace;font-weight:700;font-size:0.9rem;letter-spacing:0.05em;color:#1B5E20">${esc(n.code)}</div>`
-          : '';
-        return `
-          <div class="row ${n.read ? 'is-read' : ''}" style="${rowStyle}">
-            <h4>${esc(n.title)} ${badge}</h4>
-            <p>${esc(n.message)}</p>
-            ${codeHTML}
-            <div class="row-foot">
-              <span class="text-xs">${formatDate(n.createdAt)}</span>
-            </div>
-          </div>
-        `;
+        const badge = isRasp ? '<span class="new-tag" style="background:#F9A825;color:#1B5E20">🎁 prêmio</span>' : (!n.read ? '<span class="new-tag">novo</span>' : '');
+        const codeHTML = isRasp && n.code ? `<div style="display:inline-block;background:#fff;border:2px dashed #F9A825;border-radius:8px;padding:0.35rem 0.7rem;margin-top:0.4rem;font-family:monospace;font-weight:700;font-size:0.9rem;letter-spacing:0.05em;color:#1B5E20">${esc(n.code)}</div>` : '';
+        return `<div class="row ${n.read ? 'is-read' : ''}" style="${rowStyle}"><h4>${esc(n.title)} ${badge}</h4><p>${esc(n.message)}</p>${codeHTML}<div class="row-foot"><span class="text-xs">${formatDate(n.createdAt)}</span></div></div>`;
       }).join('');
     }
     refreshUnreadBadge();
-  } catch (e) { toast.show(e.message, 'error'); }
+  } catch (e) {
+    const listEl = $('#notif-list');
+    if (listEl) listEl.innerHTML = `<div class="empty-state"><p>Não foi possível carregar os avisos. Tente de novo.</p></div>`;
+    toast.show(e.message, 'error');
+  }
 }
-
 // ---------- AVALIAR ----------
 const FEEDBACK_QUESTIONS = [
   { key: 'experienceRating', q: 'Como foi sua experiência na Pamonha Net?' },

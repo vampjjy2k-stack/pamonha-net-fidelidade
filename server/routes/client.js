@@ -170,16 +170,26 @@ router.get('/leaderboard', async (req, res) => {
 
 router.get('/notifications', async (req, res) => {
   try {
-    const list = await Notification.find({ $or: [{ userId: req.user.id }, { broadcast: true }] }).sort({ createdAt: -1 }).limit(50);
-    const reads = await NotificationRead.find({ userId: req.user.id, notificationId: { $in: list.map((n) => n._id) } }).select('notificationId');
+    const [list, reads] = await Promise.all([
+      Notification.find({ $or: [{ userId: req.user.id }, { broadcast: true }] })
+        .sort({ createdAt: -1 }).limit(50).lean(),
+      NotificationRead.find({ userId: req.user.id }).select('notificationId').lean(),
+    ]);
     const readSet = new Set(reads.map((r) => String(r.notificationId)));
     const unseen = list.filter((n) => !readSet.has(String(n._id)));
-    if (unseen.length) await NotificationRead.insertMany(unseen.map((n) => ({ notificationId: n._id, userId: req.user.id })), { ordered: false }).catch(() => {});
-    const notifications = list.map((n) => ({ ...n.toObject(), read: readSet.has(String(n._id)) }));
+    if (unseen.length) {
+      NotificationRead.insertMany(unseen.map((n) => ({ notificationId: n._id, userId: req.user.id })), { ordered: false }).catch(() => {});
+    }
+    const notifications = list.map((n) => ({
+      _id: n._id, title: n.title, message: n.message, type: n.type || 'normal',
+      code: n.code || null, createdAt: n.createdAt, read: readSet.has(String(n._id)),
+    }));
     res.json({ notifications });
-  } catch (err) { res.status(500).json({ error: 'Erro ao carregar notificações.' }); }
+  } catch (err) {
+    console.error('Erro ao carregar notificações:', err);
+    res.status(500).json({ error: 'Erro ao carregar notificações.' });
+  }
 });
-
 router.get('/notifications/unread-count', async (req, res) => {
   try {
     const list = await Notification.find({ $or: [{ userId: req.user.id }, { broadcast: true }] }).select('_id');
