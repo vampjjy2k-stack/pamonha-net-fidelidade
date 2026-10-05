@@ -4344,8 +4344,10 @@ function renderTxPill() {
           const cliPhone=!contaExcluida&&r.userId.phone?formatPhone(r.userId.phone):'';
           const avisoExcluida=contaExcluida&&r.status==='active'?`<div style="font-size:.75rem;color:var(--error);margin-top:.3rem">⚠ O cliente apagou a conta. Este prêmio não pode mais ser resgatado. Cancele para limpar.</div>`:'';
           const btnCancelar=r.status==='active'?`<button class="btn btn-outline mt-1" style="color:var(--error);border-color:rgba(198,40,40,.35);width:100%" onclick="abrirCancelarRaspadinha('${r._id}', '${esc(r.code)}')">${icon('trash','icon icon-sm')} Cancelar prêmio</button>`:'';
-          const btnApagar=`<button class="btn btn-outline mt-1" style="color:var(--error);border-color:rgba(198,40,40,.35);width:100%" onclick="abrirApagarRaspadinha('${r._id}', '${esc(r.code)}')">${icon('trash','icon icon-sm')} Apagar registro</button>`;
-          return `<div class="venda-row"><div class="top"><div><div class="client">${esc(cli)}</div><div class="meta">${esc(cliPhone)}${cliPhone?' · ':''}${formatDate(r.createdAt)}</div></div><div class="value" style="color:${statusColor}">${r.discountPercent}%</div></div><div style="font-family:monospace;font-size:1.05rem;font-weight:700;color:var(--husk-900);letter-spacing:.06em;margin:.4rem 0">${esc(r.code)}</div><span class="venda-badge ${r.status==='active'?'ok':'warn'}">${statusTxt}${r.usedAt?' · '+formatDateShort(r.usedAt):''}</span>${avisoExcluida}${btnCancelar}${btnApagar}</div>`;
+          const btnExcluir = r.status !== 'active'
+            ? `<button class="btn btn-outline mt-1" style="color:var(--error);border-color:rgba(198,40,40,.35);width:100%" onclick="abrirExcluirRaspadinha('${r._id}', '${esc(r.code)}')">${icon('trash','icon icon-sm')} Excluir do histórico</button>`
+            : '';
+          return `<div class="venda-row"><div class="top"><div><div class="client">${esc(cli)}</div><div class="meta">${esc(cliPhone)}${cliPhone?' · ':''}${formatDate(r.createdAt)}</div></div><div class="value" style="color:${statusColor}">${r.discountPercent}%</div></div><div style="font-family:monospace;font-size:1.05rem;font-weight:700;color:var(--husk-900);letter-spacing:.06em;margin:.4rem 0">${esc(r.code)}</div><span class="venda-badge ${r.status==='active'?'ok':'warn'}">${statusTxt}${r.usedAt?' · '+formatDateShort(r.usedAt):''}</span>${avisoExcluida}${btnCancelar}${btnExcluir}</div>`;
         }).join('');
       } catch (e) { box.innerHTML = `<p class="text-xs muted">${esc(e.message)}</p>`; }
     }
@@ -4354,41 +4356,40 @@ function renderTxPill() {
     window.fecharCancelarRaspadinha=()=>{const e=$('#cancel-rasp-overlay');if(e)e.remove();};
     window.confirmarCancelarRaspadinha=async(id,code)=>{const i=$('#cancel-rasp-confirm'),d=i?i.value.trim().toUpperCase():'';if(d!==code)return toast.show('O código digitado não confere.','error');try{await api.post('/api/admin/raspadinhas/'+id+'/cancelar',{code});toast.show('Prêmio cancelado.');fecharCancelarRaspadinha();loadRaspadinhasStats();loadRaspadinhas('all');}catch(e){toast.show(e.message,'error');}};
 
-    window.abrirApagarRaspadinha = (id, code) => {
-      if (!confirm('Apagar definitivamente a raspadinha ' + code + '?\n\nO registro e o aviso do cliente serão removidos. A trava de telefone/e-mail continuará ativa.')) return;
+    // v10.5.1: excluir raspadinha do banco (canceladas/usadas).
+    // Exige digitar o código exato — confirmação dupla.
+    window.abrirExcluirRaspadinha = (id, code) => {
+      if (!confirm('Excluir definitivamente a raspadinha ' + code + '?\n\nEla será removida do histórico. A trava de telefone/e-mail continuará ativa.')) return;
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
-      overlay.id = 'delete-rasp-overlay';
+      overlay.id = 'excluir-rasp-overlay';
       overlay.innerHTML = `
         <div class="modal-card">
-          <h3 class="surface-title" style="color:var(--error)">${icon('trash','icon icon-sm')} Confirmação final</h3>
-          <p class="text-sm mb-1">Esta ação não pode ser desfeita. Para apagar, digite o código e a frase abaixo.</p>
-          <div style="background:var(--husk-300);border-radius:8px;padding:.5rem .8rem;font-family:monospace;font-weight:700;text-align:center;letter-spacing:.1em;color:var(--husk-900);margin-bottom:.6rem">${esc(code)}</div>
-          <input class="input mb-1" id="delete-rasp-code" placeholder="Digite o código" style="text-transform:uppercase;font-family:monospace" />
-          <input class="input mb-2" id="delete-rasp-phrase" placeholder="Digite: APAGAR RASPADINHA" />
-          <button class="btn btn-danger mb-1" id="delete-rasp-btn">${icon('trash','icon icon-sm')} Apagar definitivamente</button>
-          <button class="btn btn-outline" onclick="fecharApagarRaspadinha()">Voltar</button>
+          <h3 class="surface-title" style="color:var(--error)">${icon('trash','icon icon-sm')} Excluir raspadinha</h3>
+          <p class="text-sm mb-1">Isso vai <strong>apagar do banco</strong> o registro desta raspadinha. Sem volta.</p>
+          <p class="text-xs muted mb-2">Para confirmar, digite o código abaixo:</p>
+          <div style="background:var(--husk-300);border-radius:8px;padding:.5rem .8rem;font-family:monospace;font-weight:700;text-align:center;font-size:1.05rem;letter-spacing:.1em;color:var(--husk-900);margin-bottom:.6rem">${esc(code)}</div>
+          <input class="input mb-2" id="excluir-rasp-confirm" placeholder="Digite o código aqui" style="text-transform:uppercase;font-family:monospace" />
+          <button class="btn btn-danger mb-1" id="excluir-rasp-btn">${icon('trash','icon icon-sm')} Excluir definitivamente</button>
+          <button class="btn btn-outline" onclick="fecharExcluirRaspadinha()">Voltar</button>
         </div>`;
       document.body.appendChild(overlay);
-      const btn = $('#delete-rasp-btn');
-      if (btn) btn.onclick = () => confirmarApagarRaspadinha(id, code);
+      const btn = $('#excluir-rasp-btn');
+      if (btn) btn.onclick = () => confirmarExcluirRaspadinha(id, code);
     };
-    window.fecharApagarRaspadinha = () => { const el=$('#delete-rasp-overlay'); if (el) el.remove(); };
-    window.confirmarApagarRaspadinha = async (id, code) => {
-      const codeInput=$('#delete-rasp-code'), phraseInput=$('#delete-rasp-phrase');
-      const typedCode=codeInput ? codeInput.value.trim().toUpperCase() : '';
-      const typedPhrase=phraseInput ? phraseInput.value.trim().toUpperCase() : '';
-      if (typedCode !== code) return toast.show('O código digitado não confere.', 'error');
-      if (typedPhrase !== 'APAGAR RASPADINHA') return toast.show('Digite exatamente APAGAR RASPADINHA.', 'error');
+    window.fecharExcluirRaspadinha = () => { const el=$('#excluir-rasp-overlay'); if (el) el.remove(); };
+    window.confirmarExcluirRaspadinha = async (id, code) => {
+      const input=$('#excluir-rasp-confirm');
+      const digitado=input ? input.value.trim().toUpperCase() : '';
+      if (digitado !== code) return toast.show('O código digitado não confere.', 'error');
       try {
-        await api.del('/api/admin/raspadinhas/' + id, { code: typedCode, confirm: typedPhrase });
-        toast.show('Raspadinha apagada definitivamente.');
-        fecharApagarRaspadinha();
+        await api.req('DELETE', '/api/admin/raspadinhas/' + id, { code });
+        toast.show('Raspadinha excluída.');
+        fecharExcluirRaspadinha();
         loadRaspadinhasStats();
         loadRaspadinhas('all');
       } catch (e) { toast.show(e.message, 'error'); }
     };
-
     window.resgatarRaspadinha = async () => {
       const input = $('#rasp-code');
       if (!input) return;
