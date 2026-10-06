@@ -1550,16 +1550,33 @@
           <h1>Recuperar senha</h1>
           <p class="sub">Informe seu telefone ou e-mail cadastrado</p>
           <div class="surface auth-card">
+            <div class="mb-1"><label class="label">Nome completo</label>
+              <input class="input" id="forgot-name" placeholder="Seu nome completo" autocomplete="name" />
+            </div>
             <div class="mb-2"><label class="label">Telefone ou e-mail</label>
               <input class="input" id="forgot-id" placeholder="(21) 91234-5678 ou seu@email.com" />
             </div>
             <button class="btn btn-primary" id="btn-forgot">Enviar link de redefinição</button>
+            <button class="btn btn-outline mt-1" id="btn-forgot-whatsapp" style="border-color:#25D366;color:#1a8a4a">Pedir ajuda pelo WhatsApp</button>
           </div>
           <div class="switch-link"><button onclick="router.go('login')">Voltar para o login</button></div>
         </div>
       `;
       const btn = $('#btn-forgot');
+      const btnWhats = $('#btn-forgot-whatsapp');
       if (!btn) return;
+      if (btnWhats) {
+        btnWhats.onclick = () => {
+          const fullName = ($('#forgot-name')?.value || '').trim();
+          const identifier = ($('#forgot-id')?.value || '').trim();
+          if (!fullName) return toast.show('Informe seu nome completo.', 'error');
+          const parteId = identifier ? 'Meu telefone/e-mail cadastrado é: ' + identifier + '. ' : '';
+          const msg = 'Oi! Sou cliente da Pamonha Net e esqueci minha senha. ' +
+            'Meu nome completo é: ' + fullName + '. ' + parteId +
+            'Não estou conseguindo recuperar pelo e-mail. Vocês podem me enviar o link pelo meu e-mail?';
+          window.open('https://wa.me/5521994469676?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+        };
+      }
       btn.onclick = async () => {
         const identifier = $('#forgot-id').value.trim();
         if (!identifier) return toast.show('Informe telefone ou e-mail.', 'error');
@@ -3280,6 +3297,9 @@ function renderTxPill() {
             <button class="btn btn-outline" onclick="deleteHistory('${c._id}')">${icon('trash', 'icon icon-sm')} Histórico</button>
             <button class="btn btn-outline" style="border-color:#25D36660;color:#1a8a4a" onclick="shareCardWhatsapp(${jattr(c)})">${icon('whatsapp', 'icon icon-sm')} Compartilhar</button>
           </div>
+          <div class="actions">
+            <button class="btn btn-outline" onclick='enviarLinkSenha(${jattr(c)})' style="border-color:rgba(249,168,37,0.5);color:var(--gold-700)">${icon('mail', 'icon icon-sm')} Redefinir senha</button>
+          </div>
         </div>
       `;
     }
@@ -3396,6 +3416,20 @@ function renderTxPill() {
         toast.show('Cartão zerado.');
         loadAdminClients();
       } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.enviarLinkSenha = async (client) => {
+      if (!client.email) {
+        toast.show('Este cliente não tem e-mail cadastrado.', 'error');
+        return;
+      }
+      if (!confirm('Enviar link de redefinição de senha para ' + client.email + '?')) return;
+      try {
+        toast.show('Enviando…');
+        const r = await api.post('/api/admin/clients/' + client._id + '/send-password-reset', {});
+        toast.show('Link enviado para ' + r.email + '. Avise o cliente para olhar a caixa de entrada e o spam.');
+      } catch (e) {
+        toast.show(e.message, 'error');
+      }
     };
     window.deleteHistory = async (id) => {
       if (!confirm('Apagar todo o histórico de selos deste cliente? Esta ação não pode ser desfeita.')) return;

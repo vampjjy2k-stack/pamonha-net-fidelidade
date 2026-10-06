@@ -720,4 +720,31 @@ router.post('/test-email', async (req, res) => {
     res.status(500).json({ error: msg });
   }
 });
+// v10.7.2: o admin dispara o link de redefinição para o cliente.
+// O admin nunca vê nem define a senha do cliente.
+router.post('/clients/:id/send-password-reset', async (req, res) => {
+  try {
+    const crypto = require('crypto');
+    const { sendPasswordResetEmail } = require('../utils/email');
+    const user = await User.findOne({ _id: req.params.id, role: 'client' });
+    if (!user) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    if (!user.email) return res.status(400).json({ error: 'Este cliente não tem e-mail cadastrado. Peça para ele atualizar o e-mail no Perfil.' });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordTokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    user.resetPasswordExpires = new Date(Date.now() + 30 * 60 * 1000);
+    await user.save();
+
+    const baseUrl = process.env.CLIENT_URL || (req.protocol + '://' + req.get('host'));
+    const resetUrl = baseUrl + '/?reset=' + rawToken;
+    await sendPasswordResetEmail({ to: user.email, fullName: user.fullName, resetUrl });
+
+    res.json({ ok: true, email: user.email, message: 'Link enviado para ' + user.email });
+  } catch (err) {
+    console.error('Erro ao enviar link de redefinição:', err);
+    let msg = err.message;
+    if (/BREVO_API_KEY não configurada/.test(err.message)) msg = 'O envio de e-mail não está configurado no servidor.';
+    res.status(500).json({ error: msg });
+  }
+});
 module.exports = router
