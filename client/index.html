@@ -3300,6 +3300,9 @@ function renderTxPill() {
           <div class="actions">
             <button class="btn btn-outline" onclick='enviarLinkSenha(${jattr(c)})' style="border-color:rgba(249,168,37,0.5);color:var(--gold-700)">${icon('mail', 'icon icon-sm')} Redefinir senha</button>
           </div>
+          <div class="actions">
+            <button class="btn btn-outline" onclick='excluirCliente(${jattr(c)})' style="border-color:rgba(198,40,40,0.4);color:var(--error)">${icon('trash', 'icon icon-sm')} Excluir cliente</button>
+          </div>
         </div>
       `;
     }
@@ -3429,6 +3432,48 @@ function renderTxPill() {
         toast.show('Link enviado para ' + r.email + '. Avise o cliente para olhar a caixa de entrada e o spam.');
       } catch (e) {
         toast.show(e.message, 'error');
+      }
+    };
+    window.excluirCliente = (client) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.id = 'excluir-cliente-overlay';
+      overlay.innerHTML = `
+        <div class="modal-card" style="border-top:4px solid var(--error)">
+          <h3 class="surface-title" style="color:var(--error)">${icon('trash','icon icon-sm')} Excluir cliente</h3>
+          <p class="text-sm mb-1">Você está prestes a apagar <strong>${esc(client.fullName)}</strong> (${formatPhone(client.phone)}).</p>
+          <p class="text-xs muted mb-1">Será apagado: a conta, os selos (${client.stamps}/10), o histórico, as avaliações, as notificações e os dispositivos de notificação.</p>
+          <p class="text-xs muted mb-1"><strong>Não será apagado:</strong> as vendas registradas (ficam nos relatórios), as raspadinhas (ficam como canceladas) e a trava antifraude.</p>
+          <p class="text-xs mb-1" style="color:var(--error);font-weight:700">Ação permanente. Não tem como desfazer.</p>
+          <label class="label mt-1">Para confirmar, digite o telefone do cliente:</label>
+          <div style="background:var(--husk-300);border-radius:8px;padding:0.4rem 0.75rem;font-family:monospace;font-weight:700;font-size:0.9rem;color:var(--husk-900);margin-bottom:0.5rem;text-align:center">${formatPhone(client.phone)}</div>
+          <input class="input mb-2" id="exc-cli-confirm" placeholder="Digite apenas os números" inputmode="numeric" />
+          <button class="btn btn-danger mb-1" id="exc-cli-btn">${icon('trash','icon icon-sm')} Excluir definitivamente</button>
+          <button class="btn btn-outline" onclick="fecharExcluirCliente()">Cancelar</button>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      const input = $('#exc-cli-confirm');
+      if (input) input.focus();
+      const btn = $('#exc-cli-btn');
+      if (btn) btn.onclick = () => confirmarExcluirCliente(client);
+    };
+    window.fecharExcluirCliente = () => $('#excluir-cliente-overlay')?.remove();
+    window.confirmarExcluirCliente = async (client) => {
+      const input = $('#exc-cli-confirm');
+      const digitado = (input ? input.value : '').replace(/\D/g, '');
+      if (!digitado) return toast.show('Digite o telefone para confirmar.', 'error');
+      if (digitado !== client.phone) return toast.show('O telefone não confere com o cadastro.', 'error');
+      const btn = $('#exc-cli-btn');
+      if (btn) btn.classList.add('is-loading');
+      try {
+        await api.req('DELETE', '/api/admin/clients/' + client._id, { confirmPhone: digitado });
+        toast.show('Cliente excluído. As vendas continuam nos relatórios.');
+        fecharExcluirCliente();
+        loadAdminClients();
+      } catch (e) {
+        toast.show(e.message, 'error');
+        if (btn) btn.classList.remove('is-loading');
       }
     };
     window.deleteHistory = async (id) => {

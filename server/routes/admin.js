@@ -3,6 +3,7 @@ const User = require('../models/User');
 const StampHistory = require('../models/StampHistory');
 const Notification = require('../models/Notification');
 const NotificationRead = require('../models/NotificationRead');
+const PushSubscription = require('../models/PushSubscription');
 const Feedback = require('../models/Feedback');
 const Produto = require('../models/Produto');
 const Local = require('../models/Local');
@@ -745,6 +746,53 @@ router.post('/clients/:id/send-password-reset', async (req, res) => {
     let msg = err.message;
     if (/BREVO_API_KEY não configurada/.test(err.message)) msg = 'O envio de e-mail não está configurado no servidor.';
     res.status(500).json({ error: msg });
+  }
+});
+
+// v10.6.7: admin exclui cliente. Confirmação por telefone.
+// Mantém vendas (contabilidade) e ParticipanteRaspadinha (trava antifraude).
+router.delete('/clients/:id', async (req, res) => {
+  try {
+    const { confirmPhone } = req.body;
+    const user = await User.findOne({ _id: req.params.id, role: 'client' });
+    if (!user) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+    if (String(user._id) === String(req.user.id)) {
+      return res.status(400).json({ error: 'Você não pode excluir sua própria conta por aqui.' });
+    }
+
+    const typed = typeof confirmPhone === 'string' ? confirmPhone.replace(/\D/g, '') : '';
+    if (!typed) return res.status(400).json({ error: 'Digite o telefone do cliente para confirmar.' });
+    if (typed !== user.phone) {
+      return res.status(400).json({ error: 'O telefone digitado não confere com o cadastro do cliente.' });
+    }
+
+    const userId = user._id;
+    const nomeApagado = user.fullName;
+
+    await Raspadinha.updateMany(
+      { userId, status: 'active' },
+      { $set: { status: 'cancelled' } }
+    );
+
+    await Promise.all([
+      StampHistory.deleteMany({ userId }),
+      Feedback.deleteMany({ userId }),
+      Notification.deleteMany({ userId }),
+      NotificationRead.deleteMany({ userId }),
+      PushSubscription.deleteMany({ userId }),
+    ]);
+
+    await User.deleteOne({ _id: userId });
+
+    res.json({
+      ok: true,
+      message: 'Cliente excluído. As vendas continuam nos relatórios.',
+      deletedName: nomeApagado,
+    });
+  } catch (err) {
+    console.error('Erro ao excluir cliente:', err);
+    res.status(500).json({ error: 'Não foi possível excluir o cliente.' });
   }
 });
 module.exports = router
