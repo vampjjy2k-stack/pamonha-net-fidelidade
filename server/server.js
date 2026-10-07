@@ -7,6 +7,7 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 
@@ -36,11 +37,19 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
+// Força o parser de query a não transformar "?a[$ne]=x" em objeto.
+app.set('query parser', 'simple');
 
 const clientUrl = process.env.CLIENT_URL && process.env.CLIENT_URL !== '*' ? process.env.CLIENT_URL : null;
 // O frontend é servido pelo próprio servidor; sem CLIENT_URL, não habilitamos CORS.
 app.use(clientUrl ? cors({ origin: clientUrl, credentials: true }) : cors({ origin: false }));
 app.use(express.json({ limit: '8mb' }));
+// v10.6.8: remove $ e . das chaves de req.body/req.query/req.params.
+// Impede ataques NoSQL injection do tipo {"$ne": null}.
+app.use(mongoSanitize({
+  replaceWith: '_',
+  allowDots: false,
+}));
 ensureConfigured();
 
 const clientDir = path.join(__dirname, '..', 'client');
