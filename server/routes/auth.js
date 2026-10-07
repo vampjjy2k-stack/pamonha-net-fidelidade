@@ -104,12 +104,16 @@ router.post('/register', registerLimiter, async (req, res) => {
 router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { identifier, phone, password } = req.body;
-    const rawIdentifier = (identifier || phone || '').trim();
-    if (!rawIdentifier || !password) return res.status(400).json({ error: 'Informe telefone ou e-mail, e senha.' });
-    const looksLikeEmail = rawIdentifier.includes('@');
+    const rawIdentifier = identifier || phone || '';
+    if (typeof rawIdentifier !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Informe telefone ou e-mail, e senha.' });
+    }
+    const normalizedIdentifier = rawIdentifier.trim();
+    if (!normalizedIdentifier || !password) return res.status(400).json({ error: 'Informe telefone ou e-mail, e senha.' });
+    const looksLikeEmail = normalizedIdentifier.includes('@');
     const user = looksLikeEmail
-      ? await User.findOne({ email: rawIdentifier.toLowerCase() })
-      : await User.findOne({ phone: normalizePhone(rawIdentifier) });
+      ? await User.findOne({ email: normalizedIdentifier.toLowerCase() })
+      : await User.findOne({ phone: normalizePhone(normalizedIdentifier) });
     if (!user) return res.status(401).json({ error: 'Conta não encontrada com esses dados.' });
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) return res.status(401).json({ error: 'Senha incorreta.' });
