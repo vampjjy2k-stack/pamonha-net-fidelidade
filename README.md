@@ -1,8 +1,8 @@
-# 🌽 Pamonha Net Fidelidade — v10.7.5
+# 🌽 Pamonha Net Fidelidade — v10.7.6
 
 Sistema de cartão fidelidade digital da Pamonha Net, com frontend mobile-first e backend Node.js/Express/MongoDB.
 
-> **Versão publicada:** v10.7.5 — e-mail de recuperação de senha com Brevo, avisos rápidos e segurança de sessões.
+> **Versão publicada:** v10.7.6 — e-mail de recuperação de senha com Brevo, avisos rápidos e segurança de sessões.
 > **Branch de produção:** `main`
 
 ## O que está publicado
@@ -20,7 +20,6 @@ Sistema de cartão fidelidade digital da Pamonha Net, com frontend mobile-first 
 - Troca de senha com confirmação da senha atual;
 - Confirmação dupla ao redefinir a senha;
 - Desconexão automática de outros aparelhos após troca ou redefinição de senha;
-- Endereço da Feira: `Estr. Velha do Pilar, 408 - Chácaras Rio-Petrópolis, Duque de Caxias - RJ, 25230-610`.
 
 ## Estrutura
 
