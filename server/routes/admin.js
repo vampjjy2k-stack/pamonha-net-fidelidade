@@ -721,15 +721,12 @@ router.post('/test-email', async (req, res) => {
     res.status(500).json({ error: msg });
   }
 });
-// v10.7.2: o admin dispara o link de redefinição para o cliente.
-// O admin nunca vê nem define a senha do cliente.
-router.post('/clients/:id/send-password-reset', async (req, res) => {
+// v10.7.7: o admin gera um link de redefinição para enviar pelo WhatsApp.
+router.post('/clients/:id/password-reset-link', async (req, res) => {
   try {
     const crypto = require('crypto');
-    const { sendPasswordResetEmail } = require('../utils/email');
     const user = await User.findOne({ _id: req.params.id, role: 'client' });
     if (!user) return res.status(404).json({ error: 'Cliente não encontrado.' });
-    if (!user.email) return res.status(400).json({ error: 'Este cliente não tem e-mail cadastrado. Peça para ele atualizar o e-mail no Perfil.' });
 
     const rawToken = crypto.randomBytes(32).toString('hex');
     user.resetPasswordTokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
@@ -737,18 +734,17 @@ router.post('/clients/:id/send-password-reset', async (req, res) => {
     await user.save();
 
     const baseUrl = process.env.CLIENT_URL || (req.protocol + '://' + req.get('host'));
-    const resetUrl = baseUrl + '/?reset=' + rawToken;
-    await sendPasswordResetEmail({ to: user.email, fullName: user.fullName, resetUrl });
-
-    res.json({ ok: true, email: user.email, message: 'Link enviado para ' + user.email });
+    res.json({
+      ok: true,
+      resetUrl: baseUrl + '/?reset=' + rawToken,
+      expiresInMinutes: 30,
+      client: { id: user._id, fullName: user.fullName, phone: user.phone },
+    });
   } catch (err) {
-    console.error('Erro ao enviar link de redefinição:', err);
-    let msg = err.message;
-    if (/BREVO_API_KEY não configurada/.test(err.message)) msg = 'O envio de e-mail não está configurado no servidor.';
-    res.status(500).json({ error: msg });
+    console.error('Erro ao gerar link de redefinição:', err);
+    res.status(500).json({ error: 'Não foi possível gerar o link.' });
   }
 });
-
 // v10.6.7: admin exclui cliente. Confirmação por telefone.
 // Mantém vendas (contabilidade) e ParticipanteRaspadinha (trava antifraude).
 router.delete('/clients/:id', async (req, res) => {

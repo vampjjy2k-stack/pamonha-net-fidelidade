@@ -1572,7 +1572,7 @@
           const parteId = identifier ? 'Meu telefone/e-mail cadastrado é: ' + identifier + '. ' : '';
           const msg = 'Oi! Sou cliente da Pamonha Net e esqueci minha senha. ' +
             'Meu nome completo é: ' + fullName + '. ' + parteId +
-            'Não estou conseguindo recuperar pelo e-mail. Vocês podem me enviar o link pelo meu e-mail?';
+            'Não estou conseguindo recuperar pelo e-mail. Vocês podem me enviar o link pelo WhatsApp?';
           window.open('https://wa.me/5521994469676?text=' + encodeURIComponent(msg), '_blank', 'noopener');
         };
       }
@@ -3297,7 +3297,7 @@ function renderTxPill() {
             <button class="btn btn-outline" style="border-color:#25D36660;color:#1a8a4a" onclick="shareCardWhatsapp(${jattr(c)})">${icon('whatsapp', 'icon icon-sm')} Compartilhar</button>
           </div>
           <div class="actions">
-            <button class="btn btn-outline" onclick='enviarLinkSenha(${jattr(c)})' style="border-color:rgba(249,168,37,0.5);color:var(--gold-700)">${icon('mail', 'icon icon-sm')} Redefinir senha</button>
+            <button class="btn btn-outline" onclick='enviarLinkSenhaWhats(${jattr(c)})' style="border-color:#25D366;color:#1a8a4a">${icon('whatsapp', 'icon icon-sm')} Enviar link pelo WhatsApp</button>
           </div>
           <div class="actions">
             <button class="btn btn-outline" onclick='excluirCliente(${jattr(c)})' style="border-color:rgba(198,40,40,0.4);color:var(--error)">${icon('trash', 'icon icon-sm')} Excluir cliente</button>
@@ -3419,20 +3419,35 @@ function renderTxPill() {
         loadAdminClients();
       } catch (e) { toast.show(e.message, 'error'); }
     };
-    window.enviarLinkSenha = async (client) => {
-      if (!client.email) {
-        toast.show('Este cliente não tem e-mail cadastrado.', 'error');
-        return;
-      }
-      if (!confirm('Enviar link de redefinição de senha para ' + client.email + '?')) return;
+    window.enviarLinkSenhaWhats = async (client) => {
       try {
-        toast.show('Enviando…');
-        const r = await api.post('/api/admin/clients/' + client._id + '/send-password-reset', {});
-        toast.show('Link enviado para ' + r.email + '. Avise o cliente para olhar a caixa de entrada e o spam.');
+        toast.show('Gerando link…');
+        const r = await api.post('/api/admin/clients/' + client._id + '/password-reset-link', {});
+        const digits = String(client.phone || '').replace(/\D/g, '');
+        const msg = buildMsgReset(client, r.resetUrl);
+        let url;
+        if (!digits) {
+          url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+        } else {
+          const full = digits.startsWith('55') ? digits : '55' + digits;
+          url = 'https://wa.me/' + full + '?text=' + encodeURIComponent(msg);
+        }
+        window.open(url, '_blank');
       } catch (e) {
         toast.show(e.message, 'error');
       }
     };
+
+    function buildMsgReset(client, resetUrl) {
+      const first = (client.fullName || '').trim().split(/\s+/)[0] || 'cliente';
+      return (
+        'Oi, ' + first + '! Aqui é da Pamonha Net. 🌽\n\n' +
+        'Recebi seu pedido para recuperar a senha do cartão fidelidade. ' +
+        'Toque no link abaixo para escolher uma nova senha.\n\n' +
+        resetUrl + '\n\n' +
+        'O link é válido por 30 minutos. Qualquer coisa, me chama de volta!'
+      );
+    }
     window.excluirCliente = (client) => {
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
