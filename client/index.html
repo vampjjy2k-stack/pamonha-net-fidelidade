@@ -276,6 +276,29 @@
     .toast.success { background: var(--husk-700); }
     .toast.error { background: var(--error); }
 
+    /* Faixa de "acordando o servidor" */
+    .wake-banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: linear-gradient(135deg, #F9A825, #E65100);
+      color: #fff;
+      padding: 0.7rem 1rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+      font-size: 0.88rem; font-weight: 600;
+      z-index: 120;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      transform: translateY(-110%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: var(--font-body);
+    }
+    .wake-banner.show { transform: translateY(0); }
+    .wake-banner .spinner {
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
     /* -- Rows -- */
     .row {
       background: var(--cream-card); border-radius: var(--radius-sm); padding: 0.7rem 0.85rem; margin-bottom: 0.5rem;
@@ -1291,6 +1314,49 @@
       return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
     }
 
+    // ==========================================================================
+    // Aviso "acordando o servidor": mostra faixa se uma requisição demorar >3s.
+    // Some sozinha quando o servidor responde. Não interfere em nada mais.
+    // ==========================================================================
+    let wakeBannerEl = null;
+    let wakeBannerTimer = null;
+    let wakeActiveCount = 0;
+
+    function mostrarWakeBanner() {
+      if (wakeBannerEl) return;
+      wakeBannerEl = document.createElement('div');
+      wakeBannerEl.className = 'wake-banner';
+      wakeBannerEl.innerHTML =
+        '<span class="spinner"></span>' +
+        '<span>Acordando o sistema, aguarde alguns segundos…</span>';
+      document.body.appendChild(wakeBannerEl);
+      requestAnimationFrame(() => {
+        if (wakeBannerEl) wakeBannerEl.classList.add('show');
+      });
+    }
+
+    function esconderWakeBanner() {
+      if (wakeBannerTimer) { clearTimeout(wakeBannerTimer); wakeBannerTimer = null; }
+      if (!wakeBannerEl) return;
+      const el = wakeBannerEl;
+      wakeBannerEl = null;
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 400);
+    }
+
+    function iniciarContagemAcordar() {
+      if (wakeBannerTimer) return;
+      wakeActiveCount++;
+      wakeBannerTimer = setTimeout(() => {
+        if (wakeActiveCount > 0) mostrarWakeBanner();
+      }, 3000);
+    }
+
+    function terminarContagemAcordar() {
+      wakeActiveCount = Math.max(0, wakeActiveCount - 1);
+      if (wakeActiveCount === 0) esconderWakeBanner();
+    }
+
     const api = {
       token: localStorage.getItem('pnf_token') || null,
       user: JSON.parse(localStorage.getItem('pnf_user') || 'null'),
@@ -1307,10 +1373,16 @@
         const opts = { method, headers: { 'Content-Type': 'application/json' } };
         if (this.token) opts.headers['Authorization'] = 'Bearer ' + this.token;
         if (body) opts.body = JSON.stringify(body);
-        const res = await fetch(API_URL + endpoint, opts);
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || 'Não foi possível concluir. Tente novamente.');
-        return data;
+
+        iniciarContagemAcordar();
+        try {
+          const res = await fetch(API_URL + endpoint, opts);
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Não foi possível concluir. Tente novamente.');
+          return data;
+        } finally {
+          terminarContagemAcordar();
+        }
       },
       get(endpoint) { return this.req('GET', endpoint); },
       post(endpoint, body) { return this.req('POST', endpoint, body); },
