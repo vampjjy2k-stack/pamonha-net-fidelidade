@@ -2024,10 +2024,12 @@ window.sendFeedback = async () => {
     // ==========================================================================
     // RASPADINHA DE BOAS-VINDAS
     // ==========================================================================
+    const RASPADINHAS_DESATIVADAS = true;
     let scratchState = { active: false, canvas: null, ctx: null, revealed: false, touchStart: null };
 
     async function mostrarRaspadinhaSeDisponivel() {
-      if (!api.user || api.user.raspadinhaDisponivel !== true) return;
+      // Suspensão emergencial: não abrir raspadinhas antigas mesmo se o celular tiver cache.
+      if (RASPADINHAS_DESATIVADAS || !api.user || api.user.raspadinhaDisponivel !== true) return;
       if (scratchState.active) return;
       if (sessionStorage.getItem('pnf_scratch_postponed') === '1') return;
       scratchState.active = true;
@@ -4368,12 +4370,8 @@ function renderTxPill() {
     async function renderAdminRaspadinhas(container) {
       container.innerHTML = `
         <div class="surface section-gap">
-          <h3 class="surface-title">${icon('ticket','icon icon-sm')} Resgatar raspadinha</h3>
-          <p class="text-xs muted mb-1">Digite o código que o cliente está mostrando no celular. O código tem 10 caracteres (PAM-XXXXXX).</p>
-          <div class="flex gap-1 mb-1">
-            <input class="input" id="rasp-code" placeholder="PAM-XXXXXX" maxlength="20" style="text-transform:uppercase;font-family:monospace;letter-spacing:0.05em" onkeydown="if(event.key==='Enter'){event.preventDefault();resgatarRaspadinha();}" />
-            <button class="btn btn-primary" style="width:auto" onclick="resgatarRaspadinha()">${icon('check','icon icon-sm')} Resgatar</button>
-          </div>
+          <h3 class="surface-title" style="color:var(--error)">${icon('ticket','icon icon-sm')} Raspadinhas suspensas</h3>
+          <p class="text-sm mb-0">O sistema está temporariamente desativado por segurança. Novas raspadinhas e resgates estão bloqueados. O histórico abaixo foi preservado.</p>
         </div>
         <div class="surface section-gap">
           <h3 class="surface-title">${icon('chart','icon icon-sm')} Estatísticas</h3>

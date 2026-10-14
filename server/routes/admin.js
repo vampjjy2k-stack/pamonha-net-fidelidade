@@ -16,6 +16,7 @@ const { verifyQrToken } = require('./qr');
 const { sendPushToUser } = require('../utils/webPush');
 const liveEvents = require('../utils/events');
 const { matchLocal } = require('../utils/geo');
+const { RASPADINHAS_ENABLED } = require('../config/features');
 
 const router = express.Router();
 router.use(auth, adminOnly);
@@ -55,6 +56,7 @@ router.get('/raspadinhas/stats', async (req, res) => {
 });
 
 router.post('/raspadinhas/resgatar', async (req, res) => {
+  if (!RASPADINHAS_ENABLED) return res.status(503).json({ error: 'O sistema de raspadinhas está temporariamente suspenso. Nenhum prêmio pode ser resgatado agora.' });
   try {
     const code = String(req.body.code || '').trim().toUpperCase();
     if (!code) return res.status(400).json({ error: 'Digite o código.' });

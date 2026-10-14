@@ -1,8 +1,8 @@
-# 🌽 Pamonha Net Fidelidade — v10.7.8
+# 🌽 Pamonha Net Fidelidade — v10.7.9
 
 Sistema de cartão fidelidade digital da Pamonha Net, com frontend mobile-first e backend Node.js/Express/MongoDB.
 
-> **Versão publicada:** v10.7.8 — recuperação de senha por link via WhatsApp, aviso de servidor acordando e avisos rápidos e segurança de sessões.
+> **Versão publicada:** v10.7.9 — recuperação de senha por link via WhatsApp, raspadinhas suspensas temporariamente, aviso de servidor acordando e avisos rápidos e segurança de sessões.
 > **Branch de produção:** `main`
 
 ## O que está publicado

@@ -16,6 +16,7 @@ const ParticipanteRaspadinha = require('../models/ParticipanteRaspadinha');
 const Raspadinha = require('../models/Raspadinha');
 const auth = require('../middleware/auth');
 const { sendPasswordResetEmail } = require('../utils/email');
+const { RASPADINHAS_ENABLED } = require('../config/features');
 
 const router = express.Router();
 
@@ -48,7 +49,7 @@ function toPublicUser(user) {
     completedCards: user.completedCards || 0,
     lastStampAt: user.lastStampAt,
     createdAt: user.createdAt,
-    raspadinhaDisponivel: user.raspadinhaDisponivel === true,
+    raspadinhaDisponivel: RASPADINHAS_ENABLED && user.raspadinhaDisponivel === true,
   };
 }
 
@@ -72,7 +73,7 @@ router.post('/register', registerLimiter, async (req, res) => {
     const phoneHash = sha256(normalizedPhone);
     const emailHash = sha256(normalizedEmail);
     const jaParticipou = await ParticipanteRaspadinha.findOne({ $or: [{ phoneHash }, { emailHash }] });
-    const ganhaRaspadinha = !jaParticipou;
+    const ganhaRaspadinha = RASPADINHAS_ENABLED && !jaParticipou;
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 

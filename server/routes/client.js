@@ -16,6 +16,7 @@ const Raspadinha = require('../models/Raspadinha');
 const auth = require('../middleware/auth');
 const { generateQrToken, generateQrImage, QR_TOKEN_TTL_SECONDS } = require('./qr');
 const liveEvents = require('../utils/events');
+const { RASPADINHAS_ENABLED } = require('../config/features');
 
 const router = express.Router();
 router.use(auth);
@@ -54,6 +55,7 @@ function gerarCodigoRaspadinha() {
 // POST /api/client/raspadinha/raspar
 // Só funciona uma vez por conta. O servidor decide o prêmio.
 router.post('/raspadinha/raspar', async (req, res) => {
+  if (!RASPADINHAS_ENABLED) return res.status(503).json({ error: 'O sistema de raspadinhas está temporariamente suspenso.' });
   try {
     // Reivindicação atômica: duas requisições simultâneas não podem gerar dois prêmios.
     const user = await User.findOneAndUpdate(
@@ -110,6 +112,7 @@ router.post('/raspadinha/raspar', async (req, res) => {
 
 // GET /api/client/raspadinha — consulta se o usuário tem raspadinha ativa
 router.get('/raspadinha', async (req, res) => {
+  if (!RASPADINHAS_ENABLED) return res.json({ enabled: false, raspadinha: null });
   try {
     const rasp = await Raspadinha.findOne({ userId: req.user.id, status: 'active' }).lean();
     res.json({ raspadinha: rasp });
@@ -133,7 +136,7 @@ router.get('/dashboard', async (req, res) => {
       stamps: user.stamps,
       completedCards: user.completedCards || 0,
       lastStampAt: user.lastStampAt,
-      raspadinhaDisponivel: user.raspadinhaDisponivel === true,
+      raspadinhaDisponivel: RASPADINHAS_ENABLED && user.raspadinhaDisponivel === true,
       history,
     });
   } catch (err) { res.status(500).json({ error: 'Não foi possível carregar seus dados.' }); }
@@ -171,7 +174,10 @@ router.get('/leaderboard', async (req, res) => {
 router.get('/notifications', async (req, res) => {
   try {
     const [list, reads] = await Promise.all([
-      Notification.find({ $or: [{ userId: req.user.id }, { broadcast: true }] })
+      Notification.find({ $and: [
+          { $or: [{ userId: req.user.id }, { broadcast: true }] },
+          ...(RASPADINHAS_ENABLED ? [] : [{ type: { $ne: 'raspadinha' } }]),
+        ] })
         .sort({ createdAt: -1 }).limit(50).lean(),
       NotificationRead.find({ userId: req.user.id }).select('notificationId').lean(),
     ]);
@@ -192,7 +198,10 @@ router.get('/notifications', async (req, res) => {
 });
 router.get('/notifications/unread-count', async (req, res) => {
   try {
-    const list = await Notification.find({ $or: [{ userId: req.user.id }, { broadcast: true }] }).select('_id');
+    const list = await Notification.find({ $and: [
+      { $or: [{ userId: req.user.id }, { broadcast: true }] },
+      ...(RASPADINHAS_ENABLED ? [] : [{ type: { $ne: 'raspadinha' } }]),
+    ] }).select('_id');
     const reads = await NotificationRead.find({ userId: req.user.id, notificationId: { $in: list.map((n) => n._id) } }).select('notificationId');
     const readIds = new Set(reads.map((r) => String(r.notificationId)));
     const count = list.filter((n) => !readIds.has(String(n._id))).length;
