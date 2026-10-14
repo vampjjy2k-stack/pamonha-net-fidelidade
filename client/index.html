@@ -4756,7 +4756,26 @@ function renderTxPill() {
     }
 
     window.deleteVenda = async (id) => {
-      if (!confirm('Apagar esta venda? Os selos que ela deu voltam para o cliente.')) return;
+      const venda = (vendasCache || []).find(v => v._id === id);
+      const temCliente = venda && venda.clientId;
+      const selos = venda ? venda.stampsGiven : 0;
+      const fechouCartao = venda && venda.completedCardOnThisSale;
+      const nome = temCliente ? (venda.clientId.fullName || 'Cliente') : 'Venda avulsa';
+      let aviso = 'Apagar esta venda?\n\n';
+      if (temCliente && selos > 0) {
+        aviso += 'Cliente: ' + nome + '\n';
+        aviso += 'Selos que serão devolvidos: ' + selos + '\n';
+        if (fechouCartao) {
+          aviso += '\n⚠ ATENÇÃO: Esta foi a venda que FECHOU o cartão do cliente. ' +
+                   'Ao apagar, o cartão volta pra 9/10 e o desconto/registro de cartão fechado é perdido. ' +
+                   'Se o prêmio já foi entregue, isso pode gerar inconsistência.';
+        }
+      } else if (!temCliente) {
+        aviso += 'Esta é uma venda avulsa. Nenhum selo será afetado.';
+      } else {
+        aviso += 'Esta venda não deu selos (cartão já estava cheio).';
+      }
+      if (!confirm(aviso)) return;
       try {
         await api.del('/api/admin/vendas/' + id);
         toast.show('Venda removida e selos revertidos.');
