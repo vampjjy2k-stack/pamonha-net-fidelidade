@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema(
     lastStampAt: { type: Date, default: null },
     // v10.4: true = ainda pode raspar; false = já raspou (ou não tem direito).
     raspadinhaDisponivel: { type: Boolean, default: false },
+    archived: { type: Boolean, default: false, index: true },
+    archivedAt: { type: Date, default: null },
     sessionVersion: { type: Number, default: 0 },
     resetPasswordTokenHash: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },

@@ -1654,6 +1654,23 @@
         btn.classList.add('is-loading');
         try {
           const data = await api.post('/api/auth/forgot-password', { identifier });
+          if (data.deliveryFailed) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.innerHTML = `
+              <div class="modal-card">
+                <h3 class="surface-title" style="color:var(--error)">${icon('bell','icon icon-sm')} Não conseguimos enviar o e-mail</h3>
+                <p class="text-sm mb-1">Estamos com um problema momentâneo no envio de e-mails. Mas você pode resolver agora:</p>
+                <p class="text-xs muted mb-2">Toque no botão abaixo para falar com a gente pelo WhatsApp. Vamos gerar um link novo e mandar direto pra você.</p>
+                <a class="btn btn-success mb-1" href="https://wa.me/5521994469676?text=${encodeURIComponent('Oi! Tentei recuperar minha senha no site e o e-mail não chegou. Podem me enviar o link pelo WhatsApp? Meu nome completo é: [preencher aqui]')}" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+                  ${icon('whatsapp','icon icon-sm')} Falar no WhatsApp
+                </a>
+                <button class="btn btn-outline" onclick="closeModal()">Fechar</button>
+              </div>
+            `;
+            document.body.appendChild(overlay);
+            return;
+          }
           toast.show(data.message);
           router.go('login');
         } catch (e) { toast.show(e.message, 'error'); } finally { btn.classList.remove('is-loading'); }
@@ -2981,6 +2998,7 @@ function renderTxPill() {
     window.setAdminTab = (tab) => { adminActiveTab = tab; renderAdminTabBody(); };
 
     const ADMIN_MORE_ITEMS = [
+      { tab: 'backup', icon: 'save', label: 'Backup dos dados' },
       { tab: 'produtos', icon: 'box', label: 'Produtos' },
       { tab: 'premios', icon: 'trophy', label: 'Prêmios' },
       { tab: 'raspadinhas', icon: 'ticket', label: 'Raspadinhas' },
@@ -3022,6 +3040,7 @@ function renderTxPill() {
       if (adminActiveTab === 'operacao') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminOperacao($('#admin-sub')); }
       if (adminActiveTab === 'graficos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminGraficos($('#admin-sub')); }
       if (adminActiveTab === 'vendas') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminVendas($('#admin-sub')); }
+      if (adminActiveTab === 'backup') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminBackup($('#admin-sub')); }
       if (adminActiveTab === 'produtos') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminProdutos($('#admin-sub')); }
       if (adminActiveTab === 'premios') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminPremios($('#admin-sub')); }
       if (adminActiveTab === 'raspadinhas') { body.innerHTML = backToHubBtn() + '<div id="admin-sub"></div>'; return renderAdminRaspadinhas($('#admin-sub')); }
@@ -3089,6 +3108,10 @@ function renderTxPill() {
 
         <div class="mb-1">
           <input class="input" id="search-clients" placeholder="Buscar cliente por nome ou telefone" oninput="searchClients()" />
+        </div>
+        <div class="flex gap-1 mb-1">
+          <button class="audience-btn active" id="filter-active" onclick="toggleMostrarArquivados(false)">Ativos</button>
+          <button class="audience-btn" id="filter-archived" onclick="toggleMostrarArquivados(true)">Arquivados</button>
         </div>
         <div id="admin-clients"></div>
       `;
@@ -3341,9 +3364,17 @@ function renderTxPill() {
     // ADMIN — CLIENTES
     // ==========================================================================
     let adminClientCache = [];
+    window.mostrarArquivados = false;
+    window.toggleMostrarArquivados = (show) => {
+      window.mostrarArquivados = show;
+      const a = $('#filter-active'), b = $('#filter-archived');
+      if (a) a.classList.toggle('active', !show);
+      if (b) b.classList.toggle('active', show);
+      loadAdminClients();
+    };
     async function loadAdminClients() {
       try {
-        const data = await api.get('/api/admin/clients?limit=50');
+        const data = await api.get('/api/admin/clients?limit=50' + (window.mostrarArquivados ? '&includeArchived=1' : ''));
         adminClientCache = data.clients;
         if (!$('#admin-clients')) return;
         renderAdminClients(data.clients);
@@ -3374,7 +3405,9 @@ function renderTxPill() {
             <button class="btn btn-outline" onclick='enviarLinkSenhaWhats(${jattr(c)})' style="border-color:#25D366;color:#1a8a4a">${icon('whatsapp', 'icon icon-sm')} Enviar link pelo WhatsApp</button>
           </div>
           <div class="actions">
-            <button class="btn btn-outline" onclick='excluirCliente(${jattr(c)})' style="border-color:rgba(198,40,40,0.4);color:var(--error)">${icon('trash', 'icon icon-sm')} Excluir cliente</button>
+            ${c.archived
+              ? `<button class="btn btn-outline" onclick='reativarCliente(${jattr(c)})' style="border-color:rgba(46,125,50,0.5);color:var(--husk-700)">${icon('check', 'icon icon-sm')} Reativar cliente</button>`
+              : `<button class="btn btn-outline" onclick='archivarCliente(${jattr(c)})' style="border-color:rgba(96,125,139,0.5);color:var(--ink-soft)">${icon('save', 'icon icon-sm')} Arquivar cliente</button>`}
           </div>
         </div>
       `;
@@ -3522,6 +3555,22 @@ function renderTxPill() {
         'O link é válido por 30 minutos. Qualquer coisa, me chama de volta!'
       );
     }
+    window.archivarCliente = async (client) => {
+      if (!confirm('Arquivar ' + client.fullName + '?\n\nEle some da lista, mas os dados ficam guardados. Você pode reativar quando quiser.')) return;
+      try {
+        await api.post('/api/admin/clients/' + client._id + '/archivar', {});
+        toast.show('Cliente arquivado.');
+        loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
+    window.reativarCliente = async (client) => {
+      if (!confirm('Reativar ' + client.fullName + '?')) return;
+      try {
+        await api.post('/api/admin/clients/' + client._id + '/desarquivar', {});
+        toast.show('Cliente reativado.');
+        loadAdminClients();
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
     window.excluirCliente = (client) => {
       const overlay = document.createElement('div');
       overlay.className = 'modal-overlay';
@@ -4051,6 +4100,31 @@ function renderTxPill() {
     let produtosCache = [];
     let prodImageData = null;
 
+    async function renderAdminBackup(container) {
+      container.innerHTML = `
+        <div class="surface section-gap">
+          <h3 class="surface-title">${icon('save','icon icon-sm')} Backup dos dados</h3>
+          <p class="text-sm mb-1">Baixe um arquivo com todos os dados do sistema: clientes, vendas, produtos, locais, prêmios, avaliações e raspadinhas.</p>
+          <p class="text-xs muted mb-2">Recomendado antes de usar “Apagar tudo”. Guarde o arquivo em local seguro.</p>
+          <button class="btn btn-primary" onclick="baixarBackup()">${icon('save','icon icon-sm')} Baixar backup agora</button>
+          <p class="text-xs muted mt-2">O arquivo será baixado em formato JSON.</p>
+        </div>
+      `;
+    }
+    window.baixarBackup = async () => {
+      try {
+        toast.show('Gerando backup…');
+        const res = await fetch(API_URL + '/api/admin/backup/export', { headers: { 'Authorization': 'Bearer ' + api.token } });
+        if (!res.ok) throw new Error('Não foi possível baixar o backup.');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pamonha-net-backup-' + new Date().toISOString().slice(0,10) + '.json';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        toast.show('Backup baixado.');
+      } catch (e) { toast.show(e.message, 'error'); }
+    };
     async function renderAdminProdutos(container) {
       container.innerHTML = `
         <div class="surface section-gap">
@@ -4974,6 +5048,8 @@ function renderTxPill() {
         <div class="surface" style="border-color:rgba(198,40,40,0.5);background:rgba(198,40,40,0.05)">
           <h3 class="surface-title" style="color:var(--danger)">${icon('trash','icon icon-sm')} Zona vermelha</h3>
           <p class="text-sm mb-1">Apaga <strong>todos</strong> os dados: vendas, avaliações, produtos, locais e contagem de cartões. Não pode ser desfeito.</p>
+          <p class="text-sm mb-1">Antes de apagar, baixe um backup para guardar uma cópia.</p>
+          <button class="btn btn-outline mb-2" onclick="baixarBackup()">${icon('save','icon icon-sm')} Baixar backup primeiro</button>
           <label class="label">Digite APAGAR TUDO para confirmar</label>
           <input class="input mb-1" id="limpeza-confirm-word" placeholder="APAGAR TUDO" />
           <button class="btn btn-danger" onclick="limparEscopo('tudo')">Apagar TUDO</button>

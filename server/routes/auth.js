@@ -190,7 +190,15 @@ router.post('/forgot-password', forgotLimiter, async (req, res) => {
     await user.save();
     const baseUrl = process.env.CLIENT_URL || `${req.protocol}://${req.get('host')}`;
     const resetUrl = `${baseUrl}/?reset=${rawToken}`;
-    await sendPasswordResetEmail({ to: user.email, fullName: user.fullName, resetUrl });
+    try {
+      await sendPasswordResetEmail({ to: user.email, fullName: user.fullName, resetUrl });
+    } catch (emailErr) {
+      console.error('Falha ao enviar e-mail de redefinição:', emailErr);
+      return res.status(200).json({
+        deliveryFailed: true,
+        message: 'Estamos com um problema no envio de e-mails agora. Fale com a gente pelo WhatsApp que resolvemos na hora.',
+      });
+    }
     res.json(genericResponse);
   } catch (err) {
     console.error('Erro ao solicitar redefinição de senha:', err);

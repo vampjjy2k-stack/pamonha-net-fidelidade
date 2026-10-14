@@ -168,6 +168,7 @@ router.get('/clients', async (req, res) => {
   try {
     const { search = '', sort = 'name', page = 1, limit = 20 } = req.query;
     const query = { role: 'client' };
+    if (req.query.includeArchived !== '1') query.archived = { $ne: true };
     if (search.trim()) {
       const digitsOnly = search.replace(/\D/g, '');
       const safeSearch = escapeRegex(search.trim());
@@ -205,26 +206,41 @@ router.post('/clients/:id/stamps', async (req, res) => {
   try {
     const { action } = req.body;
     if (!['add', 'remove'].includes(action)) return res.status(400).json({ error: 'Ação inválida.' });
-    const client = await User.findOne({ _id: req.params.id, role: 'client' });
-    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+    let updated;
     if (action === 'add') {
-      if (client.stamps >= 10) return res.status(400).json({ error: 'Cartão já completo.' });
-      client.stamps += 1;
-      client.lastStampAt = new Date();
-      await client.save();
-      await StampHistory.create({ userId: client._id, action: 'add', adminId: req.user.id, source: 'manual' });
+      updated = await User.findOneAndUpdate(
+        { _id: req.params.id, role: 'client', stamps: { $lt: 10 } },
+        { $inc: { stamps: 1 }, $set: { lastStampAt: new Date() } },
+        { new: true }
+      );
+      if (!updated) {
+        const exists = await User.findOne({ _id: req.params.id, role: 'client' }).select('stamps').lean();
+        if (!exists) return res.status(404).json({ error: 'Cliente não encontrado.' });
+        return res.status(400).json({ error: 'O cartão deste cliente já está completo (10/10).' });
+      }
+      await StampHistory.create({ userId: updated._id, action: 'add', adminId: req.user.id, source: 'manual' });
     } else {
-      if (client.stamps <= 0) return res.status(400).json({ error: 'Sem carimbos para remover.' });
-      client.stamps -= 1;
-      await client.save();
-      const lastAdd = await StampHistory.findOne({ userId: client._id, action: 'add' }).sort({ createdAt: -1 });
+      updated = await User.findOneAndUpdate(
+        { _id: req.params.id, role: 'client', stamps: { $gt: 0 } },
+        { $inc: { stamps: -1 } },
+        { new: true }
+      );
+      if (!updated) {
+        const exists = await User.findOne({ _id: req.params.id, role: 'client' }).select('stamps').lean();
+        if (!exists) return res.status(404).json({ error: 'Cliente não encontrado.' });
+        return res.status(400).json({ error: 'Este cliente não possui carimbos para remover.' });
+      }
+      const lastAdd = await StampHistory.findOne({ userId: updated._id, action: 'add' }).sort({ createdAt: -1 });
       if (lastAdd) await StampHistory.deleteOne({ _id: lastAdd._id });
     }
-    res.json({ client });
-    liveEvents.sendToUser(client._id, 'stamps-update', { stamps: client.stamps, completedCards: client.completedCards || 0 });
-  } catch (err) { res.status(500).json({ error: 'Não foi possível atualizar o carimbo.' }); }
-});
 
+    res.json({ client: updated });
+    liveEvents.sendToUser(updated._id, 'stamps-update', { stamps: updated.stamps, completedCards: updated.completedCards || 0 });
+  } catch (err) {
+    res.status(500).json({ error: 'Não foi possível atualizar o carimbo.' });
+  }
+});
 router.post('/clients/:id/stamps/set', async (req, res) => {
   try {
     const target = Number(req.body.target);
@@ -493,18 +509,26 @@ router.post('/vendas', async (req, res) => {
       nearest = result.nearest.map((n) => ({ localId: n.local._id, name: n.local.name, distanceMeters: n.distance }));
     }
 
-    let stampsToApply = 0, previousStamps = 0, completedCardOnThisSale = false;
+    let stampsToApply = 0, completedCardOnThisSale = false;
     if (client) {
-      previousStamps = client.stamps;
-      stampsToApply = Math.min(stampsGiven, Math.max(0, 10 - client.stamps));
-      if (stampsToApply > 0) {
-        client.stamps += stampsToApply;
-        client.lastStampAt = new Date();
-        await client.save();
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const current = await User.findById(client._id).select('stamps completedCards').lean();
+        if (!current) break;
+        const before = current.stamps;
+        const toApply = Math.min(stampsGiven, Math.max(0, 10 - before));
+        if (toApply === 0) { stampsToApply = 0; break; }
+        const result = await User.updateOne(
+          { _id: client._id, role: 'client', stamps: before },
+          { $inc: { stamps: toApply }, $set: { lastStampAt: new Date() } }
+        );
+        if (result.modifiedCount === 1) {
+          stampsToApply = toApply;
+          completedCardOnThisSale = before < 10 && (before + toApply) === 10;
+          break;
+        }
       }
-      completedCardOnThisSale = previousStamps < 10 && client.stamps === 10;
+      client = await User.findById(client._id);
     }
-
     const venda = await Venda.create({
       clientId: client ? client._id : null,
       adminId: req.user.id,
@@ -793,4 +817,44 @@ router.delete('/clients/:id', async (req, res) => {
     res.status(500).json({ error: 'Não foi possível excluir o cliente.' });
   }
 });
+
+// v10.7.9: exportação manual para preservar os dados antes de limpezas.
+router.get('/backup/export', async (req, res) => {
+  try {
+    const [users, vendas, produtos, locais, premios, feedbacks, raspadinhas, history] = await Promise.all([
+      User.find({ role: 'client' }).select('-password -resetPasswordTokenHash -resetPasswordExpires').lean(),
+      Venda.find().lean(), Produto.find().lean(), Local.find().lean(), Premio.find().lean(),
+      Feedback.find().lean(), Raspadinha.find().lean(), StampHistory.find().lean(),
+    ]);
+    const payload = {
+      exportedAt: new Date().toISOString(), version: 'v10.7.10',
+      counts: { clients: users.length, vendas: vendas.length, produtos: produtos.length, locais: locais.length, premios: premios.length, feedbacks: feedbacks.length, raspadinhas: raspadinhas.length, history: history.length },
+      data: { users, vendas, produtos, locais, premios, feedbacks, raspadinhas, history },
+    };
+    const filename = 'pamonha-net-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+    res.send(JSON.stringify(payload, null, 2));
+  } catch (err) {
+    console.error('Erro ao exportar:', err);
+    res.status(500).json({ error: 'Não foi possível exportar os dados.' });
+  }
+});
+router.post('/clients/:id/archivar', async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id, role: 'client' });
+    if (!user) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    user.archived = true; user.archivedAt = new Date(); await user.save();
+    res.json({ ok: true, message: 'Cliente arquivado.' });
+  } catch (err) { res.status(500).json({ error: 'Não foi possível arquivar.' }); }
+});
+router.post('/clients/:id/desarquivar', async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id, role: 'client' });
+    if (!user) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    user.archived = false; user.archivedAt = null; await user.save();
+    res.json({ ok: true, message: 'Cliente reativado.' });
+  } catch (err) { res.status(500).json({ error: 'Não foi possível reativar.' }); }
+});
+
 module.exports = router
