@@ -133,34 +133,46 @@ router.get('/geocode', async (req, res) => {
     const q = String(req.query.q || '').trim();
     if (q.length < 3) return res.status(400).json({ error: 'Digite pelo menos 3 letras para buscar.' });
     if (typeof fetch !== 'function') return res.status(500).json({ error: 'Servidor Node desatualizado.' });
+
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const timer = setTimeout(() => ctrl.abort(), 7000);
     try {
-      // Limita ao Brasil. Inclui "structured" para pegar bairro/cidade separados.
-      const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&accept-language=pt-BR&countrycodes=br&q=${encodeURIComponent(q)}`;
-      const r = await fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': 'PamonhaNetFidelidade/1.0 (cartao fidelidade; contato via site)' } });
+      const url = 'https://nominatim.openstreetmap.org/search' +
+        '?format=jsonv2&addressdetails=1&limit=8&accept-language=pt-BR&countrycodes=br&q=' + encodeURIComponent(q);
+      const r = await fetch(url, {
+        signal: ctrl.signal,
+        headers: { 'User-Agent': 'PamonhaNetFidelidade/1.0 (cartao fidelidade; contato via site)' },
+      });
       if (!r.ok) return res.status(502).json({ error: 'Serviço de endereços indisponível.' });
+
       const json = await r.json();
       const resultados = (json || []).map((it) => {
+        const lat = Number(it.lat);
+        const lng = Number(it.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        if (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01) return null;
         const a = it.address || {};
-        const linha1 = it.name || a.road || a.pedestrian || '';
-        const linha2 = a.suburb || a.neighbourhood || a.city_district || a.town || a.village || a.city || '';
-        const linha3 = a.state || '';
-        const partes = [linha1, linha2, linha3].filter(Boolean);
+        const linha1 = it.name || a.road || a.pedestrian || a.amenity || '';
+        const linha2 = a.suburb || a.neighbourhood || a.city_district || '';
+        const linha3 = a.city || a.town || a.village || a.municipality || '';
+        const linha4 = a.state || '';
+        const partes = [linha1, linha2, linha3, linha4].filter(Boolean);
         return {
           displayName: it.display_name,
-          shortLabel: partes.join(', ') || it.display_name.split(',')[0],
-          lat: Number(it.lat),
-          lng: Number(it.lon),
-          type: it.type || '',
-          category: it.category || '',
+          shortLabel: partes.slice(0, 2).join(', ') || (it.display_name || '').split(',')[0],
+          lat, lng,
+          temCidade: !!(a.city || a.town || a.village || a.municipality),
+          type: it.type || '', category: it.category || '',
         };
-      });
+      }).filter(Boolean).sort((a, b) => (b.temCidade ? 1 : 0) - (a.temCidade ? 1 : 0));
+
       res.json({ resultados });
     } finally { clearTimeout(timer); }
-  } catch (err) { console.error('[geocode]', err); res.status(500).json({ error: 'Não foi possível buscar o endereço.' }); }
+  } catch (err) {
+    console.error('[geocode]', err);
+    res.status(500).json({ error: 'Não foi possível buscar o endereço.' });
+  }
 });
-
 // ============================================================================
 // CLIENTES (igual v10.1)
 // ============================================================================
