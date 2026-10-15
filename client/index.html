@@ -528,15 +528,26 @@
 
     .local-map { width: 100%; height: 220px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); z-index: 1; }
     .local-search-wrap { position:relative; }
-    .local-results { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,.15); max-height:280px; overflow-y:auto; z-index:1000; margin-top:4px; display:none; }
+    .local-results { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 12px 32px rgba(0,0,0,.18); max-height:60vh; overflow-y:auto; z-index:1000; margin-top:6px; display:none; }
     .local-results.show { display:block; }
-    .local-result-item { display:block; width:100%; text-align:left; background:none; border:none; padding:.75rem .9rem; border-bottom:1px solid var(--line-soft); cursor:pointer; font-family:inherit; font-size:.86rem; color:var(--ink); line-height:1.35; }
+    .local-results-header { padding:0.6rem 0.9rem; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; font-weight:700; color:var(--ink-soft); background:var(--paper); border-bottom:1px solid var(--line-soft); }
+    .local-result-item { display:flex; align-items:flex-start; gap:0.75rem; padding:0.85rem 0.9rem; border-bottom:1px solid var(--line-soft); cursor:pointer; font-family:inherit; font-size:0.9rem; color:var(--ink); text-align:left; width:100%; background:none; border-left:none; border-right:none; border-top:none; }
     .local-result-item:last-child { border-bottom:none; }
     .local-result-item:active { background:var(--gold-100); }
-    .local-result-item strong { display:block; color:var(--husk-900); font-size:.9rem; margin-bottom:2px; }
-    .local-result-item span { color:var(--ink-soft); font-size:.75rem; }
-    .local-address { background:var(--husk-300); border-radius:10px; padding:.6rem .85rem; font-size:.84rem; color:var(--husk-900); margin-top:.6rem; display:flex; align-items:flex-start; gap:.5rem; }
-    .local-address .icon { flex-shrink:0; margin-top:2px; }
+    .local-result-icon { width:38px; height:38px; border-radius:50%; background:var(--husk-300); color:var(--husk-900); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .local-result-body { flex:1; min-width:0; }
+    .local-result-body strong { display:block; font-size:0.92rem; color:var(--husk-900); font-weight:700; margin-bottom:0.15rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .local-result-body .city { font-size:0.78rem; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .local-result-distance { font-size:0.78rem; font-weight:700; color:var(--gold-700); flex-shrink:0; align-self:center; }
+    .local-results-empty { padding:1rem 0.9rem; font-size:0.85rem; color:var(--ink-soft); text-align:center; }
+    .local-status:empty { display:none; }
+    .local-status-card { padding:0.8rem 1rem; display:flex; align-items:flex-start; gap:0.65rem; background:var(--paper-deep); border-top:2px solid var(--gold-600); }
+    .local-status-card .icon { color:var(--husk-700); flex-shrink:0; margin-top:2px; }
+    .local-status-card .info { flex:1; min-width:0; }
+    .local-status-card .info strong { display:block; font-size:0.92rem; color:var(--husk-900); margin-bottom:0.15rem; word-break:break-word; font-weight:700; }
+    .local-status-card .info .full { font-size:0.78rem; color:var(--ink-soft); line-height:1.4; word-break:break-word; }
+    .local-status-card .info .meta { margin-top:0.35rem; display:inline-block; font-size:0.7rem; color:var(--husk-700); background:rgba(27,94,32,.08); padding:0.15rem 0.5rem; border-radius:999px; font-weight:600; }
+    .local-status-card.loading .icon { animation:spin 0.9s linear infinite; }
     .range-input { width: 100%; accent-color: var(--green); height: 22px; }
 
     /* -- Produtos / Locais -- */
@@ -1262,6 +1273,14 @@
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
     const icon = (name, cls='icon') => `<svg class="${cls}"><use href="#i-${name}"/></svg>`;
+
+    // v10.9 — MapTiler com fallback automático para OpenStreetMap.
+    let mapTilerKey = null;
+    async function carregarChaveMapTiler() { try { const data = await api.get('/api/public/map-key'); if (data && data.key) mapTilerKey = data.key; } catch (_) {} }
+    function novoTileLayer() {
+      if (mapTilerKey) return L.tileLayer(`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${mapTilerKey}`, { maxZoom: 19, attribution: '© MapTiler © OpenStreetMap' });
+      return L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' });
+    }
 
     // Posições reais dos 10 círculos na arte oficial do cartão (em % da imagem).
     const CARD_STAMP_POSITIONS = [
@@ -2785,7 +2804,7 @@ function renderCarroPage() {
       const mapEl = $('#carro-map');
       if (mapEl) {
         carroMap = L.map('carro-map', { zoomControl: true, attributionControl: false }).setView([p.lat, p.lng], 17);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(carroMap);
+        novoTileLayer().addTo(carroMap);
         carroMarker = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: '', html: '<div class="carro-pin">🚗</div>', iconSize: [40, 40], iconAnchor: [20, 20] }) }).addTo(carroMap);
         carroAccCircle = L.circle([p.lat, p.lng], { radius: p.accuracy || 20, color: '#2E7D32', weight: 1, fillColor: '#2E7D32', fillOpacity: 0.12 }).addTo(carroMap);
         carroMap.on('dragstart', () => { carroFollow = false; const el = $('#carro-recenter'); if (el) el.classList.remove('hidden'); });
@@ -4599,164 +4618,134 @@ function renderTxPill() {
     // LOCAIS
     // ==========================================================================
     let locaisCache = [];
-    let localMapInstance = null, localMapMarker = null, localMapCircle = null;
+    let localMapInstance = null, localMapMarker = null, localMapCircle = null, localMeMarker = null;
+    let localSearchTimer = null, localReverseTimer = null, localUserPos = null, localCurrentLatLng = null, localExistingMarkers = [];
 
     async function renderAdminLocais(container) {
       container.innerHTML = `
-        <div class="surface section-gap">
-          <h3 class="surface-title">${icon('pin','icon icon-sm')} Adicionar um ponto</h3>
-          <p class="text-xs muted mb-1">Digite o endereço, nome da feira ou referência. Escolha uma das opções.</p>
-          <div class="local-search-wrap"><input class="input" id="local-search" placeholder="Ex: Feira da Figueira, Duque de Caxias" autocomplete="off" oninput="buscarLocalDebounce()" /><div id="local-search-results" class="local-results"></div></div>
-          <button class="btn btn-outline mt-1 mb-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Ou usar minha localização atual</button>
-          <div id="local-map" class="local-map" style="height:280px;margin-top:0.6rem"></div>
-          <div id="local-found-address" class="local-address hidden"></div>
-          <input type="hidden" id="local-lat" />
-          <input type="hidden" id="local-lng" />
-          <label class="label mt-1">Nome para o cliente ver</label><input class="input mb-1" id="local-name" placeholder="Ex: Feira da Figueira" maxlength="60" />
-          <label class="label">Raio: <span id="local-radius-val">150</span> m</label>
-          <input type="range" class="range-input mb-1" id="local-radius" min="10" max="500" value="150" oninput="onLocalRadiusChange(this.value)" />
-          <button class="btn btn-primary" onclick="createLocal()">${icon('save','icon icon-sm')} Salvar este ponto</button>
-        </div><div id="locais-list"><div class="loader"></div></div>
-      `;
-      initLocalMap(-22.83, -43.28); loadLocais();
-    }
-    let localSearchTimer = null;
-    window.buscarLocalDebounce = () => { clearTimeout(localSearchTimer); localSearchTimer = setTimeout(buscarLocalPorNome, 500); };
-    window.buscarLocalPorNome = async () => {
-      const input=$('#local-search'), box=$('#local-search-results'); if(!input||!box)return;
-      const q=input.value.trim(); if(q.length<3){box.classList.remove('show');box.innerHTML='';return;}
-      box.innerHTML=`<div style="padding:.75rem .9rem;font-size:.82rem;color:var(--ink-soft)">Buscando…</div>`;box.classList.add('show');
-      try{const data=await api.get('/api/admin/geocode?q='+encodeURIComponent(q));const resultados=data.resultados||[];if(!resultados.length){box.innerHTML=`<div style="padding:.75rem .9rem;font-size:.82rem;color:var(--ink-soft)">Nada encontrado. Tente incluir a cidade.</div>`;return;}box.innerHTML=resultados.map((r,i)=>`<button class="local-result-item" onclick='escolherLocalBuscadoIdx(${i})' data-idx="${i}"><strong>${esc(r.shortLabel||r.displayName.split(',')[0])}</strong><span>${esc(r.displayName)}</span></button>`).join('');box._resultados=resultados;}catch(e){box.innerHTML=`<div style="padding:.75rem .9rem;font-size:.82rem;color:var(--error)">${esc(e.message)}</div>`;}
-    };
-    window.escolherLocalBuscadoIdx = (idx) => {
-      const box = $('#local-search-results');
-      if (!box || !box._resultados) return;
-      const r = box._resultados[idx];
-      if (!r) return;
-      if (!Number.isFinite(r.lat) || !Number.isFinite(r.lng)) {
-        toast.show('Coordenadas inválidas. Tente outro resultado.', 'error');
-        return;
-      }
-      setLocalLatLng(r.lat, r.lng);
-      if (localMapInstance && localMapMarker) {
-        localMapInstance.setView([r.lat, r.lng], 17);
-        localMapMarker.setLatLng([r.lat, r.lng]);
-        if (localMapCircle) localMapCircle.setLatLng([r.lat, r.lng]);
-      }
-      const nameEl = $('#local-name');
-      if (nameEl && !nameEl.value.trim()) nameEl.value = r.shortLabel || '';
-      const addr = $('#local-found-address');
-      if (addr) {
-        addr.innerHTML = icon('check','icon icon-sm') + ' <span>' + esc(r.displayName) + '</span>';
-        addr.classList.remove('hidden');
-      }
-      box.classList.remove('show'); box.innerHTML = ''; box._resultados = null;
-      const search = $('#local-search'); if (search) search.blur();
-    };
-    document.addEventListener('click',(e)=>{const wrap=document.querySelector('.local-search-wrap');if(!wrap||wrap.contains(e.target))return;const box=$('#local-search-results');if(box)box.classList.remove('show');});
-
-    function initLocalMap(lat, lng) {
-      const el = $('#local-map');
-      if (!el || typeof L === 'undefined') return;
-      if (localMapInstance) { localMapInstance.remove(); localMapInstance = null; }
-      localMapInstance = L.map(el, { attributionControl: false }).setView([lat, lng], 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(localMapInstance);
-      localMapMarker = L.marker([lat, lng], { draggable: true }).addTo(localMapInstance);
-      localMapCircle = L.circle([lat, lng], { radius: 150, color: '#2E7D32', fillColor: '#2E7D32', fillOpacity: 0.15 }).addTo(localMapInstance);
-      localMapMarker.on('drag', (e) => {
-        const p = e.target.getLatLng(); localMapCircle.setLatLng(p); setLocalLatLng(p.lat, p.lng);
-      });
-      localMapInstance.on('click', (e) => {
-        localMapMarker.setLatLng(e.latlng); localMapCircle.setLatLng(e.latlng);
-        setLocalLatLng(e.latlng.lat, e.latlng.lng);
-      });
-      setLocalLatLng(lat, lng);
-      if (lat === -22.83 && lng === -43.28 && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const la = pos.coords.latitude, ln = pos.coords.longitude;
-            if (!Number.isFinite(la) || !Number.isFinite(ln) || (Math.abs(la) < 0.01 && Math.abs(ln) < 0.01)) return;
-            if (localMapInstance && localMapMarker) {
-              localMapInstance.setView([la, ln], 15); localMapMarker.setLatLng([la, ln]);
-              if (localMapCircle) localMapCircle.setLatLng([la, ln]); setLocalLatLng(la, ln);
-            }
-          }, () => {}, { enableHighAccuracy: false, timeout: 6000, maximumAge: 60000 }
-        );
-      }
-    }
-    function setLocalLatLng(lat, lng) {
-      const latEl = $('#local-lat'), lngEl = $('#local-lng');
-      if (latEl) latEl.value = lat.toFixed(6);
-      if (lngEl) lngEl.value = lng.toFixed(6);
-    }
-
-    window.onLocalRadiusChange = (val) => {
-      const el = $('#local-radius-val');
-      if (el) el.textContent = val;
-      if (localMapCircle) localMapCircle.setRadius(Number(val));
-    };
-
-    window.useMyLocationForLocal = () => {
-      if (!navigator.geolocation) return toast.show('Este dispositivo não tem GPS.', 'error');
-      toast.show('Buscando sua localização…');
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude, lng = pos.coords.longitude;
-          if (!Number.isFinite(lat) || !Number.isFinite(lng) || (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01)) {
-            toast.show('Não consegui pegar seu GPS. Vá para um local aberto e tente de novo.', 'error'); return;
-          }
-          setLocalLatLng(lat, lng);
-          if (localMapInstance && localMapMarker) {
-            localMapInstance.setView([lat, lng], 17); localMapMarker.setLatLng([lat, lng]);
-            if (localMapCircle) localMapCircle.setLatLng([lat, lng]);
-          }
-          const addrBox = $('#local-found-address');
-          if (addrBox) { addrBox.innerHTML = '<span style="opacity:0.6">Identificando o endereço…</span>'; addrBox.classList.remove('hidden'); }
-          try {
-            const data = await api.get('/api/admin/geocode?q=' + encodeURIComponent(lat + ',' + lng));
-            if (data.resultados && data.resultados[0]) {
-              const r = data.resultados[0];
-              if (addrBox) addrBox.innerHTML = icon('pin','icon icon-sm') + ' <span>' + esc(r.displayName) + '</span>';
-              const nameEl = $('#local-name'); if (nameEl && !nameEl.value.trim()) nameEl.value = r.shortLabel || '';
-            } else if (addrBox) addrBox.innerHTML = '<span>Coordenadas capturadas (não foi possível identificar o endereço por extenso).</span>';
-          } catch (e) { if (addrBox) addrBox.innerHTML = '<span>Coordenadas capturadas.</span>'; }
-          toast.show('Localização preenchida.');
-        },
-        (err) => {
-          if (err.code === 1) toast.show('Você precisa permitir o acesso à localização.', 'error');
-          else if (err.code === 2) toast.show('GPS sem sinal. Vá para um local aberto.', 'error');
-          else if (err.code === 3) toast.show('Tempo esgotado. Tente de novo.', 'error');
-          else toast.show('Não foi possível obter sua localização.', 'error');
-        },
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-      );
-    };
-    async function loadLocais() {
-      try {
-        const data = await api.get('/api/admin/locais?includeInactive=1');
-        locaisCache = data.locais;
-        renderLocaisList();
-      } catch (e) { toast.show(e.message, 'error'); }
-    }
-
-    function renderLocaisList() {
-      const box = $('#locais-list');
-      if (!box) return;
-      if (!locaisCache.length) { box.innerHTML = `<div class="empty-state"><p>Nenhum local cadastrado ainda.</p></div>`; return; }
-      box.innerHTML = locaisCache.map(l => `
-        <div class="local-row ${l.active ? '' : 'inactive'}">
-          <div class="prod-icon-fallback">${icon('pin','icon icon-sm')}</div>
-          <div class="info">
-            <strong>${esc(l.name)}</strong>
-            <span>Raio de ${l.radiusMeters}m${l.active ? '' : ' · inativo'}</span>
-            <a class="find-link" style="border:none;padding:0.2rem 0;font-size:0.78rem" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}" target="_blank" rel="noopener">${icon('map','icon icon-sm')} Abrir no Google Maps</a>
+        <div class="surface section-gap" style="padding:0;overflow:hidden">
+          <div style="padding:1rem 1rem 0.7rem">
+            <h3 class="surface-title" style="margin-bottom:0.5rem">${icon('pin','icon icon-sm')} Novo ponto</h3>
+            <p class="text-xs muted mb-1">Digite o endereço, nome da feira, ou use o GPS.</p>
+            <div class="local-search-wrap">
+              <input class="input" id="local-search" placeholder="Ex: Feira da Figueira, Duque de Caxias" autocomplete="off" oninput="buscarLocalDebounce()" />
+              <div id="local-search-results" class="local-results"></div>
+            </div>
+            <button class="btn btn-outline mt-1" onclick="useMyLocationForLocal()">${icon('pin','icon icon-sm')} Usar minha localização atual</button>
           </div>
-          <div class="row-actions">
-            <button class="icon-btn" onclick="toggleLocalActive('${l._id}')" title="${l.active ? 'Desativar' : 'Ativar'}">${icon(l.active ? 'minus' : 'plus', 'icon')}</button>
-            <button class="icon-btn danger" onclick="deleteLocal('${l._id}')">${icon('trash','icon')}</button>
+          <div id="local-map" class="local-map" style="height:380px;border-radius:0;border-left:none;border-right:none"></div>
+          <div id="local-status" class="local-status">
+            <div class="local-status-card">${icon('pin','icon')}<div class="info"><strong>Nenhum ponto selecionado</strong><span class="full">Digite um endereço, use o GPS, ou toque no mapa para escolher onde fica.</span></div></div>
+          </div>
+          <div style="padding:0.9rem 1rem 1rem">
+            <input type="hidden" id="local-lat" /><input type="hidden" id="local-lng" />
+            <label class="label">Nome para o cliente ver</label>
+            <input class="input mb-1" id="local-name" placeholder="Ex: Feira da Figueira" maxlength="60" />
+            <label class="label">Raio: <span id="local-radius-val">150</span> m</label>
+            <input type="range" class="range-input mb-1" id="local-radius" min="10" max="500" value="150" oninput="onLocalRadiusChange(this.value)" />
+            <p class="text-xs muted mb-2">Distância em volta do ponto onde a venda é considerada "neste local". Para uma feira, 150m funciona bem.</p>
+            <button class="btn btn-primary" onclick="createLocal()" id="btn-save-local">${icon('save','icon icon-sm')} Salvar este ponto</button>
           </div>
         </div>
-      `).join('');
+        <div id="locais-list"><div class="loader"></div></div>
+      `;
+      localUserPos = null; localCurrentLatLng = null;
+      initLocalMap(null, null);
+      obterPosicaoUsuario();
+      loadLocais();
+    }
+
+    window.buscarLocalDebounce = () => { clearTimeout(localSearchTimer); localSearchTimer = setTimeout(buscarLocalPorNome, 350); };
+    async function obterPosicaoUsuario() {
+      if (localUserPos) return localUserPos;
+      if (!navigator.geolocation) return null;
+      return new Promise((resolve) => navigator.geolocation.getCurrentPosition(
+        (pos) => { localUserPos = { lat: pos.coords.latitude, lng: pos.coords.longitude }; resolve(localUserPos); },
+        () => resolve(null), { enableHighAccuracy: false, timeout: 5000, maximumAge: 300000 }
+      ));
+    }
+    function formatarDistancia(m) { if (!Number.isFinite(m)) return ''; return m < 950 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km'; }
+    function iconParaResultado(r) {
+      const cat = (r.category || '').toLowerCase(), type = (r.type || '').toLowerCase();
+      if (cat === 'amenity' || type === 'marketplace' || type === 'place_of_worship') return 'star';
+      if (cat === 'highway' || type === 'residential' || type === 'road') return 'map';
+      return 'pin';
+    }
+    window.buscarLocalPorNome = async () => {
+      const input = $('#local-search'), box = $('#local-search-results'); if (!input || !box) return;
+      const q = input.value.trim(); if (q.length < 3) { box.classList.remove('show'); box.innerHTML = ''; return; }
+      box.innerHTML = '<div class="local-results-header">Buscando…</div>'; box.classList.add('show');
+      const ref = await obterPosicaoUsuario();
+      try {
+        const data = await api.get('/api/admin/geocode?q=' + encodeURIComponent(q)), resultados = data.resultados || [];
+        if (!resultados.length) { box.innerHTML = '<div class="local-results-empty">Nada encontrado.<br><span style="font-size:0.78rem">Tente incluir a cidade — ex: "Feira da Figueira, Duque de Caxias".</span></div>'; return; }
+        box.innerHTML = `<div class="local-results-header">${resultados.length} resultado${resultados.length === 1 ? '' : 's'}</div>` + resultados.map((r, i) => {
+          const dist = ref ? haversineMeters(ref, { lat: r.lat, lng: r.lng }) : null;
+          const cityLine = (r.displayName || '').split(',').slice(1, 3).join(',').trim() || (r.shortLabel || '');
+          return `<button class="local-result-item" type="button" onclick="escolherLocalBuscadoIdx(${i})" data-idx="${i}"><span class="local-result-icon">${icon(iconParaResultado(r), 'icon icon-sm')}</span><span class="local-result-body"><strong>${esc(r.shortLabel || (r.displayName || '').split(',')[0])}</strong><span class="city">${esc(cityLine)}</span></span>${dist !== null ? `<span class="local-result-distance">${formatarDistancia(dist)}</span>` : ''}</button>`;
+        }).join('');
+        box._resultados = resultados;
+      } catch (e) { box.innerHTML = `<div class="local-results-empty">${esc(e.message)}</div>`; }
+    };
+    window.escolherLocalBuscadoIdx = (idx) => {
+      const box = $('#local-search-results'), r = box && box._resultados ? box._resultados[idx] : null; if (!r) return;
+      if (!Number.isFinite(r.lat) || !Number.isFinite(r.lng)) return toast.show('Coordenadas inválidas. Tente outro resultado.', 'error');
+      const nameEl = $('#local-name'); if (nameEl && !nameEl.value.trim()) nameEl.value = r.shortLabel || '';
+      placePinAt(r.lat, r.lng, 'search', r.shortLabel, r.displayName);
+      box.classList.remove('show'); box.innerHTML = ''; box._resultados = null; const search = $('#local-search'); if (search) search.blur();
+    };
+    document.addEventListener('click', (e) => { const wrap = document.querySelector('.local-search-wrap'); if (!wrap || wrap.contains(e.target)) return; const box = $('#local-search-results'); if (box) box.classList.remove('show'); });
+
+    function initLocalMap(lat, lng) {
+      const el = $('#local-map'); if (!el || typeof L === 'undefined') return;
+      if (localMapInstance) { localMapInstance.remove(); localMapInstance = null; }
+      const startLat = Number.isFinite(lat) ? lat : -22.7858, startLng = Number.isFinite(lng) ? lng : -43.3117;
+      localMapInstance = L.map(el, { attributionControl: false, zoomControl: true }).setView([startLat, startLng], 14);
+      novoTileLayer().addTo(localMapInstance);
+      localMapMarker = L.marker([startLat, startLng], { draggable: true, opacity: 0 }).addTo(localMapInstance);
+      localMapCircle = L.circle([startLat, startLng], { radius: 150, color: '#2E7D32', fillColor: '#2E7D32', fillOpacity: 0.15, weight: 2 }).addTo(localMapInstance);
+      localMapMarker.on('drag', (e) => { const p = e.target.getLatLng(); localMapCircle.setLatLng(p); setLocalLatLng(p.lat, p.lng); });
+      localMapMarker.on('dragend', (e) => { const p = e.target.getLatLng(); placePinAt(p.lat, p.lng, 'drag'); });
+      localMapInstance.on('click', (e) => placePinAt(e.latlng.lat, e.latlng.lng, 'tap'));
+      drawExistingLocaisOnMap();
+      navigator.geolocation && navigator.geolocation.getCurrentPosition((pos) => {
+        const la = pos.coords.latitude, ln = pos.coords.longitude; if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
+        localUserPos = { lat: la, lng: ln }; if (localMapInstance && !localCurrentLatLng) localMapInstance.setView([la, ln], 15);
+        if (localMapInstance) { if (localMeMarker) localMeMarker.remove(); localMeMarker = L.circleMarker([la, ln], { radius: 8, color: '#FFFFFF', weight: 3, fillColor: '#1E88E5', fillOpacity: 1 }).addTo(localMapInstance); localMeMarker.bindTooltip('Você está aqui', { direction: 'top', offset: [0, -8] }); }
+      }, () => {}, { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 });
+    }
+    function placePinAt(lat, lng, source, labelOverride, fullOverride) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01) return toast.show('GPS retornou coordenadas inválidas. Tente de novo.', 'error');
+      localCurrentLatLng = { lat, lng }; if (localMapMarker) { localMapMarker.setLatLng([lat, lng]); localMapMarker.setOpacity(1); }
+      if (localMapCircle) localMapCircle.setLatLng([lat, lng]); if (localMapInstance) localMapInstance.flyTo([lat, lng], Math.max(localMapInstance.getZoom(), 17), { duration: 0.8 }); setLocalLatLng(lat, lng);
+      if (labelOverride) return renderLocalStatusCard({ lat, lng, source, label: labelOverride, full: fullOverride || '' });
+      renderLocalStatusCard({ loading: true }); clearTimeout(localReverseTimer);
+      localReverseTimer = setTimeout(async () => { try { const data = await api.get('/api/admin/geocode?q=' + lat + ',' + lng), r = (data.resultados || [])[0]; renderLocalStatusCard(r ? { lat, lng, source, label: r.shortLabel, full: r.displayName } : { lat, lng, source, label: 'Ponto selecionado', full: 'Não foi possível identificar o endereço por extenso.' }); } catch (_) { renderLocalStatusCard({ lat, lng, source, label: 'Ponto selecionado', full: 'Não foi possível identificar o endereço.' }); } }, 300);
+    }
+    function renderLocalStatusCard(opts) {
+      const el = $('#local-status'); if (!el) return;
+      if (opts.loading) { el.innerHTML = `<div class="local-status-card loading">${icon('refresh','icon')}<div class="info"><strong>Identificando o endereço…</strong><span class="full">Aguarde um instante.</span></div></div>`; return; }
+      const labels = { gps: '📍 Sua localização atual', search: '🔍 Endereço encontrado', tap: '👆 Toque no mapa', drag: '✋ Pino ajustado' }, meta = (labels[opts.source] || '') + ' · ' + opts.lat.toFixed(5) + ', ' + opts.lng.toFixed(5);
+      el.innerHTML = `<div class="local-status-card">${icon('check','icon')}<div class="info"><strong>${esc(opts.label || 'Ponto selecionado')}</strong>${opts.full ? `<span class="full">${esc(opts.full)}</span>` : ''}<span class="meta">${esc(meta)}</span></div></div>`;
+    }
+    function setLocalLatLng(lat, lng) { const latEl = $('#local-lat'), lngEl = $('#local-lng'); if (latEl) latEl.value = lat.toFixed(6); if (lngEl) lngEl.value = lng.toFixed(6); }
+    window.onLocalRadiusChange = (val) => { const n = Number(val) || 150; const el = $('#local-radius-val'); if (el) el.textContent = String(n); if (localMapCircle) localMapCircle.setRadius(n); };
+    window.useMyLocationForLocal = () => {
+      if (!navigator.geolocation) return toast.show('Este dispositivo não tem GPS.', 'error');
+      const btn = document.querySelector('button[onclick="useMyLocationForLocal()"]'), originalText = btn ? btn.innerHTML : ''; if (btn) { btn.disabled = true; btn.innerHTML = `${icon('refresh','icon icon-sm')} Buscando sinal…`; }
+      let attempts = 0, best = null; const finalizar = () => { if (btn) { btn.disabled = false; btn.innerHTML = originalText; } };
+      const aceitar = (pos) => { const lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Math.round(pos.coords.accuracy); localUserPos = { lat, lng }; if (localMapInstance) { if (localMeMarker) localMeMarker.remove(); localMeMarker = L.circleMarker([lat, lng], { radius: 8, color: '#FFFFFF', weight: 3, fillColor: '#1E88E5', fillOpacity: 1 }).addTo(localMapInstance); localMeMarker.bindTooltip('Você está aqui', { direction: 'top', offset: [0, -8] }); } placePinAt(lat, lng, 'gps'); renderLocalStatusCard({ lat, lng, source: 'gps', label: 'Sua localização atual', full: 'Precisão ±' + acc + 'm' + (acc > 60 ? ' — ajuste o pino se precisar.' : '') }); finalizar(); toast.show('Localização capturada com precisão de ±' + acc + 'm.'); };
+      const tentar = () => { attempts++; navigator.geolocation.getCurrentPosition((pos) => { const acc = pos.coords.accuracy || 9999; if (!best || acc < (best.coords.accuracy || 9999)) best = pos; if (acc <= 60) return aceitar(best); if (attempts < 4) return setTimeout(tentar, 700); if ((best.coords.accuracy || 9999) <= 200) return aceitar(best); finalizar(); toast.show('GPS com precisão ruim (' + Math.round(best.coords.accuracy) + 'm). Vá para um local aberto e tente de novo.', 'error'); }, (err) => { if (attempts < 4) return setTimeout(tentar, 700); finalizar(); toast.show(err.code === 1 ? 'Você precisa permitir o acesso à localização.' : err.code === 2 ? 'GPS sem sinal. Vá para um local aberto.' : err.code === 3 ? 'Tempo esgotado. Tente de novo.' : 'Não foi possível obter sua localização.', 'error'); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }); };
+      tentar();
+    };
+    function drawExistingLocaisOnMap() { if (!localMapInstance) return; localExistingMarkers.forEach((m) => { try { m.remove(); } catch (_) {} }); localExistingMarkers = []; (locaisCache || []).forEach((l) => { if (!l.active) return; const m = L.circleMarker([l.lat, l.lng], { radius: 7, color: '#FFFFFF', weight: 2, fillColor: '#607D8B', fillOpacity: 0.9 }).addTo(localMapInstance); m.bindTooltip(l.name + ' (já cadastrado)', { direction: 'top', offset: [0, -8] }); localExistingMarkers.push(m); }); }
+    async function loadLocais() { try { const data = await api.get('/api/admin/locais?includeInactive=1'); locaisCache = data.locais; renderLocaisList(); drawExistingLocaisOnMap(); } catch (e) { toast.show(e.message, 'error'); } }
+
+    function renderLocaisList() {
+      const box = $('#locais-list'); if (!box) return;
+      if (!locaisCache.length) { box.innerHTML = '<div class="empty-state"><p>Nenhum local cadastrado ainda.</p></div>'; return; }
+      box.innerHTML = locaisCache.map(l => `<div class="local-row ${l.active ? '' : 'inactive'}"><div class="prod-icon-fallback">${icon('pin','icon icon-sm')}</div><div class="info"><strong>${esc(l.name)}</strong><span>Raio de ${l.radiusMeters}m${l.active ? '' : ' · inativo'}</span><a class="find-link" style="border:none;padding:0.2rem 0;font-size:0.78rem" href="https://www.google.com/maps/search/?api=1&query=${l.lat},${l.lng}" target="_blank" rel="noopener">${icon('map','icon icon-sm')} Abrir no Google Maps</a></div><div class="row-actions"><button class="icon-btn" onclick="toggleLocalActive('${l._id}')" title="${l.active ? 'Desativar' : 'Ativar'}">${icon(l.active ? 'minus' : 'plus', 'icon')}</button><button class="icon-btn danger" onclick="deleteLocal('${l._id}')">${icon('trash','icon')}</button></div></div>`).join('');
     }
 
     window.createLocal = async () => {
@@ -4773,20 +4762,17 @@ function renderTxPill() {
         loadLocais();
       } catch (e) { toast.show(e.message, 'error'); }
     };
-
     window.toggleLocalActive = async (id) => {
       const l = locaisCache.find(x => x._id === id); if (!l) return;
       try { await api.put(`/api/admin/locais/${l._id}`, { active: !l.active }); loadLocais(); }
       catch (e) { toast.show(e.message, 'error'); }
     };
-
     window.deleteLocal = async (id) => {
       if (!confirm('Remover este local? O histórico de vendas antigas mantém o nome salvo.')) return;
       try { await api.del(`/api/admin/locais/${id}`); toast.show('Local removido.'); loadLocais(); }
       catch (e) { toast.show(e.message, 'error'); }
     };
 
-    // ==========================================================================
     // VENDAS (admin)
     // ==========================================================================
     let vendasCache = [];
@@ -5193,6 +5179,7 @@ function renderTxPill() {
     async function init() {
       updateNav();
       registerServiceWorker();
+      await carregarChaveMapTiler();
 
       const params = new URLSearchParams(location.search);
       const resetToken = params.get('reset');

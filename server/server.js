@@ -1,4 +1,4 @@
-// server.js — Pamonha Net Fidelidade v10.7.14
+// server.js — Pamonha Net Fidelidade v10.9.0
 // Serviço principal da Pamonha Net Fidelidade.
 
 require('dotenv').config();
@@ -108,7 +108,7 @@ app.get('/api/public/info', async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: 'v10.7.14', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', version: 'v10.9.0', timestamp: new Date().toISOString() });
 });
 
 app.get('/api/push/vapid-public-key', (req, res) => {
@@ -140,6 +140,13 @@ app.get('/api/events', (req, res) => {
   });
 });
 
+// v10.9: chave pública do MapTiler; a restrição deve ser feita por domínio no painel MapTiler.
+app.get('/api/public/map-key', (req, res) => {
+  const key = process.env.MAPTILER_API_KEY || '';
+  if (!key) return res.status(503).json({ key: null, error: 'MapTiler não configurado.' });
+  res.json({ key });
+});
+
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Rota da API não encontrada.' });
 });
@@ -158,7 +165,7 @@ mongoose
   .then(() => {
     console.log('✅ Conectado ao MongoDB.');
     app.listen(PORT, () => {
-      console.log(`🌽 Pamonha Net Fidelidade v10.7.14 rodando em http://localhost:${PORT}`);
+      console.log(`🌽 Pamonha Net Fidelidade v10.9.0 rodando em http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
