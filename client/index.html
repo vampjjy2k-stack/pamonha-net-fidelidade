@@ -3161,6 +3161,14 @@ function renderTxPill() {
           <p class="text-xs muted mb-1">Toque em um aviso para ver quem já visualizou.</p>
           <div id="sent-notif-list"></div>
         </div>
+
+        <div class="surface section-gap" style="border-color:rgba(198,40,40,.35)">
+          <h3 class="surface-title" style="color:var(--danger)">${icon('broom', 'icon icon-sm')} Apagar notificações</h3>
+          <p class="text-xs muted mb-1">As notificações de raspadinha ficam protegidas. Escolha o tipo de aviso que deseja apagar:</p>
+          <button class="btn btn-outline mb-1" style="color:var(--danger);border-color:rgba(198,40,40,.35)" onclick="clearNotifs('broadcast')">${icon('trash', 'icon icon-sm')} Apagar avisos enviados para todos</button>
+          <button class="btn btn-outline mb-1" style="color:var(--danger);border-color:rgba(198,40,40,.35)" onclick="clearNotifs('individual')">${icon('trash', 'icon icon-sm')} Apagar avisos individuais</button>
+          <button class="btn btn-danger" onclick="clearNotifs('all')">${icon('trash', 'icon icon-sm')} Apagar todos os avisos comuns</button>
+        </div>
       `;
       loadSentNotifications();
     }
@@ -3765,6 +3773,7 @@ function renderTxPill() {
       try {
         await api.del('/api/admin/notifications?scope=' + scope);
         toast.show('Notificações removidas.');
+        loadSentNotifications();
       } catch (e) { toast.show(e.message, 'error'); }
     };
 
