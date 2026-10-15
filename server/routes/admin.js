@@ -180,7 +180,9 @@ router.get('/clients', async (req, res) => {
   try {
     const { search = '', sort = 'name', page = 1, limit = 20 } = req.query;
     const query = { role: 'client' };
-    if (req.query.includeArchived !== '1') query.archived = { $ne: true };
+    // Sem o filtro, mostrar somente clientes ativos; com includeArchived=1,
+    // a aba Arquivados deve mostrar somente os clientes realmente arquivados.
+    query.archived = req.query.includeArchived === '1' ? true : { $ne: true };
     if (search.trim()) {
       const digitsOnly = search.replace(/\D/g, '');
       const safeSearch = escapeRegex(search.trim());
@@ -192,7 +194,7 @@ router.get('/clients', async (req, res) => {
     const pageNum = Math.max(parseInt(page, 10) || 1, 1);
     const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
     const [clientsRaw, total] = await Promise.all([
-      User.find(query).select('fullName phone email stamps completedCards lastStampAt createdAt').sort(sortOption).skip((pageNum - 1) * limitNum).limit(limitNum),
+      User.find(query).select('fullName phone email stamps completedCards lastStampAt createdAt archived archivedAt').sort(sortOption).skip((pageNum - 1) * limitNum).limit(limitNum),
       User.countDocuments(query),
     ]);
     const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
