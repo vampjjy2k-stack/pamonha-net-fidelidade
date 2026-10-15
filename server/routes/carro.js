@@ -5,10 +5,11 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-const { createCarroService, nomeDoEndereco, CarroError } = require('../carro-core');
+const { createCarroService, CarroError } = require('../carro-core');
 
 const User = require('../models/User');
 const Local = require('../models/Local');
+const { reverseLocationIq } = require('../utils/locationiq');
 
 // ---- Persistência: um único documento "main" ------------------------------------------------
 const CarroState = mongoose.models.CarroState || mongoose.model('CarroState', new mongoose.Schema({
@@ -34,20 +35,12 @@ const store = {
   },
 };
 
-// ---- Nome do lugar: Locais cadastrados primeiro, OpenStreetMap como reserva -----------------
+// ---- Nome do lugar: Locais cadastrados primeiro, LocationIQ como reserva --------------------
 async function geocode(lat, lng) {
-  if (typeof fetch !== 'function') return null; // Node < 18
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 4000);
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&accept-language=pt-BR&lat=${lat}&lon=${lng}`;
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: { 'User-Agent': 'PamonhaNetFidelidade/1.0 (cartao fidelidade; contato via site)' },
-    });
-    if (!res.ok) return null;
-    return nomeDoEndereco(await res.json());
-  } catch (_) { return null; } finally { clearTimeout(timer); }
+    const result = await reverseLocationIq(lat, lng);
+    return result?.shortLabel || null;
+  } catch (_) { return null; }
 }
 
 async function listLocais() {

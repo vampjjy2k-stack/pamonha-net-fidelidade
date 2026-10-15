@@ -1,4 +1,4 @@
-// server.js — Pamonha Net Fidelidade v10.7.13
+// server.js — Pamonha Net Fidelidade v10.7.14
 // Serviço principal da Pamonha Net Fidelidade.
 
 require('dotenv').config();
@@ -108,7 +108,7 @@ app.get('/api/public/info', async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: 'v10.7.13', timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', version: 'v10.7.14', timestamp: new Date().toISOString() });
 });
 
 app.get('/api/push/vapid-public-key', (req, res) => {
@@ -158,7 +158,7 @@ mongoose
   .then(() => {
     console.log('✅ Conectado ao MongoDB.');
     app.listen(PORT, () => {
-      console.log(`🌽 Pamonha Net Fidelidade v10.7.13 rodando em http://localhost:${PORT}`);
+      console.log(`🌽 Pamonha Net Fidelidade v10.7.14 rodando em http://localhost:${PORT}`);
     });
   })
   .catch((err) => {

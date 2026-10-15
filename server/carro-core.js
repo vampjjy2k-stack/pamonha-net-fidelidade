@@ -7,7 +7,7 @@ const SINAL_FRACO_MS = 90 * 1000;          // 90s sem posição nova = "sinal fr
 const SEM_SINAL_PARAR_MS = 10 * 60 * 1000; // 10min sem posição = encerra sozinho
 const GEOCODE_MIN_MOVE_M = 120;            // só consulta endereço de novo se andou 120m+
 const GEOCODE_MAX_AGE_MS = 5 * 60 * 1000;  //  ...ou se passaram 5min
-const GEOCODE_MIN_GAP_MS = 2000;           // limite educado do Nominatim
+const GEOCODE_MIN_GAP_MS = 2000;           // intervalo mínimo entre consultas ao LocationIQ
 
 function haversineM(a, b) {
   const rad = (d) => (d * Math.PI) / 180;
@@ -125,15 +125,15 @@ function createCarroService(deps) {
     const t = now().getTime();
     const moved = lastGeocode.lat === null ? Infinity : haversineM(coords, lastGeocode);
     const fresh = lastGeocode.name && moved < GEOCODE_MIN_MOVE_M && t - lastGeocode.at < GEOCODE_MAX_AGE_MS;
-    if (fresh) return { name: lastGeocode.name, source: 'osm', localId: null };
+    if (fresh) return { name: lastGeocode.name, source: 'locationiq', localId: null };
     if (t - lastGeocode.at < GEOCODE_MIN_GAP_MS && lastGeocode.name) {
-      return { name: lastGeocode.name, source: 'osm', localId: null };
+      return { name: lastGeocode.name, source: 'locationiq', localId: null };
     }
     lastGeocode.at = t;
     let name = null;
     try { name = await deps.geocode(coords.lat, coords.lng); } catch (_) { name = null; }
     if (name) lastGeocode = { at: t, lat: coords.lat, lng: coords.lng, name };
-    return { name: name || null, source: name ? 'osm' : null, localId: null };
+    return { name: name || null, source: name ? 'locationiq' : null, localId: null };
   }
 
   return {
@@ -233,7 +233,7 @@ function createCarroService(deps) {
   };
 }
 
-// Converte a resposta do Nominatim num nome curto: "Rua X · Bairro Y · Cidade".
+// Converte uma resposta de geocodificação num nome curto: "Rua X · Bairro Y · Cidade".
 function nomeDoEndereco(json) {
   if (!json || !json.address) return null;
   const a = json.address;
