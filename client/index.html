@@ -527,6 +527,16 @@
     .switch input:disabled + .switch-track { opacity: 0.4; cursor: not-allowed; }
 
     .local-map { width: 100%; height: 220px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); z-index: 1; }
+    .local-map .leaflet-pane { z-index: 1; }
+    .local-map .leaflet-marker-pane { z-index: 600; }
+    .local-map .leaflet-overlay-pane { z-index: 500; }
+    .local-map .leaflet-popup-pane { z-index: 700; }
+    .local-map .leaflet-control { z-index: 800; }
+    .local-map-btn { position:absolute; right:12px; bottom:12px; z-index:900; background:#fff; color:var(--husk-900); border:2px solid var(--husk-500); width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(0,0,0,.18); cursor:pointer; }
+    .local-map-btn:active { transform:scale(.94); }
+    .local-map-btn .icon { width:22px; height:22px; }
+    .local-map { position:relative; }
+    .local-map-tip { position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:900; background:rgba(27,94,32,.92); color:#fff; font-size:.78rem; font-weight:600; padding:.45rem .8rem; border-radius:999px; box-shadow:0 4px 12px rgba(0,0,0,.25); pointer-events:none; animation:fadeIn .5s ease both; white-space:nowrap; }
     .local-search-wrap { position:relative; }
     .local-results { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:0 12px 32px rgba(0,0,0,.18); max-height:60vh; overflow-y:auto; z-index:1000; margin-top:6px; display:none; }
     .local-results.show { display:block; }
@@ -4619,7 +4629,7 @@ function renderTxPill() {
     // ==========================================================================
     let locaisCache = [];
     let localMapInstance = null, localMapMarker = null, localMapCircle = null, localMeMarker = null;
-    let localSearchTimer = null, localReverseTimer = null, localUserPos = null, localCurrentLatLng = null, localExistingMarkers = [];
+    let localSearchTimer = null, localReverseTimer = null, localUserPos = null, localCurrentLatLng = null, localExistingMarkers = [], localTapHintShown = false;
 
     async function renderAdminLocais(container) {
       container.innerHTML = `
@@ -4700,45 +4710,68 @@ function renderTxPill() {
       const el = $('#local-map'); if (!el || typeof L === 'undefined') return;
       if (localMapInstance) { localMapInstance.remove(); localMapInstance = null; }
       const startLat = Number.isFinite(lat) ? lat : -22.7858, startLng = Number.isFinite(lng) ? lng : -43.3117;
-      localMapInstance = L.map(el, { attributionControl: false, zoomControl: true }).setView([startLat, startLng], 14);
+      localMapInstance = L.map(el, { attributionControl: false, zoomControl: true, tap: true, tapTolerance: 15 }).setView([startLat, startLng], 15);
       novoTileLayer().addTo(localMapInstance);
-      localMapMarker = L.marker([startLat, startLng], { draggable: true, opacity: 0 }).addTo(localMapInstance);
+      localMapMarker = L.marker([startLat, startLng], { draggable: true, opacity: 0, zIndexOffset: 1000 }).addTo(localMapInstance);
       localMapCircle = L.circle([startLat, startLng], { radius: 150, color: '#2E7D32', fillColor: '#2E7D32', fillOpacity: 0.15, weight: 2 }).addTo(localMapInstance);
-      localMapMarker.on('drag', (e) => { const p = e.target.getLatLng(); localMapCircle.setLatLng(p); setLocalLatLng(p.lat, p.lng); });
-      localMapMarker.on('dragend', (e) => { const p = e.target.getLatLng(); placePinAt(p.lat, p.lng, 'drag'); });
-      localMapInstance.on('click', (e) => placePinAt(e.latlng.lat, e.latlng.lng, 'tap'));
+      localMapMarker.on('drag', (e) => { const q = e.target.getLatLng(); localMapCircle.setLatLng(q); setLocalLatLng(q.lat, q.lng); });
+      localMapMarker.on('dragend', (e) => { const q = e.target.getLatLng(); if (navigator.vibrate) navigator.vibrate(30); buscarEnderecoDoPonto(q.lat, q.lng, 'drag'); });
+      localMapInstance.on('click', (e) => { if (navigator.vibrate) navigator.vibrate(30); placePinAt(e.latlng.lat, e.latlng.lng, 'tap'); });
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'local-map-btn'; btn.title = 'Centralizar em mim'; btn.innerHTML = '<svg class="icon"><use href="#i-pin"/></svg>'; btn.onclick = () => usarGpsSuave(); el.appendChild(btn);
+      if (!localTapHintShown) { const tip = document.createElement('div'); tip.className = 'local-map-tip'; tip.textContent = 'Toque no mapa ou arraste o pino'; el.appendChild(tip); localTapHintShown = true; setTimeout(() => { try { tip.remove(); } catch (_) {} }, 4000); }
       drawExistingLocaisOnMap();
-      navigator.geolocation && navigator.geolocation.getCurrentPosition((pos) => {
-        const la = pos.coords.latitude, ln = pos.coords.longitude; if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
-        localUserPos = { lat: la, lng: ln }; if (localMapInstance && !localCurrentLatLng) localMapInstance.setView([la, ln], 15);
-        if (localMapInstance) { if (localMeMarker) localMeMarker.remove(); localMeMarker = L.circleMarker([la, ln], { radius: 8, color: '#FFFFFF', weight: 3, fillColor: '#1E88E5', fillOpacity: 1 }).addTo(localMapInstance); localMeMarker.bindTooltip('Você está aqui', { direction: 'top', offset: [0, -8] }); }
+      if (navigator.geolocation) navigator.geolocation.getCurrentPosition((pos) => {
+        const la = pos.coords.latitude, ln = pos.coords.longitude; if (!Number.isFinite(la) || !Number.isFinite(ln) || (Math.abs(la) < .01 && Math.abs(ln) < .01)) return;
+        if (localMapInstance && !localCurrentLatLng) localMapInstance.setView([la, ln], 15);
+        if (localMapInstance) { if (localMeMarker) localMeMarker.remove(); localMeMarker = L.circleMarker([la, ln], { radius: 7, color: '#FFFFFF', weight: 3, fillColor: '#1E88E5', fillOpacity: 1 }).addTo(localMapInstance); localMeMarker.bindTooltip('Você está aqui', { direction: 'top', offset: [0, -8] }); }
       }, () => {}, { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 });
     }
-    function placePinAt(lat, lng, source, labelOverride, fullOverride) {
+    function placePinAt(lat, lng, source) {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-      if (Math.abs(lat) < 0.01 && Math.abs(lng) < 0.01) return toast.show('GPS retornou coordenadas inválidas. Tente de novo.', 'error');
-      localCurrentLatLng = { lat, lng }; if (localMapMarker) { localMapMarker.setLatLng([lat, lng]); localMapMarker.setOpacity(1); }
-      if (localMapCircle) localMapCircle.setLatLng([lat, lng]); if (localMapInstance) localMapInstance.flyTo([lat, lng], Math.max(localMapInstance.getZoom(), 17), { duration: 0.8 }); setLocalLatLng(lat, lng);
-      if (labelOverride) return renderLocalStatusCard({ lat, lng, source, label: labelOverride, full: fullOverride || '' });
-      renderLocalStatusCard({ loading: true }); clearTimeout(localReverseTimer);
-      localReverseTimer = setTimeout(async () => { try { const data = await api.get('/api/admin/geocode?q=' + lat + ',' + lng), r = (data.resultados || [])[0]; renderLocalStatusCard(r ? { lat, lng, source, label: r.shortLabel, full: r.displayName } : { lat, lng, source, label: 'Ponto selecionado', full: 'Não foi possível identificar o endereço por extenso.' }); } catch (_) { renderLocalStatusCard({ lat, lng, source, label: 'Ponto selecionado', full: 'Não foi possível identificar o endereço.' }); } }, 300);
+      if (Math.abs(lat) < .01 && Math.abs(lng) < .01) return toast.show('Coordenadas inválidas. Tente de novo.', 'error');
+      localCurrentLatLng = { lat, lng };
+      if (localMapMarker) { localMapMarker.setLatLng([lat, lng]); localMapMarker.setOpacity(1); }
+      if (localMapCircle) localMapCircle.setLatLng([lat, lng]);
+      if (localMapInstance) localMapInstance.flyTo([lat, lng], Math.max(localMapInstance.getZoom(), 17), { duration: .6 });
+      setLocalLatLng(lat, lng);
+      const labels = { tap: 'Ponto escolhido no mapa', drag: 'Pino ajustado', gps: 'Localização aproximada do GPS', search: 'Endereço encontrado' };
+      renderLocalStatusCard({ lat, lng, source, label: labels[source] || 'Ponto escolhido', full: 'Buscando endereço aproximado…' });
+      buscarEnderecoDoPonto(lat, lng, source);
+    }
+    function buscarEnderecoDoPonto(lat, lng, source) {
+      clearTimeout(localReverseTimer);
+      localReverseTimer = setTimeout(async () => {
+        try {
+          const data = await api.get('/api/admin/geocode?q=' + lat + ',' + lng), r = (data.resultados || [])[0];
+          if (r) { renderLocalStatusCard({ lat, lng, source, label: r.shortLabel || 'Ponto escolhido', full: r.displayName }); const nameEl = $('#local-name'); if (nameEl && !nameEl.value.trim()) nameEl.placeholder = 'Ex: ' + (r.shortLabel || 'Nome do local'); }
+          else renderLocalStatusCard({ lat, lng, source, label: 'Ponto escolhido', full: 'Toque em "Salvar" quando estiver no lugar certo.' });
+        } catch (_) { renderLocalStatusCard({ lat, lng, source, label: 'Ponto escolhido', full: 'Toque em "Salvar" quando estiver no lugar certo.' }); }
+      }, 400);
     }
     function renderLocalStatusCard(opts) {
       const el = $('#local-status'); if (!el) return;
-      if (opts.loading) { el.innerHTML = `<div class="local-status-card loading">${icon('refresh','icon')}<div class="info"><strong>Identificando o endereço…</strong><span class="full">Aguarde um instante.</span></div></div>`; return; }
-      const labels = { gps: '📍 Sua localização atual', search: '🔍 Endereço encontrado', tap: '👆 Toque no mapa', drag: '✋ Pino ajustado' }, meta = (labels[opts.source] || '') + ' · ' + opts.lat.toFixed(5) + ', ' + opts.lng.toFixed(5);
-      el.innerHTML = `<div class="local-status-card">${icon('check','icon')}<div class="info"><strong>${esc(opts.label || 'Ponto selecionado')}</strong>${opts.full ? `<span class="full">${esc(opts.full)}</span>` : ''}<span class="meta">${esc(meta)}</span></div></div>`;
+      if (opts.loading) { el.innerHTML = `<div class="local-status-card loading">${icon('refresh','icon')}<div class="info"><strong>Identificando…</strong><span class="full">Aguarde um instante.</span></div></div>`; return; }
+      const icons = { gps: 'pin', tap: 'pin', drag: 'pin', search: 'search' };
+      el.innerHTML = `<div class="local-status-card">${icon(icons[opts.source] || 'check','icon')}<div class="info"><strong>${esc(opts.label || 'Ponto selecionado')}</strong>${opts.full ? `<span class="full">${esc(opts.full)}</span>` : ''}</div></div>`;
     }
     function setLocalLatLng(lat, lng) { const latEl = $('#local-lat'), lngEl = $('#local-lng'); if (latEl) latEl.value = lat.toFixed(6); if (lngEl) lngEl.value = lng.toFixed(6); }
     window.onLocalRadiusChange = (val) => { const n = Number(val) || 150; const el = $('#local-radius-val'); if (el) el.textContent = String(n); if (localMapCircle) localMapCircle.setRadius(n); };
-    window.useMyLocationForLocal = () => {
-      if (!navigator.geolocation) return toast.show('Este dispositivo não tem GPS.', 'error');
-      const btn = document.querySelector('button[onclick="useMyLocationForLocal()"]'), originalText = btn ? btn.innerHTML : ''; if (btn) { btn.disabled = true; btn.innerHTML = `${icon('refresh','icon icon-sm')} Buscando sinal…`; }
-      let attempts = 0, best = null; const finalizar = () => { if (btn) { btn.disabled = false; btn.innerHTML = originalText; } };
-      const aceitar = (pos) => { const lat = pos.coords.latitude, lng = pos.coords.longitude, acc = Math.round(pos.coords.accuracy); localUserPos = { lat, lng }; if (localMapInstance) { if (localMeMarker) localMeMarker.remove(); localMeMarker = L.circleMarker([lat, lng], { radius: 8, color: '#FFFFFF', weight: 3, fillColor: '#1E88E5', fillOpacity: 1 }).addTo(localMapInstance); localMeMarker.bindTooltip('Você está aqui', { direction: 'top', offset: [0, -8] }); } placePinAt(lat, lng, 'gps'); renderLocalStatusCard({ lat, lng, source: 'gps', label: 'Sua localização atual', full: 'Precisão ±' + acc + 'm' + (acc > 60 ? ' — ajuste o pino se precisar.' : '') }); finalizar(); toast.show('Localização capturada com precisão de ±' + acc + 'm.'); };
-      const tentar = () => { attempts++; navigator.geolocation.getCurrentPosition((pos) => { const acc = pos.coords.accuracy || 9999; if (!best || acc < (best.coords.accuracy || 9999)) best = pos; if (acc <= 60) return aceitar(best); if (attempts < 4) return setTimeout(tentar, 700); if ((best.coords.accuracy || 9999) <= 200) return aceitar(best); finalizar(); toast.show('GPS com precisão ruim (' + Math.round(best.coords.accuracy) + 'm). Vá para um local aberto e tente de novo.', 'error'); }, (err) => { if (attempts < 4) return setTimeout(tentar, 700); finalizar(); toast.show(err.code === 1 ? 'Você precisa permitir o acesso à localização.' : err.code === 2 ? 'GPS sem sinal. Vá para um local aberto.' : err.code === 3 ? 'Tempo esgotado. Tente de novo.' : 'Não foi possível obter sua localização.', 'error'); }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }); };
-      tentar();
-    };
+    window.useMyLocationForLocal = () => usarGpsSuave();
+    function usarGpsSuave() {
+      if (!navigator.geolocation) return toast.show('Este aparelho não tem GPS. Toque no mapa para escolher o ponto.', 'error');
+      toast.show('Pegando sua posição aproximada…');
+      let done = false;
+      const timer = setTimeout(() => { if (!done) { done = true; toast.show('GPS demorou. Toque no mapa ou arraste o pino.', 'error'); } }, 8000);
+      navigator.geolocation.getCurrentPosition((pos) => {
+        if (done) return; done = true; clearTimeout(timer);
+        const la = pos.coords.latitude, ln = pos.coords.longitude, acc = Math.round(pos.coords.accuracy || 0);
+        if (!Number.isFinite(la) || !Number.isFinite(ln) || (Math.abs(la) < .01 && Math.abs(ln) < .01)) return toast.show('GPS sem sinal. Toque no mapa para escolher.', 'error');
+        if (localMapInstance) localMapInstance.setView([la, ln], 17);
+        placePinAt(la, ln, 'gps');
+        renderLocalStatusCard({ lat: la, lng: ln, source: 'gps', label: 'Localização do GPS', full: acc > 60 ? `Aproximado (±${acc}m). Arraste o pino se precisar.` : 'Localização capturada.' });
+        if (navigator.vibrate) navigator.vibrate(30);
+      }, () => { if (done) return; done = true; clearTimeout(timer); toast.show('Não pegou o GPS. Toque no mapa para escolher o ponto.', 'error'); }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+    }
     function drawExistingLocaisOnMap() { if (!localMapInstance) return; localExistingMarkers.forEach((m) => { try { m.remove(); } catch (_) {} }); localExistingMarkers = []; (locaisCache || []).forEach((l) => { if (!l.active) return; const m = L.circleMarker([l.lat, l.lng], { radius: 7, color: '#FFFFFF', weight: 2, fillColor: '#607D8B', fillOpacity: 0.9 }).addTo(localMapInstance); m.bindTooltip(l.name + ' (já cadastrado)', { direction: 'top', offset: [0, -8] }); localExistingMarkers.push(m); }); }
     async function loadLocais() { try { const data = await api.get('/api/admin/locais?includeInactive=1'); locaisCache = data.locais; renderLocaisList(); drawExistingLocaisOnMap(); } catch (e) { toast.show(e.message, 'error'); } }
 

@@ -1,6 +1,6 @@
 {
   "name": "pamonha-net-fidelidade-server",
-  "version": "10.9.0",
+  "version": "10.11.0",
   "description": "API do cartão fidelidade digital da Pamonha Net — Refatorado",
   "main": "server.js",
   "scripts": {
